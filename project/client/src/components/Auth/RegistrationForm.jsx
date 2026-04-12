@@ -1,211 +1,239 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { apiUrl } from '../../lib/api.js'
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function passwordRequirementMessages(password) {
+  const p = String(password || '')
+  const missing = []
+  if (p.length < 8) missing.push('at least 8 characters')
+  if (!/[A-Z]/.test(p)) missing.push('one uppercase letter')
+  if (!/[a-z]/.test(p)) missing.push('one lowercase letter')
+  if (!/\d/.test(p)) missing.push('one number')
+  return missing
+}
+
+const inputNormal =
+  'border-slate-300 focus:border-green-600 focus:ring-2 focus:ring-green-100'
 
 const RegistrationForm = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        role: 'Student',
-        colorCode: '#FFFFFF'
-    });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  })
 
-    const [errors, setErrors] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    const navigate = useNavigate();
+  const [errors, setErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const navigate = useNavigate()
 
-    const validateForm = () => {
-        const newErrors = {};
+  const validateForm = () => {
+    const newErrors = {}
 
-        if (!formData.name.trim()) newErrors.name = 'Name is required';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email address';
-        if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-        if (!/[A-Z]/.test(formData.password)) newErrors.password = 'Password needs one uppercase letter';
-        if (!/[a-z]/.test(formData.password)) newErrors.password = 'Password needs one lowercase letter';
-        if (!/\d/.test(formData.password)) newErrors.password = 'Password needs one number';
-        if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required.'
+    }
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
+    const email = formData.email.trim()
+    if (!email) {
+      newErrors.email = 'Email is required.'
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = 'Please enter a valid email address.'
+    }
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+    const pwdMissing = passwordRequirementMessages(formData.password)
+    if (pwdMissing.length) {
+      newErrors.password = `Password must include ${pwdMissing.join(', ')}.`
+    }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validateForm()) return;
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password.'
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords must match.'
+    }
 
-        setIsLoading(true);
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
-        try {
-            const payload = {
-                Name: formData.name.trim(),
-                Email: formData.email.trim().toLowerCase(),
-                Password: formData.password,
-                Role: formData.role,
-                ColorCode: formData.colorCode
-            };
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
 
-            const response = await fetch('http://localhost:5000/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            });
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSuccessMessage('')
+    if (!validateForm()) return
 
-            const data = await response.json();
+    setIsLoading(true)
+    setErrors({})
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Registration failed');
-            }
+    try {
+      const response = await fetch(apiUrl('/api/auth/register'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          full_name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          password: formData.password,
+        }),
+      })
 
-            setSuccessMessage('Registration successful! Redirecting to login...');
-            setTimeout(() => navigate('/login'), 2000);
-        } catch (error) {
-            console.error('Registration Error:', error);
-            setErrors({ api: error.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+      let data = {}
+      try {
+        data = await response.json()
+      } catch {
+        throw new Error('Unexpected server response. Please try again.')
+      }
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-cyan-100 flex items-center justify-center px-4 py-10">
-            <div className="w-full max-w-md">
-                <form
-                    onSubmit={handleSubmit}
-                    className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white p-8 md:p-10 space-y-5"
-                >
-                    <div className="text-center">
-                        <h2 className="text-4xl font-extrabold text-slate-800">Create Account</h2>
-                        <p className="text-slate-500 mt-2 text-sm">
-                            Join the Library Management System
-                        </p>
-                    </div>
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed. Please try again.')
+      }
 
-                    {successMessage && (
-                        <div className="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded-xl text-sm">
-                            {successMessage}
-                        </div>
-                    )}
+      setSuccessMessage(data.message || 'Registration successful! Redirecting to login...')
+      setTimeout(() => navigate('/login'), 2000)
+    } catch (error) {
+      console.error('Registration Error:', error)
+      setErrors({ api: error.message || 'Something went wrong. Please try again.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-                    {errors.api && (
-                        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-xl text-sm">
-                            {errors.api}
-                        </div>
-                    )}
+  const pwdHints = passwordRequirementMessages(formData.password)
 
-                    <div>
-                        <label className="block text-slate-700 font-semibold mb-2">Full Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            placeholder="John Doe"
-                            className={`w-full px-4 py-3 rounded-xl border outline-none transition ${
-                                errors.name
-                                    ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                                    : 'border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-                            }`}
-                        />
-                        {errors.name && (
-                            <p className="text-red-500 text-sm mt-2">{errors.name}</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-slate-700 font-semibold mb-2">Email</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="john@example.com"
-                            className={`w-full px-4 py-3 rounded-xl border outline-none transition ${
-                                errors.email
-                                    ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                                    : 'border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-                            }`}
-                        />
-                        {errors.email && (
-                            <p className="text-red-500 text-sm mt-2">{errors.email}</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-slate-700 font-semibold mb-2">Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            placeholder="At least 8 characters"
-                            className={`w-full px-4 py-3 rounded-xl border outline-none transition ${
-                                errors.password
-                                    ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                                    : 'border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-                            }`}
-                        />
-                        {errors.password && (
-                            <p className="text-red-500 text-sm mt-2 leading-6">
-                                {errors.password}
-                                <br />
-                                Requirements: Uppercase, lowercase, number
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-slate-700 font-semibold mb-2">Confirm Password</label>
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            placeholder="Repeat your password"
-                            className={`w-full px-4 py-3 rounded-xl border outline-none transition ${
-                                errors.confirmPassword
-                                    ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                                    : 'border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-                            }`}
-                        />
-                        {errors.confirmPassword && (
-                            <p className="text-red-500 text-sm mt-2">{errors.confirmPassword}</p>
-                        )}
-                    </div>
-
-                    <input type="hidden" name="role" value="Student" />
-
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-md ${
-                            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                    >
-                        {isLoading ? 'Creating Account...' : 'Register'}
-                    </button>
-
-                    <p className="text-center text-slate-600 text-sm">
-                        Already have an account?{' '}
-                        <Link to="/login" className="text-blue-600 font-semibold hover:underline">
-                            Login here
-                        </Link>
-                    </p>
-                </form>
-            </div>
+  return (
+    <div className="w-full max-w-md">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-8 shadow-lg md:p-10"
+      >
+        <div className="text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-green-800">Sign Up</h2>
+          <p className="mt-2 text-sm text-slate-600">Join the Library Management System</p>
         </div>
-    );
-};
 
-export default RegistrationForm;
+        {successMessage && (
+          <div className="rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800">
+            {successMessage}
+          </div>
+        )}
+
+        {errors.api && (
+          <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errors.api}
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="reg-name" className="mb-2 block font-semibold text-slate-700">
+            Full Name
+          </label>
+          <input
+            id="reg-name"
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="John Doe"
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
+              errors.name ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+            }`}
+          />
+          {errors.name && <p className="mt-2 text-sm text-red-500">{errors.name}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="reg-email" className="mb-2 block font-semibold text-slate-700">
+            Email
+          </label>
+          <input
+            id="reg-email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="john@example.com"
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
+              errors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+            }`}
+          />
+          {errors.email && <p className="mt-2 text-sm text-red-500">{errors.email}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="reg-password" className="mb-2 block font-semibold text-slate-700">
+            Password
+          </label>
+          <input
+            id="reg-password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="At least 8 characters"
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
+              errors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+            }`}
+          />
+          {errors.password && <p className="mt-2 text-sm text-red-500">{errors.password}</p>}
+          {!errors.password && pwdHints.length > 0 && (
+            <p className="mt-2 text-xs text-slate-500">
+              Still needed: {pwdHints.join('; ')}.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="reg-confirm" className="mb-2 block font-semibold text-slate-700">
+            Confirm Password
+          </label>
+          <input
+            id="reg-confirm"
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Repeat your password"
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
+              errors.confirmPassword
+                ? 'border-red-500 focus:ring-2 focus:ring-red-200'
+                : inputNormal
+            }`}
+          />
+          {errors.confirmPassword && (
+            <p className="mt-2 text-sm text-red-500">{errors.confirmPassword}</p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className={`w-full rounded-xl bg-green-700 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 ${
+            isLoading ? 'cursor-not-allowed opacity-50' : ''
+          }`}
+        >
+          {isLoading ? 'Creating Account...' : 'Register'}
+        </button>
+
+        <p className="text-center text-sm text-slate-600">
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-green-700 hover:underline">
+            Login here
+          </Link>
+        </p>
+      </form>
+    </div>
+  )
+}
+
+export default RegistrationForm

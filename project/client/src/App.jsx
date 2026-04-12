@@ -1,7 +1,7 @@
-import RegistrationForm from './components/Auth/RegistrationForm.jsx'
+import AppRoutes from './routes/AppRoutes.jsx'
 
 function App() {
-  return <RegistrationForm />
+  return <AppRoutes />
 }
 
 export default App
