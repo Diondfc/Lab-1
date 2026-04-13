@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { FiBook } from 'react-icons/fi'
 
 function Navbar() {
   return (
@@ -6,8 +7,9 @@ function Navbar() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="text-lg font-semibold tracking-tight text-white transition hover:text-emerald-100 sm:text-xl"
+          className="flex items-center gap-2 text-lg font-semibold tracking-tight text-white transition hover:text-emerald-100 sm:text-xl"
         >
+          <FiBook className="h-7 w-7 shrink-0" aria-hidden />
           UBT Library Management
         </Link>
 
