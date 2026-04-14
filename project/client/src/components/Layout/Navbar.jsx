@@ -20,12 +20,12 @@ function Navbar() {
           >
             Home
           </Link>
-          <a
-            href="#about"
+          <Link
+            to="/about"
             className="text-sm font-medium text-green-100 transition hover:text-white"
           >
             About
-          </a>
+          </Link>
           <Link
             to="/login"
             className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-green-900"

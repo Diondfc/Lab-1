@@ -1,7 +1,7 @@
 import React from 'react';
 import { FiBook, FiUsers, FiClock, FiMapPin, FiPhone, FiMail, FiAward } from 'react-icons/fi';
 import LibraryImage from '../images/LibraryImage.mp4';
-import TeamImage from '../images/TeamImage.mp4';
+import TeamImage from '../images/HeroSection.mp4';
 
 const About = () => {
     const libraryStats = [
