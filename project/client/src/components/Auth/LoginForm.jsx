@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiUrl } from '../../lib/api.js'
+import { parseApiJson } from '../../lib/parseApiJson.js'
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -47,12 +48,7 @@ function LoginForm() {
         }),
       })
 
-      let data = {}
-      try {
-        data = await response.json()
-      } catch {
-        throw new Error('Unexpected server response. Please try again.')
-      }
+      const data = await parseApiJson(response)
 
       if (!response.ok) {
         throw new Error(data.message || 'Sign in failed. Please check your details.')

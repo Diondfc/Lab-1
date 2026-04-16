@@ -6,7 +6,7 @@ const express = require('express')
 const cors = require('cors')
 const authRoutes = require('./routes/authRoutes')
 
-const PORT = Number(process.env.PORT) || 5000
+const PORT = Number(process.env.PORT) || 5001
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
 
 const app = express()
