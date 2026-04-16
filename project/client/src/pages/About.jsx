@@ -162,6 +162,28 @@ const About = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Map Section */}
+            <div className="py-16 bg-white">
+                <div className="container mx-auto px-4">
+                    <div className="text-center mb-10">
+                        <h2 className="text-3xl font-bold mb-2">UBT Location in Pristina</h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-emerald-600 to-green-800 mx-auto"></div>
+                    </div>
+                    
+                    <div className="max-w-6xl mx-auto bg-gray-50 rounded-2xl border border-gray-200 p-3 shadow-lg">
+                        <iframe
+                            title="UBT Location in Pristina"
+                            src="https://maps.google.com/maps?q=UBT-Dukagjini,%20Prishtina&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                            className="w-full h-[300px] md:h-[450px] rounded-xl"
+                            style={{ border: 0 }}
+                            allowFullScreen=""
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                        ></iframe>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
