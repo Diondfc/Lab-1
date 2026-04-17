@@ -8,7 +8,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const inputNormal =
   'border-slate-300 focus:border-green-600 focus:ring-2 focus:ring-green-100'
 
-function LoginForm() {
+function LoginForm({ setUser }) {
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
@@ -55,9 +55,16 @@ function LoginForm() {
       }
 
       setSuccessMessage(data.message || 'Login successful.')
+
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user))
+        setUser(data.user)
+      }
+
       setTimeout(() => {
         navigate('/home', { replace: true })
       }, 1200)
+
     } catch (err) {
       setErrors({ api: err.message || 'Something went wrong. Please try again.' })
     } finally {

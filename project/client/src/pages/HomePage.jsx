@@ -10,6 +10,9 @@ const Home = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const storedUser = localStorage.getItem('user');
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const userName = user?.full_name || user?.name;
 
   const bookCategories = [
     { id: 'journals', name: 'Journals', icon: <FiBook className="text-[#FD7F2F]" />, count: 1245 },
@@ -50,6 +53,7 @@ const Home = () => {
         <div className="container mx-auto px-4 py-20 md:py-28 flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+              {userName ? `Hello, ${userName}, ` : ''}
               Explore UBT's <br />Physical Book Collection
             </h1>
             <p className="text-xl mb-8 opacity-90">
