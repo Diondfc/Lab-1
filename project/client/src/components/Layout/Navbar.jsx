@@ -28,6 +28,7 @@ function Navbar({ user, setUser }) {
           >
             Home
           </Link>
+
           <Link
             to="/about"
             className="text-sm font-medium text-green-100 transition hover:text-white"

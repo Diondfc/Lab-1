@@ -5,8 +5,7 @@ import LoginPage from '../pages/LoginPage.jsx'
 import HomePage from '../pages/HomePage.jsx'
 import AdminPanel from '../pages/AdminPanel.jsx'
 import About from '../pages/About.jsx'
-
-
+import BookList from '../components/Books/BookList.jsx'
 export default function AppRoutes() {
   return (
     <Routes>
@@ -17,7 +16,9 @@ export default function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/about" element={<About />} />
+        <Route path="/books" element={<BookList />} />
       </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
