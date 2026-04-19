@@ -6,6 +6,7 @@ import HomePage from '../pages/HomePage.jsx'
 import AdminPanel from '../pages/AdminPanel.jsx'
 import About from '../pages/About.jsx'
 import BookList from '../components/Books/BookList.jsx'
+import BookDetail from '../components/Books/BookDetail.jsx'
 export default function AppRoutes() {
   return (
     <Routes>
@@ -17,6 +18,7 @@ export default function AppRoutes() {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/about" element={<About />} />
         <Route path="/books" element={<BookList />} />
+        <Route path="/books/:id" element={<BookDetail />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
