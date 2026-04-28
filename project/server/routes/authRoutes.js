@@ -1,9 +1,13 @@
-const express = require('express')
-const { register, login } = require('../controllers/authController')
+const express = require('express');
+const router = express.Router();
 
-const router = express.Router()
+// Import the controller we just fixed!
+const { register, login } = require('../controllers/authController');
 
-router.post('/register', register)
-router.post('/login', login)
+// When someone POSTs to /register, run the register function!
+router.post('/register', register);
 
-module.exports = router
+// When someone POSTs to /login, run the login function!
+router.post('/login', login);
+
+module.exports = router;
