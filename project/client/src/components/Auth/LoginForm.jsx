@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { apiUrl } from '../../lib/api.js'
-import { parseApiJson } from '../../lib/parseApiJson.js'
+import { apiClient } from '../../lib/api.js'
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -39,20 +38,12 @@ function LoginForm({ setUser }) {
     setErrors({})
 
     try {
-      const response = await fetch(apiUrl('/api/auth/login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email.trim().toLowerCase(),
-          password: formData.password,
-        }),
+      const response = await apiClient.post('/api/auth/login', {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
       })
 
-      const data = await parseApiJson(response)
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Sign in failed. Please check your details.')
-      }
+      const data = response.data
 
       setSuccessMessage(data.message || 'Login successful.')
 
@@ -66,8 +57,12 @@ function LoginForm({ setUser }) {
       }, 1200)
 
     } catch (err) {
-      setErrors({ api: err.message || 'Something went wrong. Please try again.' })
-    } finally {
+      // Axios puts the server's error message inside err.response.data
+      const errorMessage = err.response?.data?.message || err.message || 'Something went wrong. Please try again.'
+      setErrors({ api: errorMessage })
+    }
+
+    finally {
       setIsLoading(false)
     }
   }
@@ -107,9 +102,8 @@ function LoginForm({ setUser }) {
             onChange={handleChange}
             autoComplete="email"
             placeholder="you@example.com"
-            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
-              errors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
-            }`}
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+              }`}
           />
           {errors.email && <p className="mt-2 text-sm text-red-500">{errors.email}</p>}
         </div>
@@ -126,9 +120,8 @@ function LoginForm({ setUser }) {
             onChange={handleChange}
             autoComplete="current-password"
             placeholder="Your password"
-            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
-              errors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
-            }`}
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+              }`}
           />
           {errors.password && <p className="mt-2 text-sm text-red-500">{errors.password}</p>}
         </div>
@@ -136,9 +129,8 @@ function LoginForm({ setUser }) {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full rounded-xl bg-green-700 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 ${
-            isLoading ? 'cursor-not-allowed opacity-50' : ''
-          }`}
+          className={`w-full rounded-xl bg-green-700 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 ${isLoading ? 'cursor-not-allowed opacity-50' : ''
+            }`}
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
         </button>

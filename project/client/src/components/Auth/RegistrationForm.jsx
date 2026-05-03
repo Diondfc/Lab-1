@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { apiUrl } from '../../lib/api.js'
-import { parseApiJson } from '../../lib/parseApiJson.js'
+import { apiClient } from '../../lib/api.js'
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -77,30 +76,23 @@ const RegistrationForm = () => {
     setErrors({})
 
     try {
-      const response = await fetch(apiUrl('/api/auth/register'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          full_name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          password: formData.password,
-        }),
+      const response = await apiClient.post('/api/auth/register', {
+        full_name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
       })
 
-      const data = await parseApiJson(response)
+      const data = response.data
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed. Please try again.')
-      }
 
       setSuccessMessage(data.message || 'Registration successful! Redirecting to login...')
       setTimeout(() => navigate('/login'), 2000)
     } catch (error) {
       console.error('Registration Error:', error)
-      setErrors({ api: error.message || 'Something went wrong. Please try again.' })
-    } finally {
+      const errorMessage = error.response?.data?.message || error.message || 'Something went wrong. Please try again.'
+      setErrors({ api: errorMessage })
+    }
+    finally {
       setIsLoading(false)
     }
   }
@@ -141,9 +133,8 @@ const RegistrationForm = () => {
             value={formData.name}
             onChange={handleChange}
             placeholder="John Doe"
-            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
-              errors.name ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
-            }`}
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.name ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+              }`}
           />
           {errors.name && <p className="mt-2 text-sm text-red-500">{errors.name}</p>}
         </div>
@@ -159,9 +150,8 @@ const RegistrationForm = () => {
             value={formData.email}
             onChange={handleChange}
             placeholder="john@example.com"
-            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
-              errors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
-            }`}
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+              }`}
           />
           {errors.email && <p className="mt-2 text-sm text-red-500">{errors.email}</p>}
         </div>
@@ -177,9 +167,8 @@ const RegistrationForm = () => {
             value={formData.password}
             onChange={handleChange}
             placeholder="At least 8 characters"
-            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
-              errors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
-            }`}
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+              }`}
           />
           {errors.password && <p className="mt-2 text-sm text-red-500">{errors.password}</p>}
           {!errors.password && pwdHints.length > 0 && (
@@ -200,11 +189,10 @@ const RegistrationForm = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Repeat your password"
-            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
-              errors.confirmPassword
-                ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                : inputNormal
-            }`}
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.confirmPassword
+              ? 'border-red-500 focus:ring-2 focus:ring-red-200'
+              : inputNormal
+              }`}
           />
           {errors.confirmPassword && (
             <p className="mt-2 text-sm text-red-500">{errors.confirmPassword}</p>
@@ -214,9 +202,8 @@ const RegistrationForm = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full rounded-xl bg-green-700 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 ${
-            isLoading ? 'cursor-not-allowed opacity-50' : ''
-          }`}
+          className={`w-full rounded-xl bg-green-700 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 ${isLoading ? 'cursor-not-allowed opacity-50' : ''
+            }`}
         >
           {isLoading ? 'Creating Account...' : 'Register'}
         </button>
