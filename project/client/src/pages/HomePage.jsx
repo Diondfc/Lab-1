@@ -183,7 +183,7 @@ const Home = () => {
                   <p className="text-gray-600 mb-4">By {book.author}</p>
                   <div className="flex justify-between items-center">
                     <button
-                      onClick={() => navigate(`/book/${book.id}`)}
+                      onClick={() => navigate(`/books/${book.id}`)}
                       className="text-[#036280] hover:underline flex items-center text-sm"
                     >
                       Details <FiArrowRight className="ml-1" />

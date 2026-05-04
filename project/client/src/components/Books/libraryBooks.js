@@ -4,7 +4,21 @@ import imgCivilWar from '../../images/TheCivilWar.png'
 import imgNovel from '../../images/NovelBook.png'
 import imgSedgewick from '../../images/Sedgewick.png'
 
-/** @typedef {{ id: number, img: string, title: string, author: string, rating: number, summary: string, status: 'available' | 'on-loan' }} LibraryBook */
+/** @typedef {'academic' | 'journal' | 'novel'} LibraryCategory */
+
+/**
+ * @typedef {{
+ *   id: number,
+ *   img: string,
+ *   title: string,
+ *   author: string,
+ *   rating: number,
+ *   summary: string,
+ *   status: 'available' | 'on-loan',
+ *   category: LibraryCategory,
+ *   genre?: string
+ * }} LibraryBook
+ */
 
 /**
  * Demo catalog: cover art is placeholder stock from the repo; summaries describe the real titles where applicable.
@@ -14,6 +28,7 @@ export const books = [
   {
     id: 1,
     img: imgAcademic,
+    category: 'academic',
     title: 'The Computer Science Book',
     author: 'Thomas Johnson',
     rating: 4.6,
@@ -24,6 +39,8 @@ export const books = [
   {
     id: 2,
     img: imgNovel,
+    category: 'novel',
+    genre: 'Fiction',
     title: 'The Nature of Code',
     author: 'Daniel Shiffman',
     rating: 4.9,
@@ -34,6 +51,7 @@ export const books = [
   {
     id: 3,
     img: imgJournal,
+    category: 'journal',
     title: 'Structure and Interpretation of Computer Programs',
     author: 'Harold Abelson, Gerald Jay Sussman, and Julie Sussman',
     rating: 4.8,
@@ -44,6 +62,7 @@ export const books = [
   {
     id: 4,
     img: imgAcademic,
+    category: 'academic',
     title: 'Introduction to Java Programming',
     author: 'K. Somasundaram',
     rating: 4.4,
@@ -54,6 +73,7 @@ export const books = [
   {
     id: 5,
     img: imgCivilWar,
+    category: 'journal',
     title: 'The Code Book',
     author: 'Simon Singh',
     rating: 4.7,
@@ -64,6 +84,7 @@ export const books = [
   {
     id: 6,
     img: imgSedgewick,
+    category: 'academic',
     title: 'Algorithms',
     author: 'Robert Sedgewick and Kevin Wayne',
     rating: 4.8,
@@ -74,6 +95,7 @@ export const books = [
   {
     id: 7,
     img: imgSedgewick,
+    category: 'academic',
     title: 'Computer Science: An Interdisciplinary Approach',
     author: 'Robert Sedgewick and Kevin Wayne',
     rating: 4.7,
@@ -84,6 +106,8 @@ export const books = [
   {
     id: 8,
     img: imgNovel,
+    category: 'novel',
+    genre: 'Fiction',
     title: 'Clean Code',
     author: 'Robert C. Martin',
     rating: 4.5,
@@ -100,6 +124,14 @@ export const books = [
 export function getBookById(rawId) {
   if (rawId == null || rawId === '') return undefined
   return books.find((b) => String(b.id) === String(rawId))
+}
+
+/**
+ * @param {LibraryCategory} category
+ * @returns {LibraryBook[]}
+ */
+export function getBooksByCategory(category) {
+  return books.filter((b) => b.category === category)
 }
 
 /**
