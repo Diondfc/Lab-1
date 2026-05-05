@@ -8,7 +8,7 @@ import {
   FiChevronRight,
   FiBook,
 } from 'react-icons/fi'
-import { getBooksByCategory } from './libraryBooks.js'
+import { getBooksByCategory } from './libraryBooks.jsx'
 
 const BookListJournal = () => {
   const books = useMemo(() => getBooksByCategory('journal'), [])

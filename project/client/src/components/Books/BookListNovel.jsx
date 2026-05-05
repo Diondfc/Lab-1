@@ -10,7 +10,7 @@ import {
   FiBook,
   FiFilter,
 } from 'react-icons/fi'
-import { getBooksByCategory } from './libraryBooks.js'
+import { getBooksByCategory } from './libraryBooks.jsx'
 
 const GENRE_OPTIONS = ['All', 'Romance', 'Fiction', 'Mystery', 'History']
 
