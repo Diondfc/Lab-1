@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FiArrowLeft, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { getAdjacentBooks, getBookById } from "./libraryBooks.js";
+import RatingForm from "../Rating/RatingForm";
 
 const linkFocus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2";
@@ -181,6 +182,13 @@ function BookDetail() {
                   ) : null}
                 </nav>
               )}
+
+              <section className="mt-12 border-t border-gray-100 pt-8" aria-labelledby="rating-form-heading">
+                <h2 id="rating-form-heading" className="mb-4 text-lg font-semibold text-gray-900">
+                  Leave Your Rating
+                </h2>
+                <RatingForm bookId={book.id} onRatingSubmitted={() => {}} />
+              </section>
             </div>
           </div>
         </article>
