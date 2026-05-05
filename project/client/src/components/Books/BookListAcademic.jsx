@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiArrowRight, FiSearch, FiStar, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
-import { getBooksByCategory } from './libraryBooks.js'
+import { getBooksByCategory } from './libraryBooks.jsx'
 
 const BookListAcademic = () => {
   const books = useMemo(() => getBooksByCategory('academic'), [])

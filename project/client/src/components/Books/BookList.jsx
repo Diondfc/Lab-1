@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FiStar, FiArrowRight } from "react-icons/fi";
-import { books } from "./libraryBooks.js";
+import { books } from "./libraryBooks.jsx";
 
 const linkFocus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2";
