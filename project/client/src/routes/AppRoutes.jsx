@@ -11,6 +11,7 @@ import BookListAcademic from '../components/Books/BookListAcademic.jsx'
 import BookListJournal from '../components/Books/BookListJournal.jsx'
 import BookListNovel from '../components/Books/BookListNovel.jsx'
 import EditBook from '../components/Books/EditBook.jsx'
+import Events from '../pages/Events.jsx'
 export default function AppRoutes() {
   return (
     <Routes>
@@ -27,6 +28,7 @@ export default function AppRoutes() {
         <Route path="/journals" element={<BookListJournal />} />
         <Route path="/novels" element={<BookListNovel />} />
         <Route path="/edit/:id" element={<EditBook />} />
+        <Route path="/events" element={<Events />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

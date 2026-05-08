@@ -33,7 +33,7 @@ const AdminPanel = () => {
                     <img src={JournalsChat} alt="JournalsChat" className="mb-2 rounded-lg" />
                     <button
                         className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
-                        onClick={() => navigate('/journalschat')}
+                        onClick={() => navigate('/journals')}
                     >
                         Journals
                     </button>
@@ -42,7 +42,7 @@ const AdminPanel = () => {
                     <img src={AcademicChat} alt="AcademicChat" className="mb-2 rounded-lg" />
                     <button
                         className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
-                        onClick={() => navigate('/academicchat')}
+                        onClick={() => navigate('/academic')}
                     >
                         Academic Literature
                     </button>
@@ -51,7 +51,7 @@ const AdminPanel = () => {
                     <img src={NovelsChat} alt="NovelsChat" className="mb-2 rounded-lg" />
                     <button
                         className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
-                        onClick={() => navigate('/novelschat')}
+                        onClick={() => navigate('/novels')}
                     >
                         Novels
                     </button>

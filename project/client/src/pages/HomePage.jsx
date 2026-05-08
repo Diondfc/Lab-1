@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiBook, FiUsers, FiClock, FiArrowRight, FiCalendar, FiAward, FiStar, FiBookmark } from 'react-icons/fi';
 import Journals from '../images/TheCivilWar.png';
 import Academic from '../images/Sedgewick.png';
 import WhiteNights from '../images/WhiteNights.png.webp';
 import StudentReading from '../images/WhiteNights.png.webp';
+import { apiClient } from '../lib/api';
 
 const Home = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState('');
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
   const userName = user?.full_name || user?.name;
@@ -33,11 +37,46 @@ const Home = () => {
     { value: "Free", label: "WiFi Access", icon: <FiAward className="text-3xl" /> }
   ];
 
-  const upcomingEvents = [
-    { id: 1, title: "Author Meet & Greet", date: "May 15, 2025", time: "3:00 PM", location: "Lagja Kalabria" },
-    { id: 2, title: "Reading Workshop", date: "May 22, 2025", time: "10:00 AM", location: "Conference Room" },
-    { id: 3, title: "Book Fair", date: "June 5-10, 2025", time: "All Day", location: "Dukagjini Residence" }
-  ];
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setEventsLoading(true);
+        setEventsError('');
+        const { data } = await apiClient.get('/api/events');
+        setUpcomingEvents(Array.isArray(data) ? data.slice(0, 3) : []);
+      } catch (error) {
+        console.error('Failed to load events:', error);
+        setEventsError('Could not load events right now.');
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const formatEventDate = (dateValue) => {
+    if (!dateValue) return 'TBA';
+    const parsedDate = new Date(dateValue);
+    if (Number.isNaN(parsedDate.getTime())) return dateValue;
+    return parsedDate.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const formatEventTime = (timeValue) => {
+    if (!timeValue) return 'TBA';
+    const [hours, minutes] = String(timeValue).split(':');
+    const date = new Date();
+    date.setHours(Number(hours), Number(minutes), 0, 0);
+    if (Number.isNaN(date.getTime())) return timeValue;
+    return date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -214,26 +253,42 @@ const Home = () => {
             </p>
           </div>
 
+          {eventsError && (
+            <p className="text-center text-red-600 mb-6">{eventsError}</p>
+          )}
+
           <div className="grid md:grid-cols-3 gap-8">
+            {eventsLoading && (
+              <div className="md:col-span-3 text-center text-gray-600">
+                Loading events...
+              </div>
+            )}
+
+            {!eventsLoading && upcomingEvents.length === 0 && !eventsError && (
+              <div className="md:col-span-3 text-center text-gray-600">
+                No upcoming events available.
+              </div>
+            )}
+
             {upcomingEvents.map(event => (
-              <div key={event.id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
+              <div key={event.EventID} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
                 <div className="flex items-center mb-4">
                   <div className="bg-[#036280]/10 p-3 rounded-lg mr-4">
                     <FiCalendar className="text-[#036280] text-xl" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg">{event.title}</h3>
-                    <p className="text-gray-600 text-sm">{event.date}</p>
+                    <h3 className="font-bold text-lg">{event.Title}</h3>
+                    <p className="text-gray-600 text-sm">{formatEventDate(event.Date)}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex text-sm">
                     <span className="text-gray-500 w-20">Time:</span>
-                    <span>{event.time}</span>
+                    <span>{formatEventTime(event.Time)}</span>
                   </div>
                   <div className="flex text-sm">
                     <span className="text-gray-500 w-20">Location:</span>
-                    <span>{event.location}</span>
+                    <span>{event.Location || 'TBA'}</span>
                   </div>
                 </div>
                 <button
@@ -261,7 +316,7 @@ const Home = () => {
                 <p className="font-medium">- Sarah Johnson, PhD Candidate</p>
               </div>
               <button
-                onClick={() => navigate('/testimonials')}
+                onClick={() => navigate('/about')}
                 className="border border-white text-white hover:bg-white hover:text-[#036280] px-6 py-2 rounded-lg transition"
               >
                 Read More Testimonials
@@ -304,7 +359,7 @@ const Home = () => {
                   Check out our newest additions to the collection updated weekly.
                 </p>
                 <button
-                  onClick={() => navigate('/new-arrivals')}
+                  onClick={() => navigate('/books')}
                   className="flex items-center text-[#036280] hover:underline"
                 >
                   <FiBookmark className="mr-2" /> View New Arrivals

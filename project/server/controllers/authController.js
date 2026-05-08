@@ -54,8 +54,8 @@ async function login(req, res) {
   }
 }
 
-module.exports = { register, login };
-const User = require('../models/user.model');
+exports.register = register;
+exports.login = login;
 const pool = require('../config/db');
 
 exports.getAllUsers = async (req, res) => {
