@@ -42,12 +42,12 @@ async function login(req, res) {
 
     // Generate JWT Token
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.UserID, email: user.Email },
       process.env.JWT_SECRET,
       { expiresIn: '15m' } // Short-lived access token
     );
 
-    res.json({ message: 'Login successful', token, user: { id: user.id, full_name: user.full_name, email: user.email } });
+    res.json({ message: 'Login successful', token, user: { id: user.UserID, full_name: user.Name, email: user.Email } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

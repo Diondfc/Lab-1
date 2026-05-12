@@ -7,6 +7,8 @@ const cors = require('cors')
 const authRoutes = require('./routes/authRoutes')
 const eventsRoutes = require('./routes/events.routes')
 const locationsRoutes = require('./routes/locations.routes')
+const userRoutes = require('./routes/user.routes')
+const booksRoutes = require('./routes/books.routes')
 
 const PORT = Number(process.env.PORT) || 5001
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
@@ -29,6 +31,8 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/events', eventsRoutes)
 app.use('/api/locations', locationsRoutes)
+app.use('/api/users', userRoutes)
+app.use('/api/books', booksRoutes)
 
 app.use((err, _req, res, _next) => {
   console.error(err)
