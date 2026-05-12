@@ -15,7 +15,9 @@ import BookListJournal from '../components/Books/BookListJournal.jsx'
 import BookListNovel from '../components/Books/BookListNovel.jsx'
 import EditBook from '../components/Books/EditBook.jsx'
 import AddBook from '../components/Books/AddBook.jsx'
-import JournalsDashboard from '../components/Books/JournalsDashboard copy.jsx'
+import JournalsDashboard from '../components/Books/JournalsDashboard.jsx'
+import AcademicDashboard from '../components/Books/AcademicDashboard.jsx'
+import NovelsDashboard from '../components/Books/NovelsDashboard.jsx'
 export default function AppRoutes() {
   return (
     <Routes>
@@ -37,6 +39,8 @@ export default function AppRoutes() {
         <Route path="/edit/:id" element={<EditBook />} />
         <Route path="/admin/add-book" element={<AddBook />} />
         <Route path="/admin/journals-dashboard" element={<JournalsDashboard />} />
+        <Route path="/admin/academic-dashboard" element={<AcademicDashboard />} />
+        <Route path="/admin/novels-dashboard" element={<NovelsDashboard />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
