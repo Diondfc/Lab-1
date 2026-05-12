@@ -5,12 +5,17 @@ import LoginPage from '../pages/LoginPage.jsx'
 import HomePage from '../pages/HomePage.jsx'
 import AdminPanel from '../pages/AdminPanel.jsx'
 import About from '../pages/About.jsx'
+import Events from '../pages/Events.jsx'
+import EventsDashboard from '../pages/EventsDashboard.jsx'
+import EventsLocations from '../pages/EventsLocations.jsx'
 import BookList from '../components/Books/BookList.jsx'
 import BookDetail from '../components/Books/BookDetail.jsx'
 import BookListAcademic from '../components/Books/BookListAcademic.jsx'
 import BookListJournal from '../components/Books/BookListJournal.jsx'
 import BookListNovel from '../components/Books/BookListNovel.jsx'
 import EditBook from '../components/Books/EditBook.jsx'
+import AddBook from '../components/Books/AddBook.jsx'
+import JournalsDashboard from '../components/Books/JournalsDashboard copy.jsx'
 export default function AppRoutes() {
   return (
     <Routes>
@@ -21,12 +26,17 @@ export default function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/about" element={<About />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/events/dashboard" element={<EventsDashboard />} />
+        <Route path="/events/locations" element={<EventsLocations />} />
         <Route path="/books" element={<BookList />} />
         <Route path="/books/:id" element={<BookDetail />} />
         <Route path="/academic" element={<BookListAcademic />} />
         <Route path="/journals" element={<BookListJournal />} />
         <Route path="/novels" element={<BookListNovel />} />
         <Route path="/edit/:id" element={<EditBook />} />
+        <Route path="/admin/add-book" element={<AddBook />} />
+        <Route path="/admin/journals-dashboard" element={<JournalsDashboard />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

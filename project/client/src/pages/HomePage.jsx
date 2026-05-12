@@ -42,7 +42,7 @@ const Home = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      navigate('/books');
     }
   };
 
@@ -261,7 +261,7 @@ const Home = () => {
                 <p className="font-medium">- Sarah Johnson, PhD Candidate</p>
               </div>
               <button
-                onClick={() => navigate('/testimonials')}
+                onClick={() => navigate('/about')}
                 className="border border-white text-white hover:bg-white hover:text-[#036280] px-6 py-2 rounded-lg transition"
               >
                 Read More Testimonials
@@ -304,7 +304,7 @@ const Home = () => {
                   Check out our newest additions to the collection updated weekly.
                 </p>
                 <button
-                  onClick={() => navigate('/new-arrivals')}
+                  onClick={() => navigate('/books')}
                   className="flex items-center text-[#036280] hover:underline"
                 >
                   <FiBookmark className="mr-2" /> View New Arrivals

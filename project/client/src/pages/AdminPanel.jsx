@@ -16,15 +16,30 @@ const AdminPanel = () => {
             <div className="flex justify-center space-x-4 mb-8">
                 <div className="bg-gradient-to-r from-emerald-600/50 to-green-800/50 rounded-lg p-4 w-1/4 flex flex-col items-center">
                     <img src={Book} alt="Book" className="mb-2 rounded-lg" />
-                    <button className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent">Add Book</button>
+                    <button
+                        className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
+                        onClick={() => navigate('/admin/add-book')}
+                    >
+                        Add Book
+                    </button>
                 </div>
                 <div className="bg-gradient-to-r from-emerald-600/50 to-green-800/50 rounded-lg p-4 w-1/4 flex flex-col items-center">
                     <img src={Loans} alt="Loans" className="mb-2 rounded-lg" />
-                    <button className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent">Loans</button>
+                    <button
+                        className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
+                        onClick={() => navigate('/admin/journals-dashboard')}
+                    >
+                        Journals Dashboard
+                    </button>
                 </div>
                 <div className="bg-gradient-to-r from-emerald-600/50 to-green-800/50 rounded-lg p-4 w-1/4 flex flex-col items-center">
                     <img src={Dashboard} alt="Dashboard" className="mb-2 rounded-lg" />
-                    <button className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent">Dashboard</button>
+                    <button
+                        className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
+                        onClick={() => navigate('/events/dashboard')}
+                    >
+                        Events Dashboard
+                    </button>
                 </div>
             </div>
             <h2 className="mt-4 grid w-full place-items-center rounded-lg bg-gradient-to-r from-emerald-600 to-green-800 py-3 font-poppins text-3xl font-bold text-white">Bookclub Chatrooms</h2>
@@ -33,7 +48,7 @@ const AdminPanel = () => {
                     <img src={JournalsChat} alt="JournalsChat" className="mb-2 rounded-lg" />
                     <button
                         className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
-                        onClick={() => navigate('/journalschat')}
+                        onClick={() => navigate('/journals')}
                     >
                         Journals
                     </button>
@@ -42,7 +57,7 @@ const AdminPanel = () => {
                     <img src={AcademicChat} alt="AcademicChat" className="mb-2 rounded-lg" />
                     <button
                         className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
-                        onClick={() => navigate('/academicchat')}
+                        onClick={() => navigate('/academic')}
                     >
                         Academic Literature
                     </button>
@@ -51,7 +66,7 @@ const AdminPanel = () => {
                     <img src={NovelsChat} alt="NovelsChat" className="mb-2 rounded-lg" />
                     <button
                         className="border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 font-poppins rounded-xl px-4 py-2 w-full bg-transparent"
-                        onClick={() => navigate('/novelschat')}
+                        onClick={() => navigate('/novels')}
                     >
                         Novels
                     </button>
