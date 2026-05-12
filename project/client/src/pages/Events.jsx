@@ -1,31 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiCalendar, FiMapPin } from 'react-icons/fi';
-
-const events = [
-  {
-    id: 1,
-    title: 'Author Meet & Greet',
-    date: 'May 15, 2026',
-    location: 'UBT Library Hall',
-    description: 'Meet local authors and discuss the stories, research, and ideas behind their latest books.'
-  },
-  {
-    id: 2,
-    title: 'Reading Workshop',
-    date: 'May 22, 2026',
-    location: 'Conference Room',
-    description: 'A practical workshop for students who want to improve reading habits and academic note-taking.'
-  },
-  {
-    id: 3,
-    title: 'Book Fair',
-    date: 'June 5, 2026',
-    location: 'Dukagjini Residence',
-    description: 'Browse featured titles, student recommendations, and selected academic resources from the library.'
-  }
-];
+import { apiClient } from '../lib/api';
 
 const Events = () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const { data } = await apiClient.get('/api/events');
+        setEvents(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to fetch events:', err);
+        setError('Could not load events right now.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const formatEventDate = (dateValue) => {
+    if (!dateValue) return 'TBA';
+    const parsedDate = new Date(dateValue);
+    if (Number.isNaN(parsedDate.getTime())) return dateValue;
+    return parsedDate.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const eventDescription = (title) =>
+    `Join us for ${title || 'this event'} hosted by the UBT Library community.`;
+
   return (
     <div className="min-h-screen bg-gray-50 py-16">
       <div className="container mx-auto max-w-7xl px-4">
@@ -40,27 +53,43 @@ const Events = () => {
           </p>
         </header>
 
+        {error && (
+          <p className="mb-6 text-center text-red-600">{error}</p>
+        )}
+
         <div className="grid gap-8 md:grid-cols-3">
+          {loading && (
+            <div className="md:col-span-3 text-center text-gray-600">
+              Loading events...
+            </div>
+          )}
+
+          {!loading && events.length === 0 && !error && (
+            <div className="md:col-span-3 text-center text-gray-600">
+              No events available right now.
+            </div>
+          )}
+
           {events.map((event) => (
             <article
-              key={event.id}
+              key={event.EventID}
               className="rounded-xl border border-gray-100 bg-white p-6 shadow-md transition hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-700/10 text-emerald-700">
                 <FiCalendar className="text-2xl" />
               </div>
-              <h2 className="mb-3 text-xl font-bold text-gray-900">{event.title}</h2>
+              <h2 className="mb-3 text-xl font-bold text-gray-900">{event.Title}</h2>
               <div className="mb-4 space-y-2 text-sm text-gray-600">
                 <div className="flex items-center">
                   <FiCalendar className="mr-2 text-emerald-700" />
-                  <span>{event.date}</span>
+                  <span>{formatEventDate(event.Date)}</span>
                 </div>
                 <div className="flex items-center">
                   <FiMapPin className="mr-2 text-emerald-700" />
-                  <span>{event.location}</span>
+                  <span>{event.Location || 'TBA'}</span>
                 </div>
               </div>
-              <p className="leading-relaxed text-gray-600">{event.description}</p>
+              <p className="leading-relaxed text-gray-600">{eventDescription(event.Title)}</p>
             </article>
           ))}
         </div>

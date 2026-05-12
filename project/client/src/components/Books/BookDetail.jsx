@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FiArrowLeft, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { getAdjacentBooks, getBookById } from "./libraryBooks.jsx";
+import RatingForm from "../Rating/RatingForm.jsx";
 
 const linkFocus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2";
