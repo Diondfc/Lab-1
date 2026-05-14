@@ -28,6 +28,15 @@ class User {
     static async deleteById(id) {
         await pool.query('DELETE FROM Users WHERE UserID = ?', [id]);
     }
+
+    static async updateUserById(id, userData) {
+        const { Name, Email, Role } = userData;
+        const [result] = await pool.query(
+            'UPDATE Users SET Name = ?, Email = ?, Role = ? WHERE UserID = ?',
+            [Name, Email, Role, id]
+        );
+        return result;
+    }
 }
 
 module.exports = User;
