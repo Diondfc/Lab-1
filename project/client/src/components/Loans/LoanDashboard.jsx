@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { apiClient } from '../../lib/api';
 import { 
   FiBook, 
   FiCalendar, 
@@ -34,7 +34,7 @@ const LoansDashboard = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get('http://localhost:5000/api/loans');
+        const response = await apiClient.get('/api/loans');
         
         if (response.data?.success) {
           setLoans(Array.isArray(response.data.data) ? response.data.data : []);
@@ -88,7 +88,7 @@ const LoansDashboard = () => {
   const handleDeleteLoan = async (loanId) => {
     if (window.confirm('Delete this loan permanently?')) {
       try {
-        const response = await axios.delete(`http://localhost:5000/api/loans/${loanId}`);
+        const response = await apiClient.delete(`/api/loans/${loanId}`);
         if (response.data.success) {
           setLoans(prev => prev.filter(loan => loan.LoanID !== loanId));
         }
@@ -154,7 +154,7 @@ const LoansDashboard = () => {
             </p>
           </div>
           <button
-            onClick={() => navigate('/adminpanel')}
+            onClick={() => navigate('/admin')}
             className="flex items-center text-[#036280] hover:text-[#024b63] transition self-start md:self-center"
           >
             <FiArrowLeft className="mr-2" />
@@ -235,7 +235,7 @@ const LoansDashboard = () => {
         {/* Create New Loan Card */}
         <div 
           className="bg-gradient-to-r from-[#036280] to-[#00509D] p-5 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer text-white"
-          onClick={() => navigate('/add-loan')}
+          onClick={() => navigate('/admin/add-loan')}
         >
           <div className="flex items-center">
             <div className="bg-white/20 p-3 rounded-full mr-4">

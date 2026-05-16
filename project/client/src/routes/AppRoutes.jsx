@@ -18,6 +18,12 @@ import AddBook from '../components/Books/AddBook.jsx'
 import JournalsDashboard from '../components/Books/JournalsDashboard.jsx'
 import AcademicDashboard from '../components/Books/AcademicDashboard.jsx'
 import NovelsDashboard from '../components/Books/NovelsDashboard.jsx'
+import LoansDashboard from '../components/Loans/LoanDashboard.jsx'
+import AddLoanForm from '../components/Loans/AddLoanForm.jsx'
+import LoanHistory from '../components/Loans/LoanHistory.jsx'
+import ReturnForm from '../components/Loans/ReturnForm.jsx'
+import Fines from '../components/Loans/Fine.jsx'
+import Bookshelf from '../components/Rating/Bookshelf.jsx'
 export default function AppRoutes() {
   return (
     <Routes>
@@ -41,6 +47,12 @@ export default function AppRoutes() {
         <Route path="/admin/journals-dashboard" element={<JournalsDashboard />} />
         <Route path="/admin/academic-dashboard" element={<AcademicDashboard />} />
         <Route path="/admin/novels-dashboard" element={<NovelsDashboard />} />
+        <Route path="/admin/loans" element={<LoansDashboard />} />
+        <Route path="/admin/add-loan" element={<AddLoanForm />} />
+        <Route path="/loan-history" element={<LoanHistory />} />
+        <Route path="/process-return" element={<ReturnForm />} />
+        <Route path="/fines" element={<Fines />} />
+        <Route path="/bookshelf" element={<Bookshelf />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

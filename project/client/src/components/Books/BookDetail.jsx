@@ -187,7 +187,11 @@ function BookDetail() {
                 <h2 id="rating-form-heading" className="mb-4 text-lg font-semibold text-gray-900">
                   Leave Your Rating
                 </h2>
-                <RatingForm bookId={book.id} onRatingSubmitted={() => {}} />
+                <RatingForm 
+                  book_id={book.id} 
+                  user_id={JSON.parse(localStorage.getItem('user'))?.id} 
+                  onRatingSubmitted={() => {}} 
+                />
               </section>
             </div>
           </div>
