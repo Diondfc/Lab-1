@@ -49,6 +49,7 @@ export default function AppRoutes() {
         <Route path="/admin/novels-dashboard" element={<NovelsDashboard />} />
         <Route path="/admin/loans" element={<LoansDashboard />} />
         <Route path="/admin/add-loan" element={<AddLoanForm />} />
+        <Route path="/loan-book" element={<AddLoanForm />} />
         <Route path="/loan-history" element={<LoanHistory />} />
         <Route path="/process-return" element={<ReturnForm />} />
         <Route path="/fines" element={<Fines />} />

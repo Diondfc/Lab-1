@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FiArrowLeft, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { LuBookUp2 } from "react-icons/lu";
 import { getAdjacentBooks, getBookById } from "./libraryBooks.jsx";
 import RatingForm from "../Rating/RatingForm.jsx";
 
@@ -141,10 +142,20 @@ function BookDetail() {
               </section>
 
               <div className="mt-10 flex flex-wrap gap-3">
+                {book.status === "available" && (
+                  <Link
+                    to="/loan-book"
+                    state={{ bookId: book.id, bookTitle: book.title }}
+                    className={gradientBtn}
+                  >
+                    <LuBookUp2 className="mr-2" aria-hidden />
+                    Loan This Book
+                  </Link>
+                )}
                 <Link to="/books" className={outlineBtn}>
                   Browse more books
                 </Link>
-                <Link to="/home" className={gradientBtn}>
+                <Link to="/home" className={outlineBtn}>
                   Back to home
                 </Link>
               </div>
