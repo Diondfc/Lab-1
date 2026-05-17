@@ -78,7 +78,7 @@ function Navbar({ user, setUser }) {
                 )}
               </Link>
             ))}
-          </motion.div>
+          </div>
 
           <motion.div className="flex items-center gap-4 border-l border-zinc-800 pl-6">
             {user ? (
@@ -86,7 +86,7 @@ function Navbar({ user, setUser }) {
                 <div className="flex items-center gap-2 text-sm text-zinc-300 bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-800">
                   <FiUser className="text-emerald-400" />
                   <span className="max-w-[100px] truncate">{user.full_name || user.name || 'User'}</span>
-                </motion.div>
+                </div>
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -178,7 +178,7 @@ function Navbar({ user, setUser }) {
                   </>
                 )}
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
