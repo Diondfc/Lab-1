@@ -8,6 +8,8 @@ import WhiteNights from '../images/WhiteNights.png.webp';
 import StudentReading from '../images/WhiteNights.png.webp';
 import { apiClient } from '../lib/api';
 import { cn } from '../lib/utils';
+import FeaturedCarousel from '../components/Books/FeaturedCarousel';
+import { books as catalogBooks } from '../components/Books/libraryBooks';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -208,64 +210,25 @@ const Home = () => {
         </motion.div>
       </div>
 
-      {/* Featured Books */}
-      <div className="py-24 container mx-auto px-4">
-        <div className="flex justify-between items-end mb-12">
-          <div>
-            <h2 className="text-4xl font-bold text-zinc-900 tracking-tight mb-2">Trending Now</h2>
-            <p className="text-zinc-500 text-lg">Books currently captivating our readers.</p>
-          </div>
-          <button
-            onClick={() => navigate('/books')}
-            className="hidden md:flex text-emerald-600 hover:text-emerald-700 font-semibold items-center group transition-colors"
-          >
-            Explore all collection <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {featuredBooks.map((book, idx) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1, duration: 0.5 }}
-              key={book.id} 
-              className="bg-white rounded-3xl overflow-hidden shadow-lg shadow-zinc-200/50 border border-zinc-100 group hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300"
+      {/* Featured Books / Carousel Showcase */}
+      <div className="py-24 w-full overflow-hidden bg-zinc-950">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-end mb-8 relative z-10">
+            <div>
+              <h2 className="text-4xl font-bold text-white tracking-tight mb-2">Trending Now</h2>
+              <p className="text-zinc-400 text-lg">Premium collection captivating our readers.</p>
+            </div>
+            <button
+              onClick={() => navigate('/books')}
+              className="hidden md:flex text-emerald-500 hover:text-emerald-400 font-semibold items-center group transition-colors"
             >
-              <div className="h-64 bg-zinc-50 flex items-center justify-center p-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <img src={book.image} alt={book.title} className="h-full object-contain relative z-10 drop-shadow-xl group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full flex items-center text-sm font-semibold shadow-sm text-zinc-800 z-20">
-                  <FiStar className="text-amber-400 mr-1.5 fill-amber-400" />
-                  {book.rating}
-                </div>
-              </div>
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-bold text-xl text-zinc-900 mb-1 line-clamp-1">{book.title}</h3>
-                    <p className="text-zinc-500">{book.author}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-4 border-t border-zinc-100">
-                  <span className={cn(
-                    "text-xs px-3 py-1.5 rounded-full font-medium",
-                    book.available ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                  )}>
-                    {book.available ? 'Available' : 'Checked Out'}
-                  </span>
-                  <button
-                    onClick={() => navigate(`/books/${book.id}`)}
-                    className="text-zinc-900 hover:text-emerald-600 font-medium flex items-center text-sm transition-colors"
-                  >
-                    Details <FiArrowRight className="ml-1" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              Explore collection <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
         </div>
+        
+        {/* New Swiper Carousel */}
+        <FeaturedCarousel books={catalogBooks} />
       </div>
 
       {/* Upcoming Events */}
