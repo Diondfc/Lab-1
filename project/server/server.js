@@ -12,6 +12,9 @@ const booksRoutes = require('./routes/books.routes')
 const loanRoutes = require('./routes/loan.routes')
 const returnRoutes = require('./routes/return.routes')
 const ratingRoutes = require('./routes/rating.routes')
+const bookshelfRoutes = require('./routes/bookshelf.routes')
+const messageRoutes = require('./routes/message.routes')
+const requestRoutes = require('./routes/request.routes')
 
 const PORT = Number(process.env.PORT) || 5001
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
@@ -39,6 +42,9 @@ app.use('/api/books', booksRoutes)
 app.use('/api/loans', loanRoutes)
 app.use('/api/returns', returnRoutes)
 app.use('/api/ratings', ratingRoutes)
+app.use('/api/bookshelf', bookshelfRoutes)
+app.use('/api/messages', messageRoutes)
+app.use('/api/requests', requestRoutes)
 
 app.use((err, _req, res, _next) => {
   console.error(err)
