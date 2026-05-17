@@ -24,6 +24,8 @@ import LoanHistory from '../components/Loans/LoanHistory.jsx'
 import ReturnForm from '../components/Loans/ReturnForm.jsx'
 import Fines from '../components/Loans/Fine.jsx'
 import Bookshelf from '../components/Rating/Bookshelf.jsx'
+import AdminRoute from '../components/Auth/AdminRoute.jsx'
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -32,23 +34,25 @@ export default function AppRoutes() {
         <Route path="/register" element={<Navigate to="/" replace />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin" element={<AdminPanel />} />
         <Route path="/about" element={<About />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/events/dashboard" element={<EventsDashboard />} />
         <Route path="/events/locations" element={<EventsLocations />} />
         <Route path="/books" element={<BookList />} />
         <Route path="/books/:id" element={<BookDetail />} />
         <Route path="/academic" element={<BookListAcademic />} />
         <Route path="/journals" element={<BookListJournal />} />
         <Route path="/novels" element={<BookListNovel />} />
-        <Route path="/edit/:id" element={<EditBook />} />
-        <Route path="/admin/add-book" element={<AddBook />} />
-        <Route path="/admin/journals-dashboard" element={<JournalsDashboard />} />
-        <Route path="/admin/academic-dashboard" element={<AcademicDashboard />} />
-        <Route path="/admin/novels-dashboard" element={<NovelsDashboard />} />
-        <Route path="/admin/loans" element={<LoansDashboard />} />
-        <Route path="/admin/add-loan" element={<AddLoanForm />} />
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/events/dashboard" element={<EventsDashboard />} />
+          <Route path="/edit/:id" element={<EditBook />} />
+          <Route path="/admin/add-book" element={<AddBook />} />
+          <Route path="/admin/journals-dashboard" element={<JournalsDashboard />} />
+          <Route path="/admin/academic-dashboard" element={<AcademicDashboard />} />
+          <Route path="/admin/novels-dashboard" element={<NovelsDashboard />} />
+          <Route path="/admin/loans" element={<LoansDashboard />} />
+          <Route path="/admin/add-loan" element={<AddLoanForm />} />
+        </Route>
         <Route path="/loan-book" element={<AddLoanForm />} />
         <Route path="/loan-history" element={<LoanHistory />} />
         <Route path="/process-return" element={<ReturnForm />} />

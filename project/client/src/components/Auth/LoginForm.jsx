@@ -52,8 +52,14 @@ function LoginForm({ setUser }) {
         setUser(data.user)
       }
 
+      if (data.token) {
+        localStorage.setItem('token', data.token)
+      }
+
+      const destination = data.user?.role === 'Admin' ? '/admin' : '/home'
+
       setTimeout(() => {
-        navigate('/home', { replace: true })
+        navigate(destination, { replace: true })
       }, 1200)
 
     } catch (err) {

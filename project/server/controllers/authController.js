@@ -40,14 +40,24 @@ async function login(req, res) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT Token
+    const role = user.Role || 'Student';
+
     const token = jwt.sign(
-      { id: user.UserID, email: user.Email },
+      { id: user.UserID, email: user.Email, role },
       process.env.JWT_SECRET,
-      { expiresIn: '15m' } // Short-lived access token
+      { expiresIn: '15m' }
     );
 
-    res.json({ message: 'Login successful', token, user: { id: user.UserID, full_name: user.Name, email: user.Email } });
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.UserID,
+        full_name: user.Name,
+        email: user.Email,
+        role,
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

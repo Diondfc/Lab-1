@@ -6,6 +6,7 @@ function Navbar({ user, setUser }) {
 
   const handleLogout = () => {
     localStorage.removeItem('user')
+    localStorage.removeItem('token')
     setUser(null)
     navigate('/login')
   }
@@ -35,6 +36,14 @@ function Navbar({ user, setUser }) {
           >
             About
           </Link>
+          {user?.role === 'Admin' && (
+            <Link
+              to="/admin"
+              className="text-sm font-medium text-green-100 transition hover:text-white"
+            >
+              Admin Panel
+            </Link>
+          )}
           {user ? (
             <>
               <button

@@ -65,7 +65,7 @@ const AddLoanForm = ({ onSave }) => {
 
   // Fetch user details when email changes (with debounce)
   useEffect(() => {
-    if (currentUser?.role !== 'admin' && formData.userEmail === currentUser?.email) return;
+    if (currentUser?.role !== 'Admin' && formData.userEmail === currentUser?.email) return;
     const timer = setTimeout(() => {
       if (formData.userEmail) {
         fetchUserDetails();
@@ -143,7 +143,7 @@ const AddLoanForm = ({ onSave }) => {
         });
         
         setTimeout(() => {
-          if (currentUser?.role === 'admin') {
+          if (currentUser?.role === 'Admin') {
             navigate('/admin/loans');
           } else {
             navigate('/loan-history');
@@ -162,10 +162,10 @@ const AddLoanForm = ({ onSave }) => {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <button 
-          onClick={() => currentUser?.role === 'admin' ? navigate('/admin/loans') : navigate('/books')}
+          onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
           className="flex items-center text-[#036280] hover:text-[#012F4A] mb-6"
         >
-          <FiArrowLeft className="mr-2" /> Back to {currentUser?.role === 'admin' ? 'Loans Dashboard' : 'Library'}
+          <FiArrowLeft className="mr-2" /> Back to {currentUser?.role === 'Admin' ? 'Loans Dashboard' : 'Library'}
         </button>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
@@ -253,9 +253,9 @@ const AddLoanForm = ({ onSave }) => {
                     name="userEmail"
                     value={formData.userEmail}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent ${currentUser?.role !== 'admin' ? 'bg-gray-50' : ''}`}
+                    className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent ${currentUser?.role !== 'Admin' ? 'bg-gray-50' : ''}`}
                     required
-                    readOnly={currentUser?.role !== 'admin'}
+                    readOnly={currentUser?.role !== 'Admin'}
                   />
                   {isFetchingUser && (
                     <p className="text-sm text-[#036280] mt-2 flex items-center">
@@ -318,7 +318,7 @@ const AddLoanForm = ({ onSave }) => {
                 <div className="flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={() => currentUser?.role === 'admin' ? navigate('/admin/loans') : navigate('/books')}
+                    onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
                     className="px-6 py-2.5 border border-gray-300 rounded-lg text-[#012F4A] hover:bg-gray-50 transition"
                     disabled={isSubmitting}
                   >
