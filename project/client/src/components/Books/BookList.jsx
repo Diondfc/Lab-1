@@ -1,89 +1,171 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiStar, FiArrowRight } from "react-icons/fi";
+import { FiStar, FiArrowRight, FiSearch, FiFilter } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
 import { books } from "./libraryBooks.jsx";
-
-const linkFocus =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2";
+import { cn } from "../../lib/utils";
 
 const BookList = () => {
+  const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredBooks = books.filter(book => {
+    const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          book.author.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filter === "all" || book.status === filter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
-      <div className="container mx-auto max-w-7xl px-4">
+    <div className="min-h-screen bg-zinc-50 py-24">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="mb-16 text-center">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-emerald-700">
-            UBT Library
-          </p>
-          <h1 className="mb-4 text-4xl font-bold text-gray-900">Library Collection</h1>
-          <div className="mx-auto mb-6 h-1.5 w-24 rounded-full bg-gradient-to-r from-emerald-600 to-green-800" />
-          <p className="mx-auto max-w-2xl text-lg text-gray-600">
-            Explore our comprehensive collection of computer science resources, programming guides, and
-            academic literature.
-          </p>
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/50 border border-emerald-200 mb-6"
+          >
+            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">UBT Library</span>
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 text-4xl md:text-5xl font-bold text-zinc-900 tracking-tight"
+          >
+            Our Collection
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mx-auto max-w-2xl text-lg text-zinc-500"
+          >
+            Explore our comprehensive collection of resources, journals, and academic literature.
+          </motion.p>
         </header>
 
-        <div
-          className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4"
-          role="list"
-          aria-label="Books in this collection"
-        >
-          {books.map((book) => (
-            <article
-              key={book.id}
-              role="listitem"
-              className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-            >
-              <Link
-                to={`/books/${book.id}`}
-                className={`relative flex h-64 items-center justify-center overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100 p-6 ${linkFocus} rounded-t-2xl`}
-                aria-label={`Open details: ${book.title}`}
+        {/* Search and Filter Bar */}
+        <div className="mb-12 flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-3xl shadow-lg shadow-zinc-200/50 border border-zinc-100">
+          <div className="relative w-full md:w-96">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <FiSearch className="text-zinc-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search books, authors..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-zinc-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500/50 transition-shadow"
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto hide-scrollbar">
+            {["all", "available", "on loan"].map((status) => (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                className={cn(
+                  "px-6 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap capitalize",
+                  filter === status 
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" 
+                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                )}
               >
-                <div className="absolute h-32 w-32 rounded-full bg-emerald-100 opacity-50 blur-3xl transition-opacity group-hover:opacity-70" />
-                <img
-                  src={book.img}
-                  alt=""
-                  className="relative z-10 h-full object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105"
-                  decoding="async"
-                />
-                <div className="absolute right-4 top-4 z-20 flex items-center rounded-full bg-white/95 px-2.5 py-1 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur-sm">
-                  <FiStar className="mr-1.5 text-yellow-400" aria-hidden />
-                  <span>{book.rating.toFixed(1)}</span>
-                </div>
-              </Link>
+                {status}
+              </button>
+            ))}
+          </div>
+        </div>
 
-              <div className="flex flex-grow flex-col p-6">
-                <div className="flex-grow">
-                  <h2 className="mb-2 line-clamp-2 text-xl font-bold leading-tight text-gray-900 transition-colors group-hover:text-emerald-700">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <AnimatePresence>
+            {filteredBooks.map((book) => (
+              <motion.article
+                variants={itemVariants}
+                layout
+                key={book.id}
+                className="group flex flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-900/10 hover:-translate-y-1"
+              >
+                <Link
+                  to={`/books/${book.id}`}
+                  className="relative flex h-72 items-center justify-center overflow-hidden bg-zinc-50 p-6"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <img
+                    src={book.img}
+                    alt={book.title}
+                    className="relative z-10 h-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute right-4 top-4 z-20 flex items-center rounded-full bg-white/90 px-3 py-1.5 text-sm font-bold text-zinc-700 shadow-sm backdrop-blur-md">
+                    <FiStar className="mr-1.5 text-amber-400 fill-amber-400" />
+                    <span>{book.rating.toFixed(1)}</span>
+                  </div>
+                </Link>
+
+                <div className="flex flex-grow flex-col p-6">
+                  <div className="flex-grow">
+                    <h2 className="mb-1 line-clamp-2 text-xl font-bold leading-tight text-zinc-900 group-hover:text-emerald-600 transition-colors">
+                      <Link to={`/books/${book.id}`}>{book.title}</Link>
+                    </h2>
+                    <p className="line-clamp-1 text-sm font-medium text-zinc-500 mb-4">{book.author}</p>
+                    <p className="line-clamp-3 text-sm leading-relaxed text-zinc-400">{book.summary}</p>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between pt-4 border-t border-zinc-100">
                     <Link
                       to={`/books/${book.id}`}
-                      className={`rounded-sm hover:underline ${linkFocus}`}
+                      className="group/link flex items-center text-sm font-semibold text-zinc-900 hover:text-emerald-600 transition-colors"
                     >
-                      {book.title}
+                      Details
+                      <FiArrowRight className="ml-1.5 transform transition-transform group-hover/link:translate-x-1" />
                     </Link>
-                  </h2>
-                  <p className="line-clamp-2 text-sm text-gray-600">By {book.author}</p>
-                  <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-gray-500">{book.summary}</p>
+                    <span className={cn(
+                      "rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider",
+                      book.status === "available" 
+                        ? "bg-emerald-50 text-emerald-700" 
+                        : "bg-rose-50 text-rose-700"
+                    )}>
+                      {book.status === "available" ? "Available" : "Checked Out"}
+                    </span>
+                  </div>
                 </div>
-
-                <div className="mt-6 flex items-center justify-between border-t border-gray-50 pt-4">
-                  <Link
-                    to={`/books/${book.id}`}
-                    className={`group/link flex items-center rounded-md border border-emerald-700 px-3 py-1.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-700/10 ${linkFocus}`}
-                  >
-                    View Details
-                    <FiArrowRight
-                      className="ml-1.5 transform transition-transform group-hover/link:translate-x-1"
-                      aria-hidden
-                    />
-                  </Link>
-                  <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                    {book.status === "available" ? "Available" : "On loan"}
-                  </span>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </motion.article>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+        
+        {filteredBooks.length === 0 && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="text-center py-20"
+          >
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-100 mb-4">
+              <FiSearch className="text-2xl text-zinc-400" />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-900 mb-2">No books found</h3>
+            <p className="text-zinc-500">We couldn't find any books matching your current search or filters.</p>
+          </motion.div>
+        )}
       </div>
     </div>
   );
