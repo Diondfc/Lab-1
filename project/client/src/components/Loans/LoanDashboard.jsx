@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { apiClient } from '../../lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiBook, 
   FiCalendar, 
@@ -18,6 +19,7 @@ import {
   FiChevronDown,
 } from 'react-icons/fi';
 import { LuBookUp2 } from "react-icons/lu";
+import { cn } from '../../lib/utils';
 
 const LoansDashboard = () => {
   const navigate = useNavigate();
@@ -101,9 +103,9 @@ const LoansDashboard = () => {
 
   // Calculate statistics
   const totalLoans = loans.length;
-  const returnedLoans = loans.filter((loan) => loan.status === 'returned').length;
-  const overdueLoans = loans.filter((loan) => loan.status === 'overdue').length;
-  const activeLoans = loans.filter((loan) => loan.status === 'active').length;
+  const returnedLoans = loans.filter(loan => loan.status === 'returned').length;
+  const overdueLoans = loans.filter(loan => loan.status === 'overdue').length;
+  const activeLoans = loans.filter(loan => loan.status === 'active').length;
   
   const totalFines = loans.reduce((sum, loan) => {
     let fine = 0;
@@ -121,327 +123,327 @@ const LoansDashboard = () => {
   }, 0);
 
   const formatLoanDate = (dateString) => {
-    if (!dateString) return 'Not available';
+    if (!dateString) return 'N/A';
     try {
-      return dateString.split('T')[0];
+      return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch {
       return 'Invalid date';
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-lg font-medium text-gray-600">Loading loans…</div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-lg font-medium text-red-600">{error}</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl">
-      {/* Header Section */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-[#012F4A] flex items-center gap-3">
-              <LuBookUp2 className="text-4xl text-[#036280]" />
-              Loan Management
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {loans.length} loans processed in our system
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/admin')}
-            className="flex items-center text-[#036280] hover:text-[#024b63] transition self-start md:self-center"
-          >
-            <FiArrowLeft className="mr-2" />
-            Back to staff panel
+      <div className="flex items-center justify-center min-h-screen bg-zinc-50">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md text-center">
+          <FiAlertTriangle className="text-5xl text-rose-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-zinc-900 mb-2">Failed to load data</h2>
+          <p className="text-zinc-500">{error}</p>
+          <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-zinc-900 text-white rounded-xl hover:bg-zinc-800 transition">
+            Retry
           </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 gap-5 mb-8 sm:grid-cols-2 lg:grid-cols-5">
-        {[
-          {
-            icon: <LuBookUp2 className="text-2xl" />,
-            value: totalLoans,
-            label: 'Total loans',
-            bgColor: 'bg-[#012F4A]/10',
-            iconColor: 'text-[#012F4A]',
-            textColor: 'text-[#012F4A]',
-          },
-          { 
-            icon: <FiCheckCircle className="text-2xl" />, 
-            value: returnedLoans, 
-            label: "Returned", 
-            bgColor: "bg-emerald-100",
-            iconColor: "text-emerald-600",
-            textColor: "text-emerald-700"
-          },
-          { 
-            icon: <FiClock className="text-2xl" />, 
-            value: activeLoans, 
-            label: "Active", 
-            bgColor: "bg-blue-100",
-            iconColor: "text-blue-600",
-            textColor: "text-blue-600"
-          },
-          { 
-            icon: <FiAlertTriangle className="text-2xl" />, 
-            value: overdueLoans, 
-            label: "Overdue", 
-            bgColor: "bg-red-100",
-            iconColor: "text-red-600",
-            textColor: "text-red-600"
-          },
-          { 
-            icon: <FiDollarSign className="text-2xl" />, 
-            value: `$${totalFines.toFixed(2)}`, 
-            label: "Total Fines", 
-            bgColor: "bg-green-100",
-            iconColor: "text-green-600",
-            textColor: "text-green-600"
-          }
-        ].map((stat, index) => (
-          <div key={index} className="bg-white p-5 rounded-xl shadow-sm hover:shadow-md transition border border-gray-100">
-            <div className="flex items-center">
-              <div className={`p-3 rounded-lg ${stat.bgColor} mr-4`}>
-                <div className={stat.iconColor}>{stat.icon}</div>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 uppercase tracking-wider">{stat.label}</p>
-                <p className={`text-2xl font-bold ${stat.textColor}`}>{stat.value}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+  };
 
-      {/* Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-        {/* Process Return Card */}
-        <div 
-          className="bg-gradient-to-r from-[#3FA34D] to-[#3FA34D]/90 p-5 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer text-white"
-          onClick={() => navigate('/process-return')}
+  const fadeUp = {
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+  };
+
+  return (
+    <div className="min-h-screen bg-zinc-50 pt-24 pb-12">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Header Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10"
         >
-          <div className="flex items-center">
-            <div className="bg-white/20 p-3 rounded-full mr-4">
-              <FiCheckCircle className="text-xl" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-lg">Process Return</h3>
-              <p className="text-white/90 text-sm">Record book returns and calculate fines</p>
-            </div>
-            <FiArrowRight className="text-white/70 group-hover:text-white transition" />
-          </div>
-        </div>
-        
-        {/* Create New Loan Card */}
-        <div 
-          className="bg-gradient-to-r from-[#036280] to-[#00509D] p-5 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer text-white"
-          onClick={() => navigate('/admin/add-loan')}
-        >
-          <div className="flex items-center">
-            <div className="bg-white/20 p-3 rounded-full mr-4">
-              <FiPlus className="text-xl" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-lg">Create New Loan</h3>
-              <p className="text-white/90 text-sm">Add a new book loan record</p>
-            </div>
-            <FiArrowRight className="text-white/70 group-hover:text-white transition" />
-          </div>
-        </div>
-      </div>
-
-      {/* Loans Table Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-[#012F4A]">Loan Records</h2>
-            <p className="text-gray-600">Detailed view of all book loans</p>
+            <button
+              onClick={() => navigate('/admin')}
+              className="flex items-center text-zinc-500 hover:text-zinc-900 transition mb-4 text-sm font-medium"
+            >
+              <FiArrowLeft className="mr-2" /> Back to Admin Panel
+            </button>
+            <h1 className="text-4xl font-bold text-zinc-900 flex items-center gap-3 tracking-tight">
+              <div className="bg-emerald-100/50 p-2.5 rounded-xl border border-emerald-200">
+                <LuBookUp2 className="text-emerald-600" />
+              </div>
+              Loan Management
+            </h1>
+            <p className="text-zinc-500 mt-2 text-lg">
+              Manage and track book borrowing across the library.
+            </p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-[200px]">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiSearch className="text-gray-400" />
+          <div className="flex gap-3">
+            <button 
+              className="flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all font-medium"
+              onClick={() => navigate('/process-return')}
+            >
+              <FiCheckCircle className="text-emerald-500" /> Return Book
+            </button>
+            <button 
+              className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-600/30 transition-all font-medium"
+              onClick={() => navigate('/admin/add-loan')}
+            >
+              <FiPlus /> New Loan
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Quick Stats */}
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10"
+        >
+          {[
+            { 
+              icon: <LuBookUp2 className="text-xl" />, 
+              value: totalLoans, 
+              label: "Total Loans", 
+              bgColor: "bg-zinc-100",
+              iconColor: "text-zinc-600",
+            },
+            { 
+              icon: <FiClock className="text-xl" />, 
+              value: activeLoans, 
+              label: "Active", 
+              bgColor: "bg-emerald-100",
+              iconColor: "text-emerald-600",
+            },
+            { 
+              icon: <FiAlertTriangle className="text-xl" />, 
+              value: overdueLoans, 
+              label: "Overdue", 
+              bgColor: "bg-rose-100",
+              iconColor: "text-rose-600",
+            },
+            { 
+              icon: <FiDollarSign className="text-xl" />, 
+              value: `$${totalFines.toFixed(2)}`, 
+              label: "Total Fines", 
+              bgColor: "bg-amber-100",
+              iconColor: "text-amber-600",
+            }
+          ].map((stat, index) => (
+            <motion.div variants={fadeUp} key={index} className="bg-white p-6 rounded-3xl shadow-sm shadow-zinc-200/50 border border-zinc-100 hover:shadow-lg transition-all">
+              <div className="flex items-center gap-4">
+                <div className={cn("p-3.5 rounded-2xl", stat.bgColor, stat.iconColor)}>
+                  {stat.icon}
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mb-1">{stat.label}</p>
+                  <p className="text-2xl font-bold text-zinc-900">{stat.value}</p>
+                </div>
               </div>
-              <input
-                type="text"
-                placeholder="Search..."
-                className="pl-10 pr-4 py-2.5 w-full border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#036280] focus:outline-none transition"
-                value={filters.searchQuery}
-                onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
-              />
-            </div>
-            
-            {/* Status Filter */}
-            <div className="relative flex-1 min-w-[180px]">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiFilter className="text-gray-400" />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Loans Table Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-3xl shadow-xl shadow-zinc-200/50 border border-zinc-100 overflow-hidden"
+        >
+          <div className="p-6 md:p-8 border-b border-zinc-100 bg-zinc-50/50">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900">Loan Records</h2>
+                <p className="text-zinc-500 text-sm">Detailed overview of all active and past loans.</p>
               </div>
-              <select
-                className="appearance-none pl-10 pr-10 py-2.5 w-full border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#036280] focus:outline-none transition cursor-pointer bg-white"
-                value={filters.status}
-                onChange={(e) => setFilters({...filters, status: e.target.value})}
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active Loans</option>
-                <option value="overdue">Overdue Loans</option>
-                <option value="returned">Returned Loans</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <FiChevronDown className="text-gray-400" />
+              
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <div className="relative">
+                  <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by book or user..."
+                    className="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all"
+                    value={filters.searchQuery}
+                    onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
+                  />
+                </div>
+                
+                <div className="relative">
+                  <FiFilter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 z-10" />
+                  <select
+                    className="w-full sm:w-48 appearance-none pl-10 pr-10 py-2.5 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all cursor-pointer font-medium text-zinc-700"
+                    value={filters.status}
+                    onChange={(e) => setFilters({...filters, status: e.target.value})}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="returned">Returned</option>
+                  </select>
+                  <FiChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLoans.length > 0 ? (
-                filteredLoans.map((loan) => {
-                  const fineAmount = loan.FineAmount || 0;
-                  const daysLate = loan.status === 'overdue' && !loan.ReturnDate 
-                    ? Math.max(0, Math.floor((new Date() - new Date(loan.DueDate)) / 86400000))
-                    : 0;
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="py-20 text-center flex flex-col items-center">
+                <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-zinc-500 font-medium">Loading loans...</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white border-b border-zinc-100">
+                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Book Details</th>
+                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Timeline</th>
+                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Fine</th>
+                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-50 bg-white">
+                  <AnimatePresence>
+                    {filteredLoans.length > 0 ? (
+                      filteredLoans.map((loan) => {
+                        const fineAmount = loan.FineAmount || 0;
+                        const daysLate = loan.status === 'overdue' && !loan.ReturnDate 
+                          ? Math.max(0, Math.floor((new Date() - new Date(loan.DueDate)) / 86400000))
+                          : 0;
 
-                  return (
-                    <tr key={loan.LoanID} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 rounded-md bg-[#FD7F2F]/10 flex items-center justify-center border border-[#FD7F2F]/20">
-                            <LuBookUp2 className="text-[#FD7F2F]" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {loan.BookTitle || 'Unknown Book'}
-                            </div>
-                            <div className="text-xs text-gray-500">ID: {loan.BookID}</div>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="bg-[#2E7AD2]/10 p-2 rounded-full mr-3">
-                            <FiUser className="text-[#2E7AD2] text-sm" />
-                          </div>
-                          <div>
-                            <div className="text-sm text-gray-900">{loan.UserName}</div>
-                            <div className="text-xs text-gray-500">ID: {loan.UserID}</div>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 space-y-1">
-                          <div className="flex items-center">
-                            <FiCalendar className="mr-2 text-gray-400 text-sm" />
-                            <span>Due: {formatLoanDate(loan.DueDate)}</span>
-                          </div>
-                          {loan.status === 'returned' && (
-                            <div className="flex items-center">
-                              <FiCheckCircle className="mr-2 text-gray-400 text-sm" />
-                              <span>Returned: {formatLoanDate(loan.ReturnDate)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          loan.status === 'returned' ? 'bg-green-100 text-green-800' : 
-                          loan.status === 'overdue' ? 'bg-red-100 text-red-800' : 
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {loan.status === 'overdue' && <FiAlertTriangle className="mr-1" />}
-                          {loan.status === 'active' && <FiClock className="mr-1" />}
-                          {loan.status === 'returned' && <FiCheckCircle className="mr-1" />}
-                          {loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}
-                        </span>
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {loan.status === 'returned' && fineAmount > 0 ? (
-                          <span className="text-red-600 font-medium">
-                            ${typeof fineAmount === 'number' ? fineAmount.toFixed(2) : parseFloat(fineAmount || 0).toFixed(2)}
-                          </span>
-                        ) : loan.status === 'overdue' && !loan.ReturnDate ? (
-                          <span className="text-[#FD7F2F]">
-                            ${(0.50 * daysLate).toFixed(2)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex justify-end space-x-2">
-                          {loan.status !== 'returned' && (
-                            <button
-                              onClick={() => handleReturnNavigation(loan)}
-                              className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition"
-                              title="Process return"
-                            >
-                              <FiCheckCircle className="w-5 h-5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteLoan(loan.LoanID)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition"
-                            title="Delete loan"
+                        return (
+                          <motion.tr 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            key={loan.LoanID} 
+                            className="hover:bg-zinc-50/80 transition-colors group"
                           >
-                            <FiTrash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-gray-400">
-                      <FiBook className="w-12 h-12 mb-4 opacity-30" />
-                      <p className="text-lg font-medium mb-1">No matching loans found</p>
-                      <p className="text-sm mb-3">Try adjusting your search or filter</p>
-                      <button 
-                        onClick={() => setFilters({ status: 'all', searchQuery: '' })}
-                        className="px-4 py-2 bg-[#036280] text-white rounded-lg hover:bg-[#012F4A] transition"
-                      >
-                        Clear all filters
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 shrink-0">
+                                  <LuBookUp2 className="text-emerald-600" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold text-zinc-900 max-w-[200px] truncate">{loan.BookTitle || 'Unknown Book'}</p>
+                                  <p className="text-xs text-zinc-400">ID: {loan.BookID}</p>
+                                </div>
+                              </div>
+                            </td>
+                            
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center shrink-0">
+                                  <FiUser className="text-zinc-500 text-sm" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-zinc-900">{loan.UserName}</p>
+                                  <p className="text-xs text-zinc-400">{loan.UserID}</p>
+                                </div>
+                              </div>
+                            </td>
+                            
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="space-y-1">
+                                <div className="flex items-center text-sm">
+                                  <FiCalendar className="mr-2 text-zinc-400" />
+                                  <span className="text-zinc-700">Due: <span className="font-medium text-zinc-900">{formatLoanDate(loan.DueDate)}</span></span>
+                                </div>
+                                {loan.status === 'returned' && (
+                                  <div className="flex items-center text-sm">
+                                    <FiCheckCircle className="mr-2 text-emerald-500" />
+                                    <span className="text-zinc-500">In: {formatLoanDate(loan.ReturnDate)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold",
+                                loan.status === 'returned' ? 'bg-emerald-100 text-emerald-700' : 
+                                loan.status === 'overdue' ? 'bg-rose-100 text-rose-700' : 
+                                'bg-blue-100 text-blue-700'
+                              )}>
+                                {loan.status === 'overdue' && <FiAlertTriangle />}
+                                {loan.status === 'active' && <FiClock />}
+                                {loan.status === 'returned' && <FiCheckCircle />}
+                                {loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}
+                              </span>
+                            </td>
+                            
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {loan.status === 'returned' && fineAmount > 0 ? (
+                                <span className="px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 font-bold text-sm">
+                                  ${typeof fineAmount === 'number' ? fineAmount.toFixed(2) : parseFloat(fineAmount || 0).toFixed(2)}
+                                </span>
+                              ) : loan.status === 'overdue' && !loan.ReturnDate ? (
+                                <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 font-bold text-sm">
+                                  ${(0.50 * daysLate).toFixed(2)}
+                                </span>
+                              ) : (
+                                <span className="text-zinc-300">-</span>
+                              )}
+                            </td>
+                            
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {loan.status !== 'returned' && (
+                                  <button
+                                    onClick={() => handleReturnNavigation(loan)}
+                                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                                    title="Process Return"
+                                  >
+                                    <FiCheckCircle className="w-5 h-5" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteLoan(loan.LoanID)}
+                                  className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition"
+                                  title="Delete Record"
+                                >
+                                  <FiTrash2 className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        );
+                      })
+                    ) : (
+                      <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <td colSpan="6" className="px-6 py-20 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
+                              <LuBookUp2 className="w-8 h-8 text-zinc-300" />
+                            </div>
+                            <p className="text-lg font-bold text-zinc-900 mb-1">No loans found</p>
+                            <p className="text-sm text-zinc-500 mb-4">There are no records matching your criteria.</p>
+                            <button 
+                              onClick={() => setFilters({ status: 'all', searchQuery: '' })}
+                              className="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-xl hover:bg-zinc-200 transition font-medium text-sm"
+                            >
+                              Clear Filters
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    )}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            )}
+          </div>
+        </motion.div>
       </div>
     </div>
   );

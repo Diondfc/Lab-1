@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiBook, FiUsers, FiClock, FiArrowRight, FiCalendar, FiAward, FiStar, FiBookmark } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 import Journals from '../images/TheCivilWar.png';
 import Academic from '../images/Sedgewick.png';
 import WhiteNights from '../images/WhiteNights.png.webp';
 import StudentReading from '../images/WhiteNights.png.webp';
 import { apiClient } from '../lib/api';
+import { cn } from '../lib/utils';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -19,9 +21,9 @@ const Home = () => {
   const userName = user?.full_name || user?.name;
 
   const bookCategories = [
-    { id: 'journals', name: 'Journals', icon: <FiBook className="text-[#FD7F2F]" />, count: 1245 },
-    { id: 'academic', name: 'Academic', icon: <FiBook className="text-[#2E7AD2]" />, count: 876 },
-    { id: 'novels', name: 'Novels', icon: <FiBook className="text-[#3FA34D]" />, count: 532 }
+    { id: 'journals', name: 'Journals', icon: <FiBook className="text-emerald-400" />, count: 1245 },
+    { id: 'academic', name: 'Academic', icon: <FiBook className="text-emerald-400" />, count: 876 },
+    { id: 'novels', name: 'Novels', icon: <FiBook className="text-emerald-400" />, count: 532 }
   ];
 
   const featuredBooks = [
@@ -31,10 +33,10 @@ const Home = () => {
   ];
 
   const libraryStats = [
-    { value: "50,000+", label: "Books Collection", icon: <FiBook className="text-3xl" /> },
-    { value: "24/7", label: "Digital Access", icon: <FiClock className="text-3xl" /> },
-    { value: "100+", label: "Study Spaces", icon: <FiUsers className="text-3xl" /> },
-    { value: "Free", label: "WiFi Access", icon: <FiAward className="text-3xl" /> }
+    { value: "50,000+", label: "Books Collection", icon: <FiBook className="text-3xl text-emerald-400" /> },
+    { value: "24/7", label: "Digital Access", icon: <FiClock className="text-3xl text-emerald-400" /> },
+    { value: "100+", label: "Study Spaces", icon: <FiUsers className="text-3xl text-emerald-400" /> },
+    { value: "Free", label: "WiFi Access", icon: <FiAward className="text-3xl text-emerald-400" /> }
   ];
 
   useEffect(() => {
@@ -85,317 +87,253 @@ const Home = () => {
     }
   };
 
-  return (
-    <div className="font-poppins bg-white">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-emerald-700 to-green-900 text-white">
-        <div className="container mx-auto px-4 py-20 md:py-28 flex flex-col md:flex-row items-center">
-          <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-              {userName ? `Hello, ${userName}, ` : ''}
-              Explore UBT's <br />Physical Book Collection
-            </h1>
-            <p className="text-xl mb-8 opacity-90">
-              Search, discover, and connect with our library resources
-            </p>
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+  };
 
-            <div className="relative max-w-xl">
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  return (
+    <div className="font-poppins bg-zinc-50 min-h-screen pb-20 pt-20">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-zinc-950 text-white rounded-b-[3rem] shadow-2xl pb-10">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-zinc-900 to-emerald-950/30" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+        </div>
+        
+        <div className="container mx-auto px-4 py-24 md:py-32 relative z-10 flex flex-col md:flex-row items-center">
+          <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+            className="md:w-2/3 mx-auto text-center"
+          >
+            <motion.div variants={fadeIn} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-zinc-800 mb-8 backdrop-blur-md">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-xs font-medium text-zinc-300 uppercase tracking-wider">Welcome to the future of learning</span>
+            </motion.div>
+            
+            <motion.h1 variants={fadeIn} className="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
+              {userName ? `Hello, ${userName}.` : 'Discover.'} <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+                Expand your mind.
+              </span>
+            </motion.h1>
+            
+            <motion.p variants={fadeIn} className="text-xl text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Explore our premium collection of academic resources, journals, and literature tailored for the UBT community.
+            </motion.p>
+
+            <motion.div variants={fadeIn} className="relative max-w-2xl mx-auto">
               <form onSubmit={handleSearch}>
-                <div className="flex bg-white rounded-xl overflow-hidden shadow-lg">
+                <div className="flex bg-zinc-900/80 backdrop-blur-md border border-zinc-700/50 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.4)] transition-all focus-within:border-emerald-500/50 focus-within:shadow-[0_8px_30px_rgba(16,185,129,0.15)]">
+                  <div className="pl-6 flex items-center justify-center">
+                    <FiSearch className="text-zinc-400 h-5 w-5" />
+                  </div>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-grow h-14 px-6 focus:outline-none text-gray-800"
-                    placeholder="Find books by title, author..."
+                    className="flex-grow h-16 px-4 bg-transparent focus:outline-none text-white placeholder-zinc-500"
+                    placeholder="Find books, authors, or ISBN..."
                     onFocus={() => setSearchOpen(true)}
                     onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
                   />
-                  <button
-                    type="submit"
-                    className="bg-green-800 hover:bg-green-900 text-white px-6 flex items-center transition"
-                  >
-                    <FiSearch className="mr-2" /> Search
-                  </button>
+                  <div className="p-2">
+                    <button
+                      type="submit"
+                      className="h-full bg-emerald-600 hover:bg-emerald-500 text-white px-8 rounded-xl font-medium transition-all shadow-lg shadow-emerald-900/20"
+                    >
+                      Search
+                    </button>
+                  </div>
                 </div>
               </form>
 
               {searchOpen && (
-                <div className="absolute bg-white border border-gray-200 rounded-lg w-full mt-2 z-50 shadow-xl">
+                <div className="absolute top-full left-0 right-0 bg-zinc-900 border border-zinc-800 rounded-2xl mt-3 z-50 shadow-2xl overflow-hidden backdrop-blur-xl">
                   {bookCategories.map(category => (
                     <div
                       key={category.id}
                       onClick={() => {
-                        navigate(`/${category.id}`);
-                        setSearchOpen(false);
+                         navigate(`/${category.id}`);
+                         setSearchOpen(false);
                       }}
-                      className="p-3 hover:bg-gray-100 cursor-pointer flex items-center"
+                      className="p-4 hover:bg-zinc-800 cursor-pointer flex items-center transition-colors border-b border-zinc-800/50 last:border-0"
                     >
-                      {category.icon}
-                      <span className="ml-3 text-gray-800">{category.name}</span>
-                      <span className="ml-auto text-gray-500 text-sm">{category.count} titles</span>
+                      <div className="bg-zinc-800 p-2 rounded-lg mr-4 shadow-inner">
+                        {category.icon}
+                      </div>
+                      <span className="text-zinc-200 font-medium">{category.name}</span>
+                      <span className="ml-auto text-zinc-500 text-sm bg-zinc-950 px-3 py-1 rounded-full">{category.count} titles</span>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-
-
+            </motion.div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* Quick Stats - Pulled up to overlap hero */}
+      <div className="container mx-auto px-4 -mt-10 relative z-20">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={staggerContainer}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
+        >
           {libraryStats.map((stat, index) => (
-            <div key={index} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition text-center">
-              <div className="text-emerald-700 mb-3 flex justify-center">
+            <motion.div 
+              variants={fadeIn}
+              key={index} 
+              className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-xl shadow-zinc-200/50 border border-white hover:-translate-y-1 transition-transform duration-300"
+            >
+              <div className="bg-emerald-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                 {stat.icon}
               </div>
-              <h3 className="text-2xl font-bold mb-1">{stat.value}</h3>
-              <p className="text-gray-600">{stat.label}</p>
-            </div>
+              <h3 className="text-3xl font-bold text-zinc-900 mb-1">{stat.value}</h3>
+              <p className="text-zinc-500 font-medium">{stat.label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Featured Books */}
+      <div className="py-24 container mx-auto px-4">
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <h2 className="text-4xl font-bold text-zinc-900 tracking-tight mb-2">Trending Now</h2>
+            <p className="text-zinc-500 text-lg">Books currently captivating our readers.</p>
+          </div>
+          <button
+            onClick={() => navigate('/books')}
+            className="hidden md:flex text-emerald-600 hover:text-emerald-700 font-semibold items-center group transition-colors"
+          >
+            Explore all collection <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {featuredBooks.map((book, idx) => (
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1, duration: 0.5 }}
+              key={book.id} 
+              className="bg-white rounded-3xl overflow-hidden shadow-lg shadow-zinc-200/50 border border-zinc-100 group hover:shadow-2xl hover:shadow-emerald-900/10 transition-all duration-300"
+            >
+              <div className="h-64 bg-zinc-50 flex items-center justify-center p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <img src={book.image} alt={book.title} className="h-full object-contain relative z-10 drop-shadow-xl group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full flex items-center text-sm font-semibold shadow-sm text-zinc-800 z-20">
+                  <FiStar className="text-amber-400 mr-1.5 fill-amber-400" />
+                  {book.rating}
+                </div>
+              </div>
+              <div className="p-8">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-bold text-xl text-zinc-900 mb-1 line-clamp-1">{book.title}</h3>
+                    <p className="text-zinc-500">{book.author}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center pt-4 border-t border-zinc-100">
+                  <span className={cn(
+                    "text-xs px-3 py-1.5 rounded-full font-medium",
+                    book.available ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                  )}>
+                    {book.available ? 'Available' : 'Checked Out'}
+                  </span>
+                  <button
+                    onClick={() => navigate(`/books/${book.id}`)}
+                    className="text-zinc-900 hover:text-emerald-600 font-medium flex items-center text-sm transition-colors"
+                  >
+                    Details <FiArrowRight className="ml-1" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
-      {/* Quick Categories */}
-      <div className="bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold mb-2">Browse Collections</h2>
-            <div className="w-20 h-1 bg-gradient-to-r from-emerald-600 to-green-800 mx-auto"></div>
-            <p className="text-gray-600 max-w-2xl mx-auto mt-4">
-              Explore our diverse range of book collections
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {bookCategories.map(category => (
-              <div
-                key={category.id}
-                onClick={() => navigate(`/${category.id}`)}
-                className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer flex items-center"
-              >
-                <div className="bg-gray-100 p-3 rounded-full mr-4">
-                  {category.icon}
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">{category.name}</h3>
-                  <p className="text-gray-600 text-sm">{category.count} titles available</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Featured Books */}
-      <div className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-10">
-            <div>
-              <h2 className="text-3xl font-bold">Featured Books</h2>
-              <p className="text-gray-600">Popular titles among our readers</p>
-            </div>
-            <button
-              onClick={() => navigate('/books')}
-              className="text-[#036280] hover:underline flex items-center"
-            >
-              View all <FiArrowRight className="ml-1" />
-            </button>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {featuredBooks.map(book => (
-              <div key={book.id} className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition hover:-translate-y-1">
-                <div className="h-48 bg-gray-100 flex items-center justify-center p-4 relative">
-                  <img src={book.image} alt={book.title} className="h-full object-contain" />
-                  <div className="absolute top-3 right-3 bg-white/90 px-2 py-1 rounded-full flex items-center text-sm">
-                    <FiStar className="text-yellow-500 mr-1" />
-                    {book.rating}
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-xl mb-1">{book.title}</h3>
-                  <p className="text-gray-600 mb-4">By {book.author}</p>
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={() => navigate(`/books/${book.id}`)}
-                      className="text-[#036280] hover:underline flex items-center text-sm"
-                    >
-                      Details <FiArrowRight className="ml-1" />
-                    </button>
-                    <span className={`text-xs px-3 py-1 rounded-full ${book.available
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                      }`}>
-                      {book.available ? 'Available' : 'Checked Out'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-
       {/* Upcoming Events */}
-      <div className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
-            <div className="w-20 h-1 bg-gradient-to-r from-[#036280] to-[#233B7D] mx-auto"></div>
-            <p className="text-gray-600 max-w-2xl mx-auto mt-4">
-              Join our community events and enhance your reading experience
+      <div className="py-24 bg-zinc-950 text-white rounded-3xl mx-4 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-900/20 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>
+        <div className="container mx-auto px-8 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Upcoming Events</h2>
+            <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
+              Engage with our community. Join seminars, book readings, and research workshops.
             </p>
           </div>
 
           {eventsError && (
-            <p className="text-center text-red-600 mb-6">{eventsError}</p>
+            <p className="text-center text-rose-400 mb-6 bg-rose-500/10 py-3 rounded-lg border border-rose-500/20">{eventsError}</p>
           )}
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {eventsLoading && (
-              <div className="md:col-span-3 text-center text-gray-600">
+              <div className="md:col-span-3 text-center text-zinc-500 py-10">
+                <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                 Loading events...
               </div>
             )}
 
             {!eventsLoading && upcomingEvents.length === 0 && !eventsError && (
-              <div className="md:col-span-3 text-center text-gray-600">
-                No upcoming events available.
+              <div className="md:col-span-3 text-center text-zinc-500 py-10">
+                No upcoming events available at the moment.
               </div>
             )}
 
-            {upcomingEvents.map(event => (
-              <div key={event.EventID} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
-                <div className="flex items-center mb-4">
-                  <div className="bg-[#036280]/10 p-3 rounded-lg mr-4">
-                    <FiCalendar className="text-[#036280] text-xl" />
+            {upcomingEvents.map((event, idx) => (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                key={event.EventID} 
+                className="bg-zinc-900/50 backdrop-blur-sm p-8 rounded-3xl border border-zinc-800 hover:border-emerald-500/50 transition-colors group"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="bg-emerald-500/10 p-4 rounded-2xl text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                    <FiCalendar className="text-2xl" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{event.Title}</h3>
-                    <p className="text-gray-600 text-sm">{formatEventDate(event.Date)}</p>
+                  <div className="text-right">
+                    <div className="text-xl font-bold text-white">{formatEventDate(event.Date).split(' ')[1]}</div>
+                    <div className="text-sm text-emerald-400 font-medium uppercase">{formatEventDate(event.Date).split(' ')[0]}</div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex text-sm">
-                    <span className="text-gray-500 w-20">Time:</span>
+                <h3 className="font-bold text-xl text-white mb-4 line-clamp-2">{event.Title}</h3>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center text-zinc-400 text-sm">
+                    <FiClock className="mr-3 text-zinc-500" />
                     <span>{formatEventTime(event.Time)}</span>
                   </div>
-                  <div className="flex text-sm">
-                    <span className="text-gray-500 w-20">Location:</span>
+                  <div className="flex items-center text-zinc-400 text-sm">
+                    <FiBookmark className="mr-3 text-zinc-500" />
                     <span>{event.Location || 'TBA'}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate('/events')}
-                  className="mt-4 text-[#036280] hover:underline flex items-center text-sm"
+                  className="w-full py-3 rounded-xl bg-zinc-800 text-white font-medium hover:bg-emerald-600 transition-colors"
                 >
-                  Learn more <FiArrowRight className="ml-1" />
+                  Reserve Seat
                 </button>
-              </div>
+              </motion.div>
             ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Testimonial */}
-      <div className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center bg-gradient-to-br from-emerald-700 to-green-900 text-white rounded-xl overflow-hidden shadow-xl">
-            <div className="md:w-1/2 p-8 md:p-12 text-white">
-              <h2 className="text-3xl font-bold mb-4">What Our Readers Say</h2>
-              <div className="mb-6">
-                <p className="italic mb-4">
-                  "The UBT library has been an invaluable resource for my research. The collection is extensive and the staff is incredibly helpful."
-                </p>
-                <p className="font-medium">- Sarah Johnson, PhD Candidate</p>
-              </div>
-              <button
-                onClick={() => navigate('/about')}
-                className="border border-white text-white hover:bg-white hover:text-[#036280] px-6 py-2 rounded-lg transition"
-              >
-                Read More Testimonials
-              </button>
-            </div>
-            <div className="md:w-1/2">
-              <img
-                src={StudentReading}
-                alt="Student reading"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Library Hours */}
-      <div className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-8 md:mb-0 md:pr-10">
-              <h2 className="text-3xl font-bold mb-4">Library Hours</h2>
-              <div className="space-y-4">
-                <div className="flex justify-between border-b pb-2">
-                  <span className="font-medium">Monday - Friday</span>
-                  <span>8:00 AM - 8:00 PM</span>
-                </div>
-                <div className="flex justify-between border-b pb-2">
-                  <span className="font-medium">Saturday</span>
-                  <span>10:00 AM - 4:00 PM</span>
-                </div>
-                <div className="flex justify-between border-b pb-2">
-                  <span className="font-medium">Sunday</span>
-                  <span>Closed</span>
-                </div>
-              </div>
-              <div className="mt-8">
-                <h3 className="text-xl font-bold mb-2">New arrivals</h3>
-                <p className="mb-4 text-gray-600">
-                  Check out our newest additions to the collection, updated weekly.
-                </p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/books')}
-                    className="flex items-center justify-center text-[#036280] hover:underline sm:justify-start"
-                  >
-                    <FiBookmark className="mr-2" /> View new arrivals
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/bookshelf')}
-                    className="flex items-center justify-center text-[#036280] hover:underline sm:justify-start"
-                  >
-                    <FiBookmark className="mr-2" /> My bookshelf
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="md:w-1/2 bg-gray-50 p-8 rounded-xl shadow-md">
-              <h3 className="text-xl font-bold mb-4">Need Help?</h3>
-              <p className="mb-4">
-                Our librarians are available to assist you with finding resources and using library services.
-              </p>
-              <div className="space-y-4">
-                <button
-                  onClick={() => navigate('/about')}
-                  className="w-full bg-green-800 hover:bg-green-900 text-white px-6 py-3 rounded-lg transition"
-                >
-                  Contact Us
-                </button>
-                <button
-                  onClick={() => navigate('/about')}
-                  className="w-full border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10px-6 py-3 rounded-lg transition"
-                >
-                  FAQ
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
