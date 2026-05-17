@@ -1,48 +1,89 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+
+function getUserId(req) {
+  return req.user?.id ?? req.user?.user?.id;
+}
+
+function getUserRole(req) {
+  return req.user?.role || req.user?.user?.role;
+}
+
+function isStaffRole(role) {
+  return role === 'Admin' || role === 'Librarian';
+}
+
+function isStaff(req) {
+  return isStaffRole(getUserRole(req));
+}
 
 const auth = async (req, res, next) => {
-    try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
-        if (!token) {
-            return res.status(401).json({ message: 'No token, authorization denied' });
-        }
-
-        // Verify access token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        console.log('Decoded token:', decoded);
-        req.user = decoded;
-        next();
-    } catch (err) {
-        // If token expired, check for refresh token
-        if (err.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                message: 'Token expired',
-                code: 'TOKEN_EXPIRED'
-            });
-        }
-        res.status(401).json({ message: 'Token is not valid' });
+  try {
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: 'Server misconfiguration: JWT_SECRET not set' });
     }
+
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ message: 'No token, authorization denied' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        message: 'Token expired',
+        code: 'TOKEN_EXPIRED',
+      });
+    }
+    res.status(401).json({ message: 'Token is not valid' });
+  }
 };
 
 const authorizeRoles = (...roles) => {
-    return (req, res, next) => {
-        const userRole = req.user?.role || req.user?.user?.role;
+  return (req, res, next) => {
+    const userRole = getUserRole(req);
 
-        if (!userRole) {
-            console.error('Role missing in:', req.user);
-            return res.status(403).json({ message: 'No role assigned' });
-        }
+    if (!userRole) {
+      return res.status(403).json({ message: 'No role assigned' });
+    }
 
-        if (!roles.includes(userRole)) {
-            console.error(`Role ${userRole} not in required roles:`, roles);
-            return res.status(403).json({ message: 'Insufficient permissions' });
-        }
+    if (!roles.includes(userRole)) {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
 
-        console.log(`Access granted to ${userRole}`);
-        next();
-    };
+    next();
+  };
 };
 
-module.exports = { auth, authorizeRoles };
+/** Allow access when :param matches the authenticated user, or caller is staff. */
+const authorizeSelfOrStaff = (paramName = 'userId') => {
+  return (req, res, next) => {
+    const callerId = Number(getUserId(req));
+    const requestedId = Number(req.params[paramName]);
+
+    if (!callerId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (isStaff(req) || requestedId === callerId) {
+      return next();
+    }
+
+    return res.status(403).json({ message: 'Insufficient permissions' });
+  };
+};
+
+const authorizeStaff = authorizeRoles('Admin', 'Librarian');
+
+module.exports = {
+  auth,
+  authorizeRoles,
+  authorizeStaff,
+  authorizeSelfOrStaff,
+  getUserId,
+  getUserRole,
+  isStaff,
+  isStaffRole,
+};

@@ -101,9 +101,9 @@ const LoansDashboard = () => {
 
   // Calculate statistics
   const totalLoans = loans.length;
-  const returnedLoans = loans.filter(loan => loan.status === 'returned').length;
-  const overdueLoans = loans.filter(loan => loan.status === 'overdue').length;
-  const activeLoans = loans.filter(loan => loan.status === 'active').length;
+  const returnedLoans = loans.filter((loan) => loan.status === 'returned').length;
+  const overdueLoans = loans.filter((loan) => loan.status === 'overdue').length;
+  const activeLoans = loans.filter((loan) => loan.status === 'active').length;
   
   const totalFines = loans.reduce((sum, loan) => {
     let fine = 0;
@@ -129,12 +129,18 @@ const LoansDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg font-medium text-gray-600">Loading loans…</div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg font-medium text-gray-600">
-          Loading loans...
-        </div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg font-medium text-red-600">{error}</div>
       </div>
     );
   }
@@ -158,21 +164,29 @@ const LoansDashboard = () => {
             className="flex items-center text-[#036280] hover:text-[#024b63] transition self-start md:self-center"
           >
             <FiArrowLeft className="mr-2" />
-            Back to Admin Panel
+            Back to staff panel
           </button>
         </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-1 gap-5 mb-8 sm:grid-cols-2 lg:grid-cols-5">
         {[
+          {
+            icon: <LuBookUp2 className="text-2xl" />,
+            value: totalLoans,
+            label: 'Total loans',
+            bgColor: 'bg-[#012F4A]/10',
+            iconColor: 'text-[#012F4A]',
+            textColor: 'text-[#012F4A]',
+          },
           { 
-            icon: <LuBookUp2 className="text-2xl" />, 
-            value: totalLoans, 
-            label: "Total Loans", 
-            bgColor: "bg-[#012F4A]/10",
-            iconColor: "text-[#012F4A]",
-            textColor: "text-[#012F4A]"
+            icon: <FiCheckCircle className="text-2xl" />, 
+            value: returnedLoans, 
+            label: "Returned", 
+            bgColor: "bg-emerald-100",
+            iconColor: "text-emerald-600",
+            textColor: "text-emerald-700"
           },
           { 
             icon: <FiClock className="text-2xl" />, 

@@ -36,14 +36,32 @@ function Navbar({ user, setUser }) {
           >
             About
           </Link>
-          {user?.role === 'Admin' && (
+          {user?.role === 'Admin' || user?.role === 'Librarian' ? (
             <Link
               to="/admin"
               className="text-sm font-medium text-green-100 transition hover:text-white"
             >
-              Admin Panel
+              Staff panel
             </Link>
-          )}
+          ) : null}
+          <Link
+            to="/events"
+            className="text-sm font-medium text-green-100 transition hover:text-white"
+          >
+            Events
+          </Link>
+          <Link
+            to="/book-club"
+            className="text-sm font-medium text-green-100 transition hover:text-white"
+          >
+            Book club
+          </Link>
+          <Link
+            to="/bookshelf"
+            className="text-sm font-medium text-green-100 transition hover:text-white"
+          >
+            My shelf
+          </Link>
           {user ? (
             <>
               <button

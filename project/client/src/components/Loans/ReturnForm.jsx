@@ -35,7 +35,7 @@ const ReturnForm = () => {
   const navigate = useNavigate();
 
   // If coming from dashboard with pre-filled data, skip the initial inputs
-  const [skipInitialInputs, setSkipInitialInputs] = useState(!!state?.loanId);
+  const [skipInitialInputs] = useState(!!state?.loanId);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

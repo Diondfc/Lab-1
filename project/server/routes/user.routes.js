@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
-const { auth } = require('../middlewares/auth');
+const { auth, authorizeStaff } = require('../middlewares/auth');
 
-router.get('/', auth, userController.getAllUsers);
+// Specific paths before /:id
+router.get('/email/:email', auth, authorizeStaff, userController.getUserByEmail);
+
+router.get('/', auth, authorizeStaff, userController.getAllUsers);
+router.post('/', auth, authorizeStaff, userController.createUser);
 router.get('/:id', auth, userController.getUserById);
-router.post('/', auth, userController.createUser);
-router.delete('/:id', auth, userController.deleteUserById)
-router.put("/:id", auth, userController.updateUser)
-router.get('/email/:email', userController.getUserByEmail);
+router.put('/:id', auth, userController.updateUser);
+router.delete('/:id', auth, authorizeStaff, userController.deleteUserById);
 
 module.exports = router;

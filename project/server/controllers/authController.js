@@ -1,13 +1,15 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+const UserAccount = require('../models/user-account');
 
 async function register(req, res) {
   try {
     const { full_name, email, password } = req.body;
 
     // Check if user exists
-    const existingUser = await User.findByEmail(email);
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await User.findByEmail(normalizedEmail);
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -15,7 +17,12 @@ async function register(req, res) {
     // Hash password & Save
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    await User.create({ full_name, email, password: hashedPassword });
+    const userId = await User.create({
+      full_name,
+      email: normalizedEmail,
+      password: hashedPassword,
+    });
+    await UserAccount.create(userId);
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
@@ -28,8 +35,12 @@ async function login(req, res) {
   try {
     const { email, password } = req.body;
 
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: 'Server misconfiguration: JWT_SECRET not set' });
+    }
+
     // Find user
-    const user = await User.findByEmail(email);
+    const user = await User.findByEmail(email?.trim().toLowerCase());
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -45,7 +56,7 @@ async function login(req, res) {
     const token = jwt.sign(
       { id: user.UserID, email: user.Email, role },
       process.env.JWT_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     res.json({

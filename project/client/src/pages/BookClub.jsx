@@ -1,0 +1,334 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { FiBook, FiMessageCircle, FiSend, FiTrash2 } from 'react-icons/fi'
+import { apiClient } from '../lib/api'
+
+const ROOMS = [
+  { id: 'journals', label: 'Journals' },
+  { id: 'academic', label: 'Academic' },
+  { id: 'novels', label: 'Novels' },
+  { id: 'general', label: 'General' },
+]
+
+function displayName() {
+  try {
+    const raw = localStorage.getItem('user')
+    if (!raw) return 'Reader'
+    const u = JSON.parse(raw)
+    return u.full_name || u.name || u.email || 'Reader'
+  } catch {
+    return 'Reader'
+  }
+}
+
+export default function BookClub() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const roomFromUrl = searchParams.get('room')
+  const activeRoom = useMemo(() => {
+    const r = (roomFromUrl || 'general').toLowerCase()
+    return ROOMS.some((x) => x.id === r) ? r : 'general'
+  }, [roomFromUrl])
+
+  const [messages, setMessages] = useState([])
+  const [requests, setRequests] = useState([])
+  const [msgText, setMsgText] = useState('')
+  const [reqTitle, setReqTitle] = useState('')
+  const [reqAuthor, setReqAuthor] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [sending, setSending] = useState(false)
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+
+  const setRoom = (id) => {
+    setSearchParams(id === 'general' ? {} : { room: id })
+  }
+
+  const loadRoomData = useCallback(async () => {
+    try {
+      setError('')
+      const [msgRes, reqRes] = await Promise.all([
+        apiClient.get(`/api/messages/room/${encodeURIComponent(activeRoom)}`),
+        apiClient.get(`/api/requests/room/${encodeURIComponent(activeRoom)}`),
+      ])
+      setMessages(Array.isArray(msgRes.data) ? msgRes.data : [])
+      setRequests(Array.isArray(reqRes.data) ? reqRes.data : [])
+    } catch (e) {
+      console.error(e)
+      setError('Could not load book club data.')
+    } finally {
+      setLoading(false)
+    }
+  }, [activeRoom])
+
+  useEffect(() => {
+    setLoading(true)
+    loadRoomData()
+  }, [loadRoomData])
+
+  useEffect(() => {
+    const id = setInterval(loadRoomData, 10000)
+    return () => clearInterval(id)
+  }, [loadRoomData])
+
+  const sendMessage = async (e) => {
+    e.preventDefault()
+    if (!token || !msgText.trim()) return
+    try {
+      setSending(true)
+      await apiClient.post('/api/messages', {
+        room: activeRoom,
+        username: displayName(),
+        message: msgText.trim(),
+      })
+      setMsgText('')
+      await loadRoomData()
+    } catch (err) {
+      console.error(err)
+      setError(err.response?.data?.message || 'Failed to send message.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const sendRequest = async (e) => {
+    e.preventDefault()
+    if (!token || !reqTitle.trim()) return
+    try {
+      setSending(true)
+      await apiClient.post('/api/requests', {
+        room: activeRoom,
+        username: displayName(),
+        book_title: reqTitle.trim(),
+        book_author: reqAuthor.trim() || undefined,
+      })
+      setReqTitle('')
+      setReqAuthor('')
+      await loadRoomData()
+    } catch (err) {
+      console.error(err)
+      setError(err.response?.data?.message || 'Failed to submit request.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const deleteMessage = async (id) => {
+    if (!token || !window.confirm('Delete this message?')) return
+    try {
+      await apiClient.delete(`/api/messages/${id}`)
+      await loadRoomData()
+    } catch (err) {
+      console.error(err)
+      setError(err.response?.data?.message || 'Could not delete message.')
+    }
+  }
+
+  const deleteRequest = async (id) => {
+    if (!token || !window.confirm('Remove this request?')) return
+    try {
+      await apiClient.delete(`/api/requests/${id}`)
+      await loadRoomData()
+    } catch (err) {
+      console.error(err)
+      setError(err.response?.data?.message || 'Could not delete request.')
+    }
+  }
+
+  const userId = (() => {
+    try {
+      const raw = localStorage.getItem('user')
+      if (!raw) return null
+      return JSON.parse(raw).id
+    } catch {
+      return null
+    }
+  })()
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
+      <div className="mx-auto max-w-5xl">
+        <header className="mb-8 border-l-4 border-emerald-600 pl-4">
+          <h1 className="text-3xl font-bold text-slate-900">Book club</h1>
+          <p className="mt-1 text-slate-600">
+            Chat by room and request titles for the library to consider.
+          </p>
+        </header>
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          {ROOMS.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => setRoom(r.id)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                activeRoom === r.id
+                  ? 'bg-emerald-700 text-white shadow'
+                  : 'bg-white text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-50'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+
+        {error && (
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+            {error}
+          </p>
+        )}
+
+        {!token && (
+          <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <Link to="/login" className="font-semibold underline">
+              Sign in
+            </Link>{' '}
+            to post messages and book requests.
+          </p>
+        )}
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
+              <FiMessageCircle className="text-emerald-600" />
+              Messages
+            </h2>
+            {loading ? (
+              <p className="text-slate-500">Loading…</p>
+            ) : (
+              <ul className="mb-4 max-h-80 space-y-3 overflow-y-auto pr-1 text-sm">
+                {messages.length === 0 && (
+                  <li className="text-slate-500">No messages yet in this room.</li>
+                )}
+                {messages.map((m) => {
+                  const mid = m.id
+                  const mine = userId != null && Number(m.userId) === Number(userId)
+                  return (
+                    <li
+                      key={mid}
+                      className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-slate-800">{m.username}</p>
+                          <p className="mt-1 whitespace-pre-wrap text-slate-700">{m.message}</p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {m.timestamp
+                              ? new Date(m.timestamp).toLocaleString()
+                              : ''}
+                          </p>
+                        </div>
+                        {mine && token && (
+                          <button
+                            type="button"
+                            onClick={() => deleteMessage(mid)}
+                            className="shrink-0 rounded p-1 text-red-600 hover:bg-red-50"
+                            title="Delete"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            <form onSubmit={sendMessage} className="space-y-2">
+              <textarea
+                value={msgText}
+                onChange={(e) => setMsgText(e.target.value)}
+                placeholder={token ? 'Write a message…' : 'Sign in to chat'}
+                disabled={!token || sending}
+                rows={3}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:bg-slate-100"
+              />
+              <button
+                type="submit"
+                disabled={!token || sending || !msgText.trim()}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+              >
+                <FiSend />
+                Send
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
+              <FiBook className="text-emerald-600" />
+              Book requests
+            </h2>
+            {loading ? (
+              <p className="text-slate-500">Loading…</p>
+            ) : (
+              <ul className="mb-4 max-h-56 space-y-2 overflow-y-auto text-sm">
+                {requests.length === 0 && (
+                  <li className="text-slate-500">No requests in this room yet.</li>
+                )}
+                {requests.map((r) => {
+                  const rid = r.id
+                  const mine = userId != null && Number(r.user_id) === Number(userId)
+                  return (
+                    <li
+                      key={rid}
+                      className="flex items-start justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-800">{r.book_title}</p>
+                        {r.book_author && (
+                          <p className="text-slate-600">by {r.book_author}</p>
+                        )}
+                        <p className="text-xs text-slate-500">
+                          {r.username} ·{' '}
+                          {r.created_at
+                            ? new Date(r.created_at).toLocaleString()
+                            : ''}
+                        </p>
+                      </div>
+                      {mine && token && (
+                        <button
+                          type="button"
+                          onClick={() => deleteRequest(rid)}
+                          className="shrink-0 rounded p-1 text-red-600 hover:bg-red-50"
+                          title="Remove"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            <form onSubmit={sendRequest} className="space-y-2">
+              <input
+                type="text"
+                value={reqTitle}
+                onChange={(e) => setReqTitle(e.target.value)}
+                placeholder="Book title"
+                disabled={!token || sending}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:bg-slate-100"
+              />
+              <input
+                type="text"
+                value={reqAuthor}
+                onChange={(e) => setReqAuthor(e.target.value)}
+                placeholder="Author (optional)"
+                disabled={!token || sending}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:bg-slate-100"
+              />
+              <button
+                type="submit"
+                disabled={!token || sending || !reqTitle.trim()}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+              >
+                <FiBook />
+                Request book
+              </button>
+            </form>
+          </section>
+        </div>
+      </div>
+    </div>
+  )
+}

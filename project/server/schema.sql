@@ -249,3 +249,38 @@ INSERT IGNORE INTO Users (UserID, Name, Email, Password, Role) VALUES
   );
 
 INSERT IGNORE INTO useraccount (UserID) VALUES (1);
+
+-- Sample catalog (IDs 1–8 align with the demo client catalog for easier testing)
+INSERT IGNORE INTO Books (
+  BookID, ISBN, Title, Author, Publisher, YearOfPublishment,
+  AvailabilityStatus, CategoryID, SubCategoryID, Rating, Quantity, Description
+) VALUES
+  (1, '978-0000000001', 'The Computer Science Book', 'Thomas Johnson', 'UBT Press', 2020,
+   'Available', 1, NULL, 4.60, 3,
+   'A wide-angle introduction to computer science—how programs represent information, how algorithms solve problems, and how all the pieces fit together for newcomers.'),
+  (2, '978-0000000002', 'The Nature of Code', 'Daniel Shiffman', 'Processing Foundation', 2012,
+   'Available', 3, 4, 4.90, 2,
+   'Builds simulations and visual sketches by borrowing ideas from physics and biology—excellent if you learn by coding motion, forces, and systems.'),
+  (3, '978-0000000003', 'Structure and Interpretation of Computer Programs', 'Harold Abelson, Gerald Jay Sussman, and Julie Sussman', 'MIT Press', 1996,
+   'Available', 2, NULL, 4.80, 2,
+   'The influential SICP curriculum: programs as symbolic expressions, abstraction, recursion, and interpreters.'),
+  (4, '978-0000000004', 'Introduction to Java Programming', 'K. Somasundaram', 'UBT Press', 2018,
+   'Available', 1, NULL, 4.40, 4,
+   'A practical path through Java syntax, object-oriented design, and core APIs, with exercises aimed at students.'),
+  (5, '978-0000000005', 'The Code Book', 'Simon Singh', 'Anchor', 1999,
+   'Available', 2, NULL, 4.70, 2,
+   'A popular history of cryptography—from ancient ciphers to Enigma and public-key crypto.'),
+  (6, '978-0000000006', 'Algorithms', 'Robert Sedgewick and Kevin Wayne', 'Addison-Wesley', 2011,
+   'Available', 1, NULL, 4.80, 3,
+   'Algorithms and data structures with clear explanations and code, aligned with the Princeton treatment.'),
+  (7, '978-0000000007', 'Computer Science: An Interdisciplinary Approach', 'Robert Sedgewick and Kevin Wayne', 'Addison-Wesley', 2016,
+   'Available', 1, NULL, 4.70, 2,
+   'Programming, scientific computation, and data—connecting code to math, science, and real datasets.'),
+  (8, '978-0000000008', 'Clean Code', 'Robert C. Martin', 'Prentice Hall', 2008,
+   'Available', 3, 4, 4.50, 3,
+   'Software craftsmanship through naming, small functions, error handling, and refactoring patterns.');
+
+INSERT IGNORE INTO Events (EventID, Title, Date, Time, LocationID) VALUES
+  (1, 'Author Meet & Greet', '2026-05-15', '14:00:00', 1),
+  (2, 'Reading Workshop', '2026-05-22', '10:30:00', 2),
+  (3, 'Book Fair', '2026-06-05', '16:00:00', 3);

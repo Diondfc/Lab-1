@@ -23,10 +23,6 @@ const NovelsDashboard = () => {
   const [subcategory, setSubcategory] = useState('All')
   const navigate = useNavigate()
 
-  useEffect(() => {
-    fetchNovels(subcategory)
-  }, [subcategory])
-
   const fetchNovels = async (selectedSubcategory = 'All') => {
     try {
       const path =
@@ -41,6 +37,11 @@ const NovelsDashboard = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load list when room filter changes
+    void fetchNovels(subcategory)
+  }, [subcategory])
 
   const toggleDescription = (bookId) => {
     setExpandedDescriptions((prev) => ({

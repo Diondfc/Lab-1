@@ -354,16 +354,26 @@ const Home = () => {
                 </div>
               </div>
               <div className="mt-8">
-                <h3 className="text-xl font-bold mb-2">New Arrivals</h3>
-                <p className="mb-4">
-                  Check out our newest additions to the collection updated weekly.
+                <h3 className="text-xl font-bold mb-2">New arrivals</h3>
+                <p className="mb-4 text-gray-600">
+                  Check out our newest additions to the collection, updated weekly.
                 </p>
-                <button
-                  onClick={() => navigate('/books')}
-                  className="flex items-center text-[#036280] hover:underline"
-                >
-                  <FiBookmark className="mr-2" /> View New Arrivals
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/books')}
+                    className="flex items-center justify-center text-[#036280] hover:underline sm:justify-start"
+                  >
+                    <FiBookmark className="mr-2" /> View new arrivals
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/bookshelf')}
+                    className="flex items-center justify-center text-[#036280] hover:underline sm:justify-start"
+                  >
+                    <FiBookmark className="mr-2" /> My bookshelf
+                  </button>
+                </div>
               </div>
             </div>
             <div className="md:w-1/2 bg-gray-50 p-8 rounded-xl shadow-md">

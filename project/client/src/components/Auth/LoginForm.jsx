@@ -56,7 +56,10 @@ function LoginForm({ setUser }) {
         localStorage.setItem('token', data.token)
       }
 
-      const destination = data.user?.role === 'Admin' ? '/admin' : '/home'
+      const destination =
+        data.user?.role === 'Admin' || data.user?.role === 'Librarian'
+          ? '/admin'
+          : '/home'
 
       setTimeout(() => {
         navigate(destination, { replace: true })

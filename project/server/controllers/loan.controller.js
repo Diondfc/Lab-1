@@ -1,5 +1,6 @@
 const pool = require('../config/db');
-const Loan = require('../models/loan.model'); 
+const Loan = require('../models/loan.model');
+const { getUserId, isStaffRole } = require('../middlewares/auth');
 
 exports.createLoan = async (req, res) => {
   try {
@@ -9,6 +10,15 @@ exports.createLoan = async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: 'Missing required fields' 
+      });
+    }
+
+    const callerId = Number(getUserId(req));
+    const targetUserId = Number(userId);
+    if (!isStaffRole(req.user?.role) && callerId !== targetUserId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only create loans for your own account',
       });
     }
 
@@ -235,6 +245,17 @@ exports.getLoanById = async (req, res) => {
         return res.status(404).json({
           success: false,
           message: 'Loan not found'
+        });
+      }
+
+      const callerId = Number(getUserId(req));
+      if (
+        !isStaffRole(req.user?.role) &&
+        Number(loan[0].UserID) !== callerId
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions',
         });
       }
       

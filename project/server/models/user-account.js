@@ -1,27 +1,17 @@
 const db = require('../config/db');
 
-
 class UserAccount {
+  static async create(userId) {
+    await db.query('INSERT IGNORE INTO useraccount (UserID) VALUES (?)', [userId]);
+  }
 
-    static async create(userId) {
-        const [result] = await db.query(
-            'INSERT INTO useraccount (UserID) VALUES (?)',
-            [userId]
-        );
-        return result;
-    }
-
-    static async MyUserAccountInformation(userId) {
-        const [rows] = await db.query(
-            `SELECT ua.*, u.*
-       FROM ubtlibrarygateway.useraccount ua
-       JOIN ubtlibrarygateway.users u ON ua.UserID = u.UserId
-       WHERE ua.UserID = ?`,
-            [userId]
-        );
-        return rows[0];
-
-    }
+  static async findByUserId(userId) {
+    const [rows] = await db.query(
+      'SELECT * FROM useraccount WHERE UserID = ?',
+      [userId],
+    );
+    return rows[0] || null;
+  }
 }
 
 module.exports = UserAccount;

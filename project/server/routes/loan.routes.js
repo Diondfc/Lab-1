@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const loanController = require('../controllers/loan.controller');
+const { auth, authorizeStaff, authorizeSelfOrStaff } = require('../middlewares/auth');
 
+// Specific paths before /:id
+router.get('/total-count', auth, authorizeStaff, loanController.getTotalLoansCount);
+router.get('/user/:userId', auth, authorizeSelfOrStaff('userId'), loanController.getUserLoans);
 
-router.post('/', loanController.createLoan); 
-router.get('/', loanController.getAllLoans);
-router.get('/user/:userId', loanController.getUserLoans);
-router.delete('/:id', loanController.deleteLoan);
-router.get('/:id', loanController.getLoanById);
-router.get('/total-count', loanController.getTotalLoansCount);
-
-
+router.get('/', auth, authorizeStaff, loanController.getAllLoans);
+router.post('/', auth, loanController.createLoan);
+router.delete('/:id', auth, authorizeStaff, loanController.deleteLoan);
+router.get('/:id', auth, loanController.getLoanById);
 
 module.exports = router;

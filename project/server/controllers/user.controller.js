@@ -1,5 +1,12 @@
 const User = require('../models/user.model');
 const pool = require('../config/db');
+const { getUserId, isStaff } = require('../middlewares/auth');
+
+function sanitizeUser(user) {
+  if (!user) return user;
+  const { Password, ...safe } = user;
+  return safe;
+}
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -12,11 +19,18 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const userId = Number(req.params.id);
+    const callerId = Number(getUserId(req));
+
+    if (!isStaff(req) && userId !== callerId) {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json(user);
+    res.json(sanitizeUser(user));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -24,8 +38,34 @@ exports.getUserById = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const newUser = await User.create(req.body);
-    res.status(201).json(newUser);
+    const bcrypt = require('bcryptjs');
+    const { full_name, Name, email, Email, password, role, Role } = req.body;
+    const name = full_name || Name;
+    const userEmail = (email || Email || '').trim().toLowerCase();
+    const userRole = role || Role || 'Student';
+
+    if (!name || !userEmail || !password) {
+      return res.status(400).json({ message: 'Name, email, and password are required' });
+    }
+
+    const existing = await User.findByEmail(userEmail);
+    if (existing) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userId = await User.create({
+      full_name: name,
+      email: userEmail,
+      password: hashedPassword,
+      role: userRole,
+    });
+
+    const UserAccount = require('../models/user-account');
+    await UserAccount.create(userId);
+
+    const user = await User.findById(userId);
+    res.status(201).json(sanitizeUser(user));
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -49,9 +89,18 @@ exports.updateUser = async (req, res) => {
   try {
     const userId = Number(req.params.id);
     const updatedInfo = req.body;
+    const callerId = Number(getUserId(req));
 
     if (!userId || isNaN(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    if (!isStaff(req) && userId !== callerId) {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+
+    if (!isStaff(req) && updatedInfo.Role != null) {
+      return res.status(403).json({ message: 'Cannot change role on your own account' });
     }
 
     const userExists = await User.findById(userId);

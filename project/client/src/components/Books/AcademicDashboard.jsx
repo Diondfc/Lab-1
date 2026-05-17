@@ -21,11 +21,6 @@ const AcademicDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const navigate = useNavigate()
 
-  useEffect(() => {
-    fetchAcademicBooks()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   const fetchAcademicBooks = async () => {
     try {
       const res = await axios.get(apiUrl('/api/books/academic'))
@@ -36,6 +31,11 @@ const AcademicDashboard = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial catalog load
+    void fetchAcademicBooks()
+  }, [])
 
   const toggleDescription = (bookId) => {
     setExpandedDescriptions((prev) => ({

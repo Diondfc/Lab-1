@@ -73,6 +73,7 @@ const AddLoanForm = ({ onSave }) => {
     }, 500);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounced email lookup; stable currentUser from initial state
   }, [formData.userEmail]);
 
   const fetchUserDetails = async () => {

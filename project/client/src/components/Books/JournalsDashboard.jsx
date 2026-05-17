@@ -21,11 +21,6 @@ const JournalsDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const navigate = useNavigate()
 
-  useEffect(() => {
-    fetchJournals()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   const fetchJournals = async () => {
     try {
       const res = await axios.get(apiUrl('/api/books/journals'))
@@ -36,6 +31,11 @@ const JournalsDashboard = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial catalog load
+    void fetchJournals()
+  }, [])
 
   const toggleDescription = (bookId) => {
     setExpandedDescriptions((prev) => ({

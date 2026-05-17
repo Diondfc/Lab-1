@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const ratingController = require('../controllers/rating.controller');
+const { auth, authorizeStaff } = require('../middlewares/auth');
 
-router.post('/', ratingController.createRating);
-router.get('/', ratingController.getAllRatings);
 router.get('/book/:bookId', ratingController.getRatingsByBookId);
-router.delete('/:id', ratingController.deleteRating);
+router.get('/', auth, authorizeStaff, ratingController.getAllRatings);
+router.post('/', auth, ratingController.createRating);
+router.delete('/:id', auth, ratingController.deleteRating);
 
 module.exports = router;

@@ -9,7 +9,10 @@ function AdminRoute() {
     return <Navigate to="/login" replace />
   }
 
-  if (currentUser.role !== 'Admin') {
+  const isStaff =
+    currentUser.role === 'Admin' || currentUser.role === 'Librarian'
+
+  if (!isStaff) {
     return <Navigate to="/home" replace />
   }
 

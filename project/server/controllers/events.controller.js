@@ -33,6 +33,39 @@ exports.getAllEvents = async (req, res) => {
   }
 };
 
+exports.getEventById = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const [rows] = await db.query(
+      `
+          SELECT
+              e.EventID,
+              e.Title,
+              DATE_FORMAT(e.Date, '%Y-%m-%d') AS Date,
+              TIME_FORMAT(e.Time, '%H:%i') AS Time,
+              el.Name AS Location,
+              e.LocationID
+          FROM Events e
+          LEFT JOIN EventLocations el ON e.LocationID = el.LocationID
+          WHERE e.EventID = ?
+      `,
+      [eventId],
+    );
+
+    if (!rows?.length) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    res.json(rows[0]);
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      error: 'Database operation failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
 exports.createEvent = async (req, res) => {
   try {
       const { Title, Date, Time, LocationID } = req.body;

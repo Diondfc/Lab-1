@@ -69,12 +69,18 @@ const Fines = () => {
   const totalFines = fines.reduce((sum, fine) => sum + fine.fineAmount, 0);
   const unpaidFines = fines.filter(fine => fine.status === 'unpaid').length;
 
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg font-medium text-gray-600">Loading fines…</div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg font-medium text-gray-600">
-          Loading fines...
-        </div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg font-medium text-red-600">{error}</div>
       </div>
     );
   }

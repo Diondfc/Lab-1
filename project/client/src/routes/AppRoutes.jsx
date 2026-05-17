@@ -25,6 +25,9 @@ import ReturnForm from '../components/Loans/ReturnForm.jsx'
 import Fines from '../components/Loans/Fine.jsx'
 import Bookshelf from '../components/Rating/Bookshelf.jsx'
 import AdminRoute from '../components/Auth/AdminRoute.jsx'
+import BookClub from '../pages/BookClub.jsx'
+import EditEvents from '../pages/EditEvents.jsx'
+import RatingDashboard from '../components/Rating/RatingDashboard.jsx'
 
 export default function AppRoutes() {
   return (
@@ -45,6 +48,8 @@ export default function AppRoutes() {
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/events/dashboard" element={<EventsDashboard />} />
+          <Route path="/admin/events/edit/:id" element={<EditEvents />} />
+          <Route path="/admin/ratings" element={<RatingDashboard />} />
           <Route path="/edit/:id" element={<EditBook />} />
           <Route path="/admin/add-book" element={<AddBook />} />
           <Route path="/admin/journals-dashboard" element={<JournalsDashboard />} />
@@ -58,6 +63,7 @@ export default function AppRoutes() {
         <Route path="/process-return" element={<ReturnForm />} />
         <Route path="/fines" element={<Fines />} />
         <Route path="/bookshelf" element={<Bookshelf />} />
+        <Route path="/book-club" element={<BookClub />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
