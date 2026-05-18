@@ -88,7 +88,7 @@ const Fines = () => {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-[#FD7F2F] to-[#233B7D] text-white rounded-2xl p-6 mb-8 shadow-lg">
+      <div className="bg-gradient-to-r from-[#FD7F2F] to-[#233B7D] text-slate-900 rounded-2xl p-6 mb-8 shadow-lg">
         <h1 className="text-3xl font-bold mb-1">Fines & Payments</h1>
         <p className="text-[#FFE4C4] opacity-90">View your outstanding and paid fines</p>
       </div>

@@ -23,7 +23,7 @@ const AddBookForm = ({
     <div className="mb-6 p-6 bg-white rounded-xl max-w-2xl mx-auto border border-[#2E7AD2]/30 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center mb-5">
         <div className="bg-gradient-to-br bg-[#2E7AD2] p-2 rounded-lg mr-3">
-          <FiBook className="text-white text-lg" />
+          <FiBook className="text-slate-900 text-lg" />
         </div>
         <h2 className="text-xl font-bold text-[#2E7AD2] bg-clip-text text-transparent bg-gradient-to-r bg-[#2E7AD2]">
           Add New Book
@@ -110,7 +110,7 @@ const AddBookForm = ({
                     }}
                   >
                     <span 
-                      className="text-white font-serif font-bold px-1 [writing-mode:vertical-rl] [text-orientation:mixed] origin-center whitespace-nowrap overflow-hidden text-ellipsis text-sm leading-tight mb-2"
+                      className="text-slate-900 font-serif font-bold px-1 [writing-mode:vertical-rl] [text-orientation:mixed] origin-center whitespace-nowrap overflow-hidden text-ellipsis text-sm leading-tight mb-2"
                       style={{ 
                         transform: 'rotate(180deg)',
                         fontFamily: "'Georgia', serif",
@@ -132,11 +132,11 @@ const AddBookForm = ({
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full px-6 py-3 rounded-xl text-white bg-[#2E7AD2] hover:bg-[#00509D] transition-all shadow-md hover:shadow-lg disabled:opacity-70 flex items-center justify-center text-base font-medium`}
+          className={`w-full px-6 py-3 rounded-xl text-slate-900 bg-[#2E7AD2] hover:bg-[#00509D] transition-all shadow-md hover:shadow-lg disabled:opacity-70 flex items-center justify-center text-base font-medium`}
         >
           {isLoading ? (
             <span className="flex items-center">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>

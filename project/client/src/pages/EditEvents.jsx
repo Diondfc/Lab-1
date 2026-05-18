@@ -112,7 +112,7 @@ const EditEvents = () => {
     <div className="min-h-screen bg-gray-50 px-4 py-12">
       <div className="mx-auto max-w-4xl">
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md">
-          <div className="bg-gradient-to-r from-emerald-600 to-green-800 p-6 text-white">
+          <div className="bg-gradient-to-r from-indigo-600 to-green-800 p-6 text-slate-900">
             <div className="flex items-center">
               <FiEdit3 className="mr-3 text-2xl" />
               <div>
@@ -147,7 +147,7 @@ const EditEvents = () => {
                 required
                 value={form.Title}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-gray-200 px-4 py-3 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 focus:border-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-700/20"
               />
             </div>
 
@@ -157,7 +157,7 @@ const EditEvents = () => {
                   Date
                 </label>
                 <div className="relative">
-                  <FiCalendar className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-emerald-700" />
+                  <FiCalendar className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-indigo-700" />
                   <input
                     id="Date"
                     name="Date"
@@ -165,7 +165,7 @@ const EditEvents = () => {
                     required
                     value={form.Date}
                     onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-200 py-3 pl-11 pr-4 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                    className="w-full rounded-lg border border-gray-200 py-3 pl-11 pr-4 focus:border-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-700/20"
                   />
                 </div>
               </div>
@@ -181,14 +181,14 @@ const EditEvents = () => {
                   required
                   value={form.Time}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-200 px-4 py-3 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                  className="w-full rounded-lg border border-gray-200 px-4 py-3 focus:border-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-700/20"
                 />
               </div>
             </div>
 
             <div>
               <label htmlFor="LocationID" className="mb-2 flex items-center gap-2 font-medium text-gray-700">
-                <FiMapPin className="text-emerald-700" />
+                <FiMapPin className="text-indigo-700" />
                 Location
               </label>
               <select
@@ -197,7 +197,7 @@ const EditEvents = () => {
                 required
                 value={form.LocationID}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-gray-200 px-4 py-3 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 focus:border-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-700/20"
               >
                 <option value="">Select location…</option>
                 {locations.map((loc) => (
@@ -212,7 +212,7 @@ const EditEvents = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center justify-center rounded-lg bg-green-800 px-6 py-3 font-semibold text-white transition hover:bg-green-900 disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-lg bg-green-800 px-6 py-3 font-semibold text-slate-900 transition hover:bg-green-900 disabled:opacity-50"
               >
                 <FiCheck className="mr-2" />
                 {saving ? 'Saving…' : 'Save changes'}

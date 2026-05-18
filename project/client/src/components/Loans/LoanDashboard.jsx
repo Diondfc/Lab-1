@@ -133,12 +133,12 @@ const LoansDashboard = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-zinc-50">
-        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md text-center">
+      <div className="flex items-center justify-center min-h-screen bg-zinc-50 dark:bg-slate-900 transition-colors duration-300">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl max-w-md text-center">
           <FiAlertTriangle className="text-5xl text-rose-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-zinc-900 mb-2">Failed to load data</h2>
-          <p className="text-zinc-500">{error}</p>
-          <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-zinc-900 text-white rounded-xl hover:bg-zinc-800 transition">
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Failed to load data</h2>
+          <p className="text-slate-400">{error}</p>
+          <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-white dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 transition">
             Retry
           </button>
         </div>
@@ -157,7 +157,7 @@ const LoansDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 pt-24 pb-12">
+    <div className="min-h-screen bg-zinc-50 dark:bg-slate-900 pt-24 pb-12 transition-colors duration-300">
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Header Section */}
         <motion.div 
@@ -168,30 +168,30 @@ const LoansDashboard = () => {
           <div>
             <button
               onClick={() => navigate('/admin')}
-              className="flex items-center text-zinc-500 hover:text-zinc-900 transition mb-4 text-sm font-medium"
+              className="flex items-center text-slate-400 dark:text-slate-500 hover:text-zinc-900 dark:hover:text-white transition mb-4 text-sm font-medium"
             >
               <FiArrowLeft className="mr-2" /> Back to Admin Panel
             </button>
-            <h1 className="text-4xl font-bold text-zinc-900 flex items-center gap-3 tracking-tight">
-              <div className="bg-emerald-100/50 p-2.5 rounded-xl border border-emerald-200">
-                <LuBookUp2 className="text-emerald-600" />
+            <h1 className="text-4xl font-bold text-zinc-900 dark:text-white flex items-center gap-3 tracking-tight">
+              <div className="bg-indigo-100/50 dark:bg-indigo-900/30 p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                <LuBookUp2 className="text-indigo-600 dark:text-indigo-400" />
               </div>
               Loan Management
             </h1>
-            <p className="text-zinc-500 mt-2 text-lg">
+            <p className="text-slate-400 mt-2 text-lg">
               Manage and track book borrowing across the library.
             </p>
           </div>
           
           <div className="flex gap-3">
             <button 
-              className="flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all font-medium"
+              className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 text-zinc-700 dark:text-slate-300 px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500 transition-all font-medium"
               onClick={() => navigate('/process-return')}
             >
-              <FiCheckCircle className="text-emerald-500" /> Return Book
+              <FiCheckCircle className="text-indigo-500" /> Return Book
             </button>
             <button 
-              className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-600/30 transition-all font-medium"
+              className="flex items-center gap-2 bg-indigo-600 dark:bg-indigo-500 text-slate-900 dark:text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 dark:hover:bg-indigo-400 transition-all font-medium"
               onClick={() => navigate('/admin/add-loan')}
             >
               <FiPlus /> New Loan
@@ -218,8 +218,8 @@ const LoansDashboard = () => {
               icon: <FiClock className="text-xl" />, 
               value: activeLoans, 
               label: "Active", 
-              bgColor: "bg-emerald-100",
-              iconColor: "text-emerald-600",
+              bgColor: "bg-indigo-100",
+              iconColor: "text-indigo-600",
             },
             { 
               icon: <FiAlertTriangle className="text-xl" />, 
@@ -236,14 +236,14 @@ const LoansDashboard = () => {
               iconColor: "text-amber-600",
             }
           ].map((stat, index) => (
-            <motion.div variants={fadeUp} key={index} className="bg-white p-6 rounded-3xl shadow-sm shadow-zinc-200/50 border border-zinc-100 hover:shadow-lg transition-all">
+            <motion.div variants={fadeUp} key={index} className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm shadow-zinc-200/50 border border-zinc-100 dark:border-slate-700 hover:shadow-lg transition-all">
               <div className="flex items-center gap-4">
                 <div className={cn("p-3.5 rounded-2xl", stat.bgColor, stat.iconColor)}>
                   {stat.icon}
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-zinc-900">{stat.value}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">{stat.label}</p>
+                  <p className="text-2xl font-bold text-zinc-900 dark:text-white">{stat.value}</p>
                 </div>
               </div>
             </motion.div>
@@ -255,31 +255,31 @@ const LoansDashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-3xl shadow-xl shadow-zinc-200/50 border border-zinc-100 overflow-hidden"
+          className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-zinc-200/50 border border-zinc-100 dark:border-slate-700 overflow-hidden transition-colors duration-300"
         >
-          <div className="p-6 md:p-8 border-b border-zinc-100 bg-zinc-50/50">
+          <div className="p-6 md:p-8 border-b border-zinc-100 dark:border-slate-700 bg-zinc-50/50 dark:bg-slate-900/50">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h2 className="text-xl font-bold text-zinc-900">Loan Records</h2>
-                <p className="text-zinc-500 text-sm">Detailed overview of all active and past loans.</p>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Loan Records</h2>
+                <p className="text-slate-400 text-sm">Detailed overview of all active and past loans.</p>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <div className="relative">
-                  <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     type="text"
                     placeholder="Search by book or user..."
-                    className="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all"
+                    className="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-zinc-200 dark:border-slate-700 text-zinc-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all"
                     value={filters.searchQuery}
                     onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
                   />
                 </div>
                 
                 <div className="relative">
-                  <FiFilter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 z-10" />
+                  <FiFilter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 z-10" />
                   <select
-                    className="w-full sm:w-48 appearance-none pl-10 pr-10 py-2.5 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all cursor-pointer font-medium text-zinc-700"
+                    className="w-full sm:w-48 appearance-none pl-10 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-zinc-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all cursor-pointer font-medium text-zinc-700 dark:text-slate-300"
                     value={filters.status}
                     onChange={(e) => setFilters({...filters, status: e.target.value})}
                   >
@@ -288,7 +288,7 @@ const LoansDashboard = () => {
                     <option value="overdue">Overdue</option>
                     <option value="returned">Returned</option>
                   </select>
-                  <FiChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                  <FiChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -297,22 +297,22 @@ const LoansDashboard = () => {
           <div className="overflow-x-auto">
             {loading ? (
               <div className="py-20 text-center flex flex-col items-center">
-                <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
-                <p className="text-zinc-500 font-medium">Loading loans...</p>
+                <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-400 font-medium">Loading loans...</p>
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-white border-b border-zinc-100">
-                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Book Details</th>
-                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Timeline</th>
-                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider">Fine</th>
-                    <th className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-wider text-right">Actions</th>
+                  <tr className="bg-white dark:bg-slate-800 border-b border-zinc-100 dark:border-slate-700">
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Book Details</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Timeline</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fine</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-50 bg-white">
+                <tbody className="divide-y divide-zinc-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
                   <AnimatePresence>
                     {filteredLoans.length > 0 ? (
                       filteredLoans.map((loan) => {
@@ -327,28 +327,28 @@ const LoansDashboard = () => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             key={loan.LoanID} 
-                            className="hover:bg-zinc-50/80 transition-colors group"
+                            className="hover:bg-zinc-50/80 dark:hover:bg-slate-700/50 transition-colors group"
                           >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 shrink-0">
-                                  <LuBookUp2 className="text-emerald-600" />
+                                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100 shrink-0">
+                                  <LuBookUp2 className="text-indigo-600" />
                                 </div>
                                 <div>
-                                  <p className="text-sm font-bold text-zinc-900 max-w-[200px] truncate">{loan.BookTitle || 'Unknown Book'}</p>
-                                  <p className="text-xs text-zinc-400">ID: {loan.BookID}</p>
+                                  <p className="text-sm font-bold text-zinc-900 dark:text-white max-w-[200px] truncate">{loan.BookTitle || 'Unknown Book'}</p>
+                                  <p className="text-xs text-slate-500">ID: {loan.BookID}</p>
                                 </div>
                               </div>
                             </td>
                             
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center shrink-0">
-                                  <FiUser className="text-zinc-500 text-sm" />
+                                <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                                  <FiUser className="text-slate-400 text-sm" />
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium text-zinc-900">{loan.UserName}</p>
-                                  <p className="text-xs text-zinc-400">{loan.UserID}</p>
+                                  <p className="text-sm font-medium text-zinc-900 dark:text-white">{loan.UserName}</p>
+                                  <p className="text-xs text-slate-500">{loan.UserID}</p>
                                 </div>
                               </div>
                             </td>
@@ -356,13 +356,13 @@ const LoansDashboard = () => {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="space-y-1">
                                 <div className="flex items-center text-sm">
-                                  <FiCalendar className="mr-2 text-zinc-400" />
-                                  <span className="text-zinc-700">Due: <span className="font-medium text-zinc-900">{formatLoanDate(loan.DueDate)}</span></span>
+                                  <FiCalendar className="mr-2 text-slate-500" />
+                                  <span className="text-zinc-700 dark:text-slate-300">Due: <span className="font-medium text-zinc-900 dark:text-white">{formatLoanDate(loan.DueDate)}</span></span>
                                 </div>
                                 {loan.status === 'returned' && (
                                   <div className="flex items-center text-sm">
-                                    <FiCheckCircle className="mr-2 text-emerald-500" />
-                                    <span className="text-zinc-500">In: {formatLoanDate(loan.ReturnDate)}</span>
+                                    <FiCheckCircle className="mr-2 text-indigo-500" />
+                                    <span className="text-slate-400">In: {formatLoanDate(loan.ReturnDate)}</span>
                                   </div>
                                 )}
                               </div>
@@ -371,7 +371,7 @@ const LoansDashboard = () => {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={cn(
                                 "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold",
-                                loan.status === 'returned' ? 'bg-emerald-100 text-emerald-700' : 
+                                loan.status === 'returned' ? 'bg-indigo-100 text-indigo-700' : 
                                 loan.status === 'overdue' ? 'bg-rose-100 text-rose-700' : 
                                 'bg-blue-100 text-blue-700'
                               )}>
@@ -392,7 +392,7 @@ const LoansDashboard = () => {
                                   ${(0.50 * daysLate).toFixed(2)}
                                 </span>
                               ) : (
-                                <span className="text-zinc-300">-</span>
+                                <span className="text-slate-600">-</span>
                               )}
                             </td>
                             
@@ -401,7 +401,7 @@ const LoansDashboard = () => {
                                 {loan.status !== 'returned' && (
                                   <button
                                     onClick={() => handleReturnNavigation(loan)}
-                                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
                                     title="Process Return"
                                   >
                                     <FiCheckCircle className="w-5 h-5" />
@@ -423,14 +423,14 @@ const LoansDashboard = () => {
                       <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <td colSpan="6" className="px-6 py-20 text-center">
                           <div className="flex flex-col items-center justify-center">
-                            <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
-                              <LuBookUp2 className="w-8 h-8 text-zinc-300" />
+                            <div className="w-16 h-16 bg-zinc-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                              <LuBookUp2 className="w-8 h-8 text-slate-600" />
                             </div>
-                            <p className="text-lg font-bold text-zinc-900 mb-1">No loans found</p>
-                            <p className="text-sm text-zinc-500 mb-4">There are no records matching your criteria.</p>
+                            <p className="text-lg font-bold text-zinc-900 dark:text-white mb-1">No loans found</p>
+                            <p className="text-sm text-slate-400 mb-4">There are no records matching your criteria.</p>
                             <button 
                               onClick={() => setFilters({ status: 'all', searchQuery: '' })}
-                              className="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-xl hover:bg-zinc-200 transition font-medium text-sm"
+                              className="px-4 py-2 bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-slate-300 rounded-xl hover:bg-zinc-200 dark:hover:bg-slate-600 transition font-medium text-sm"
                             >
                               Clear Filters
                             </button>

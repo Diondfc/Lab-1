@@ -201,7 +201,7 @@ const Bookshelf = () => {
                   {/* Prapavija e raftit (wood texture ose simple color) */}
                   <div className="flex flex-wrap items-end gap-[2px] pb-5 border-b-[16px] border-[#8B5A2B] rounded-sm relative px-4 pt-16 bg-[#F5DEB3]/20">
                     {/* Shadow effect on the shelf */}
-                    <div className="absolute bottom-0 left-0 right-0 h-4 bg-black/10 -mb-4 blur-sm rounded-full"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-4 bg-white/10 -mb-4 blur-sm rounded-full"></div>
                     
                     {books.map((book) => {
                       const bookId = book._id || book.id;
@@ -244,10 +244,10 @@ const Bookshelf = () => {
                             <div className="absolute top-3 w-full h-[2px] bg-white/20" />
                             <div className="absolute top-4 w-full h-[1px] bg-white/10" />
                             <div className="absolute bottom-5 w-full h-[3px] bg-white/20" />
-                            <div className="absolute bottom-7 w-full h-[1px] bg-black/10" />
+                            <div className="absolute bottom-7 w-full h-[1px] bg-white/10" />
                             
                             <span 
-                              className="text-white font-serif font-bold text-sm px-1 [writing-mode:vertical-rl] [text-orientation:mixed] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center"
+                              className="text-slate-900 font-serif font-bold text-sm px-1 [writing-mode:vertical-rl] [text-orientation:mixed] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center"
                               style={{ 
                                 transform: 'rotate(180deg)',
                                 textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
@@ -327,7 +327,7 @@ const Bookshelf = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 text-sm font-medium text-white bg-[#2E7AD2] rounded-xl hover:bg-[#00509D] flex items-center gap-2 transition-colors shadow-md"
+                  className="px-5 py-2.5 text-sm font-medium text-slate-900 bg-[#2E7AD2] rounded-xl hover:bg-[#00509D] flex items-center gap-2 transition-colors shadow-md"
                 >
                   <FiCheck size={18} />
                   Save Changes

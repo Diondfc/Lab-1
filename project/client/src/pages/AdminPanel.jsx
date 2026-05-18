@@ -43,7 +43,7 @@ const AdminPanel = () => {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-50 pt-24 pb-12">
+        <div className="min-h-screen bg-zinc-50 dark:bg-slate-900 pt-24 pb-12 transition-colors duration-300">
             <div className="container mx-auto px-4 max-w-7xl">
                 
                 {/* Header */}
@@ -53,20 +53,20 @@ const AdminPanel = () => {
                   className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10"
                 >
                   <div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100/50 border border-emerald-200 mb-4">
-                      <FiSettings className="text-emerald-700" />
-                      <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">System Control</span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 mb-4">
+                      <FiSettings className="text-indigo-700 dark:text-indigo-400" />
+                      <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">System Control</span>
                     </div>
-                    <h1 className="text-4xl font-bold text-zinc-900 tracking-tight">
+                    <h1 className="text-4xl font-bold text-zinc-900 dark:text-white tracking-tight">
                       Admin Dashboard
                     </h1>
-                    <p className="text-zinc-500 mt-2 text-lg">
+                    <p className="text-slate-400 mt-2 text-lg">
                       Overview of library operations and system analytics.
                     </p>
                   </div>
                   
                   <button 
-                    className="flex items-center gap-2 bg-zinc-900 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-zinc-900/20 hover:bg-zinc-800 transition-all font-medium"
+                    className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-5 py-2.5 rounded-xl shadow-lg shadow-zinc-900/20 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all font-medium"
                     onClick={() => navigate('/admin/add-book')}
                   >
                     <FiPlusCircle /> Add New Book
@@ -81,23 +81,23 @@ const AdminPanel = () => {
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"
                 >
                   {[
-                    { title: "Total Books", value: "3,240", icon: <FiBook />, color: "emerald", trend: "+12%" },
+                    { title: "Total Books", value: "3,240", icon: <FiBook />, color: "indigo", trend: "+12%" },
                     { title: "Active Loans", value: "184", icon: <LuBookUp2 />, color: "blue", trend: "+5%" },
                     { title: "Active Users", value: "892", icon: <FiUsers />, color: "amber", trend: "+18%" },
                     { title: "Overdue", value: "24", icon: <FiClock />, color: "rose", trend: "-2%" }
                   ].map((stat, i) => (
-                    <motion.div variants={fadeUp} key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-zinc-100">
+                    <motion.div variants={fadeUp} key={i} className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-zinc-100 dark:border-slate-700 transition-colors duration-300">
                       <div className="flex justify-between items-start mb-4">
-                        <div className={`p-3 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600`}>
+                        <div className={`p-3 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-900/30 text-${stat.color}-600 dark:text-${stat.color}-400`}>
                           {React.cloneElement(stat.icon, { className: "w-6 h-6" })}
                         </div>
-                        <span className={`flex items-center gap-1 text-sm font-bold ${stat.trend.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        <span className={`flex items-center gap-1 text-sm font-bold ${stat.trend.startsWith('+') ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {stat.trend.startsWith('+') ? <FiTrendingUp /> : <FiTrendingUp className="rotate-180" />}
                           {stat.trend}
                         </span>
                       </div>
-                      <h3 className="text-3xl font-bold text-zinc-900 mb-1">{stat.value}</h3>
-                      <p className="text-zinc-500 font-medium">{stat.title}</p>
+                      <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stat.value}</h3>
+                      <p className="text-slate-400 font-medium">{stat.title}</p>
                     </motion.div>
                   ))}
                 </motion.div>
@@ -110,11 +110,11 @@ const AdminPanel = () => {
                   className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10"
                 >
                   {/* Activity Chart */}
-                  <motion.div variants={fadeUp} className="lg:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100">
+                  <motion.div variants={fadeUp} className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 dark:border-slate-700 transition-colors duration-300">
                     <div className="flex justify-between items-center mb-6">
                       <div>
-                        <h3 className="text-xl font-bold text-zinc-900">Loan Activity</h3>
-                        <p className="text-zinc-500 text-sm">Daily borrowing trends over the last week</p>
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Loan Activity</h3>
+                        <p className="text-slate-400 text-sm">Daily borrowing trends over the last week</p>
                       </div>
                     </div>
                     <div className="h-[300px] w-full">
@@ -139,10 +139,10 @@ const AdminPanel = () => {
                   </motion.div>
 
                   {/* Categories Chart */}
-                  <motion.div variants={fadeUp} className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100">
+                  <motion.div variants={fadeUp} className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 dark:border-slate-700 transition-colors duration-300">
                     <div className="mb-6">
-                      <h3 className="text-xl font-bold text-zinc-900">Collection Stats</h3>
-                      <p className="text-zinc-500 text-sm">Books by category</p>
+                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Collection Stats</h3>
+                      <p className="text-slate-400 text-sm">Books by category</p>
                     </div>
                     <div className="h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -165,13 +165,13 @@ const AdminPanel = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100"
+                    className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 dark:border-slate-700 transition-colors duration-300"
                   >
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                      <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
                         <FiSettings className="w-5 h-5" />
                       </div>
-                      <h3 className="text-xl font-bold text-zinc-900">System Management</h3>
+                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white">System Management</h3>
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -186,13 +186,13 @@ const AdminPanel = () => {
                         <button
                           key={i}
                           onClick={() => navigate(item.path)}
-                          className="flex flex-col items-start p-4 bg-zinc-50 hover:bg-emerald-50 rounded-2xl border border-zinc-100 hover:border-emerald-200 transition-all text-left group"
+                          className="flex flex-col items-start p-4 bg-zinc-50 dark:bg-slate-900/50 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-2xl border border-zinc-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500 transition-all text-left group"
                         >
-                          <div className="text-zinc-600 group-hover:text-emerald-600 mb-2">
+                          <div className="text-zinc-600 dark:text-zinc-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 mb-2">
                             {React.cloneElement(item.icon, { className: "w-6 h-6" })}
                           </div>
-                          <span className="font-bold text-zinc-900 mb-1">{item.title}</span>
-                          <span className="text-xs text-zinc-500">{item.desc}</span>
+                          <span className="font-bold text-zinc-900 dark:text-white mb-1">{item.title}</span>
+                          <span className="text-xs text-slate-400">{item.desc}</span>
                         </button>
                       ))}
                     </div>
@@ -203,13 +203,13 @@ const AdminPanel = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100"
+                    className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 dark:border-slate-700 transition-colors duration-300"
                   >
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+                      <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-xl">
                         <FiMessageSquare className="w-5 h-5" />
                       </div>
-                      <h3 className="text-xl font-bold text-zinc-900">Community Moderation</h3>
+                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Community Moderation</h3>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -221,21 +221,21 @@ const AdminPanel = () => {
                         <button
                           key={i}
                           onClick={() => navigate(item.path)}
-                          className="flex items-center p-4 bg-zinc-50 hover:bg-white hover:shadow-md rounded-2xl border border-zinc-100 transition-all text-left group"
+                          className="flex items-center p-4 bg-zinc-50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-700 hover:shadow-md rounded-2xl border border-zinc-100 dark:border-slate-700 transition-all text-left group"
                         >
                           <div className={`w-3 h-3 rounded-full bg-${item.color}-500 mr-3`} />
-                          <span className="font-bold text-zinc-900 group-hover:text-emerald-600 transition-colors">{item.title}</span>
+                          <span className="font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{item.title}</span>
                         </button>
                       ))}
                     </div>
 
-                    <div className="mt-8 p-5 bg-zinc-900 rounded-2xl text-white relative overflow-hidden">
-                      <div className="absolute -right-10 -top-10 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl" />
+                    <div className="mt-8 p-5 bg-white dark:bg-slate-800/50 rounded-2xl text-slate-900 dark:text-white relative overflow-hidden border border-zinc-100 dark:border-slate-700 transition-colors duration-300">
+                      <div className="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl" />
                       <div className="relative z-10">
                         <h4 className="font-bold mb-1">System Status</h4>
-                        <p className="text-sm text-zinc-400 mb-4">All services are operating normally.</p>
-                        <div className="flex items-center gap-2 text-sm text-emerald-400 font-medium">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">All services are operating normally.</p>
+                        <div className="flex items-center gap-2 text-sm text-indigo-400 font-medium">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                           Connected to Database
                         </div>
                       </div>

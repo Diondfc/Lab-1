@@ -160,17 +160,17 @@ const AddLoanForm = ({ onSave }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         <button 
           onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
-          className="flex items-center text-[#036280] hover:text-[#012F4A] mb-6"
+          className="flex items-center text-[#036280] dark:text-indigo-400 hover:text-[#012F4A] dark:hover:text-indigo-300 mb-6"
         >
           <FiArrowLeft className="mr-2" /> Back to {currentUser?.role === 'Admin' ? 'Loans Dashboard' : 'Library'}
         </button>
 
-        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-          <div className="bg-gradient-to-r from-[#036280] to-[#233B7D] p-6 text-white">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-slate-700 transition-colors duration-300">
+          <div className="bg-gradient-to-r from-[#036280] to-[#233B7D] p-6 text-slate-900 dark:text-white">
             <div className="flex items-center">
               <FiBook className="text-2xl mr-3" />
               <h2 className="text-2xl font-semibold">Add New Loan</h2>
@@ -219,11 +219,11 @@ const AddLoanForm = ({ onSave }) => {
               {/* Left Column - Book Information */}
               <div className="space-y-5">
                 <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">Book ID *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Book ID *</label>
                   <input
                     type="text"
                     name="bookId"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
                     value={formData.bookId}
                     onChange={handleChange}
                     required
@@ -232,13 +232,13 @@ const AddLoanForm = ({ onSave }) => {
                 </div>
                 
                 <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">Book Title *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Book Title *</label>
                   <input
                     type="text"
                     name="bookTitle"
                     value={formData.bookTitle}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent bg-gray-50"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent bg-gray-50 dark:bg-slate-900 dark:text-white"
                     required
                     readOnly
                   />
@@ -248,13 +248,13 @@ const AddLoanForm = ({ onSave }) => {
               {/* Right Column - User Information */}
               <div className="space-y-5">
                 <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">User Email *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">User Email *</label>
                   <input
                     type="email"
                     name="userEmail"
                     value={formData.userEmail}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent ${currentUser?.role !== 'Admin' ? 'bg-gray-50' : ''}`}
+                    className={`w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent dark:text-white ${currentUser?.role !== 'Admin' ? 'bg-gray-50 dark:bg-slate-900' : 'dark:bg-slate-900'}`}
                     required
                     readOnly={currentUser?.role !== 'Admin'}
                   />
@@ -283,7 +283,7 @@ const AddLoanForm = ({ onSave }) => {
               <div className="space-y-5 md:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">Start Date *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Start Date *</label>
                     <div className="relative">
                       <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
@@ -291,14 +291,14 @@ const AddLoanForm = ({ onSave }) => {
                         name="startDate"
                         value={formData.startDate}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
                         required
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">Due Date *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Due Date *</label>
                     <div className="relative">
                       <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
@@ -306,7 +306,7 @@ const AddLoanForm = ({ onSave }) => {
                         name="dueDate"
                         value={formData.dueDate}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
                         required
                       />
                     </div>
@@ -320,14 +320,14 @@ const AddLoanForm = ({ onSave }) => {
                   <button
                     type="button"
                     onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
-                    className="px-6 py-2.5 border border-gray-300 rounded-lg text-[#012F4A] hover:bg-gray-50 transition"
+                    className="px-6 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg text-[#012F4A] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                     disabled={isSubmitting}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-gradient-to-r from-[#036280] to-[#233B7D] hover:from-[#012F4A] hover:to-[#122B5C] text-white font-medium rounded-lg shadow-md transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="px-6 py-2.5 bg-gradient-to-r from-[#036280] to-[#233B7D] hover:from-[#012F4A] hover:to-[#122B5C] text-slate-900 dark:text-white font-medium rounded-lg shadow-md transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                     disabled={isSubmitting || !formData.userId}
                   >
                     {isSubmitting ? (

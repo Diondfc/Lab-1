@@ -5,7 +5,7 @@ function LoginPage() {
   const { setUser } = useOutletContext()
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-gray-200 px-4 py-10 sm:py-12">
+    <div className="flex flex-1 items-center justify-center bg-gray-200 dark:bg-slate-900 px-4 py-10 sm:py-12 transition-colors duration-300">
       <LoginForm setUser={setUser} />
     </div>
   )

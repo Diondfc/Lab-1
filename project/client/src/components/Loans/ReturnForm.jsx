@@ -91,7 +91,7 @@ const ReturnForm = () => {
         </button>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-          <div className="bg-gradient-to-r from-[#036280] to-[#233B7D] p-6 text-white">
+          <div className="bg-gradient-to-r from-[#036280] to-[#233B7D] p-6 text-slate-900">
             <div className="flex items-center">
               <FiCheckCircle className="text-2xl mr-3" />
               <h2 className="text-2xl font-semibold">Process Book Return</h2>
@@ -265,7 +265,7 @@ const ReturnForm = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-gradient-to-r from-[#036280] to-[#233B7D] hover:from-[#012F4A] hover:to-[#122B5C] text-white font-medium rounded-lg shadow-md transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="px-6 py-2.5 bg-gradient-to-r from-[#036280] to-[#233B7D] hover:from-[#012F4A] hover:to-[#122B5C] text-slate-900 font-medium rounded-lg shadow-md transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (

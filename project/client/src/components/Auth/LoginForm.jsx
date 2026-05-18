@@ -5,7 +5,7 @@ import { apiClient } from '../../lib/api.js'
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const inputNormal =
-  'border-slate-300 focus:border-green-600 focus:ring-2 focus:ring-green-100'
+  'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-600 dark:focus:border-green-500 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/30'
 
 function LoginForm({ setUser }) {
   const [formData, setFormData] = useState({ email: '', password: '' })
@@ -80,27 +80,27 @@ function LoginForm({ setUser }) {
     <div className="w-full max-w-md">
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-8 shadow-lg md:p-10"
+        className="space-y-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-lg md:p-10 transition-colors duration-300"
       >
         <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-green-800">Sign In</h2>
-          <p className="mt-2 text-sm text-slate-600">Welcome back to the Library Management System</p>
+          <h2 className="text-3xl font-bold tracking-tight text-green-800 dark:text-green-500">Sign In</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Welcome back to the Library Management System</p>
         </div>
 
         {successMessage && (
-          <div className="rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <div className="rounded-xl border border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/30 px-4 py-3 text-sm text-green-800 dark:text-green-300">
             {successMessage}
           </div>
         )}
 
         {errors.api && (
-          <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">
             {errors.api}
           </div>
         )}
 
         <div>
-          <label htmlFor="login-email" className="mb-2 block font-semibold text-slate-700">
+          <label htmlFor="login-email" className="mb-2 block font-semibold text-slate-700 dark:text-slate-300">
             Email
           </label>
           <input
@@ -111,14 +111,14 @@ function LoginForm({ setUser }) {
             onChange={handleChange}
             autoComplete="email"
             placeholder="you@example.com"
-            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-900/30 dark:bg-slate-700 dark:text-white' : inputNormal
               }`}
           />
           {errors.email && <p className="mt-2 text-sm text-red-500">{errors.email}</p>}
         </div>
 
         <div>
-          <label htmlFor="login-password" className="mb-2 block font-semibold text-slate-700">
+          <label htmlFor="login-password" className="mb-2 block font-semibold text-slate-700 dark:text-slate-300">
             Password
           </label>
           <input
@@ -129,7 +129,7 @@ function LoginForm({ setUser }) {
             onChange={handleChange}
             autoComplete="current-password"
             placeholder="Your password"
-            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : inputNormal
+            className={`w-full rounded-xl border px-4 py-3 outline-none transition ${errors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-900/30 dark:bg-slate-700 dark:text-white' : inputNormal
               }`}
           />
           {errors.password && <p className="mt-2 text-sm text-red-500">{errors.password}</p>}
@@ -138,15 +138,15 @@ function LoginForm({ setUser }) {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full rounded-xl bg-green-700 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-800 ${isLoading ? 'cursor-not-allowed opacity-50' : ''
+          className={`w-full rounded-xl bg-green-700 dark:bg-green-600 py-3 font-semibold text-slate-900 dark:text-white shadow-md transition duration-200 hover:bg-green-800 dark:hover:bg-green-500 ${isLoading ? 'cursor-not-allowed opacity-50' : ''
             }`}
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
         </button>
 
-        <p className="text-center text-sm text-slate-600">
+        <p className="text-center text-sm text-slate-600 dark:text-slate-400">
           Need an account?{' '}
-          <Link to="/" className="font-semibold text-green-700 hover:underline">
+          <Link to="/" className="font-semibold text-green-700 dark:text-green-400 hover:underline">
             Register here
           </Link>
         </p>

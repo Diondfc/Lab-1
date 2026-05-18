@@ -46,15 +46,15 @@ async function login(req, res) {
     }
 
     // Check password
-    const isMatch = await bcrypt.compare(password, user.Password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const role = user.Role || 'Student';
+    const role = user.role || 'Student';
 
     const token = jwt.sign(
-      { id: user.UserID, email: user.Email, role },
+      { id: user.id, email: user.email, role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -63,9 +63,9 @@ async function login(req, res) {
       message: 'Login successful',
       token,
       user: {
-        id: user.UserID,
-        full_name: user.Name,
-        email: user.Email,
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
         role,
       },
     });

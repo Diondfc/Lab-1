@@ -112,7 +112,7 @@ const LoanHistory = () => {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-[#3FA34D] to-[#036280] text-white rounded-2xl p-6 mb-8 shadow-lg">
+      <div className="bg-gradient-to-r from-[#3FA34D] to-[#036280] text-slate-900 rounded-2xl p-6 mb-8 shadow-lg">
         <h1 className="text-3xl font-bold mb-1">Your Reading History</h1>
         <p className="text-blue-100 opacity-90">Track all your borrowed books</p>
       </div>

@@ -21,9 +21,9 @@ export default function MainLayout() {
   }, [])
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Navbar user={user} setUser={setUser} />
-      <main className="flex w-full flex-1 flex-col">
+      <main className="flex w-full flex-1 flex-col pt-20">
         <Outlet context={{ user, setUser }} />
       </main>
       <Footer />

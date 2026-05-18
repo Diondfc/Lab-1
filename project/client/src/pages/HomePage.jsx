@@ -23,9 +23,9 @@ const Home = () => {
   const userName = user?.full_name || user?.name;
 
   const bookCategories = [
-    { id: 'journals', name: 'Journals', icon: <FiBook className="text-emerald-400" />, count: 1245 },
-    { id: 'academic', name: 'Academic', icon: <FiBook className="text-emerald-400" />, count: 876 },
-    { id: 'novels', name: 'Novels', icon: <FiBook className="text-emerald-400" />, count: 532 }
+    { id: 'journals', name: 'Journals', icon: <FiBook className="text-indigo-400" />, count: 1245 },
+    { id: 'academic', name: 'Academic', icon: <FiBook className="text-indigo-400" />, count: 876 },
+    { id: 'novels', name: 'Novels', icon: <FiBook className="text-indigo-400" />, count: 532 }
   ];
 
   const featuredBooks = [
@@ -35,10 +35,10 @@ const Home = () => {
   ];
 
   const libraryStats = [
-    { value: "50,000+", label: "Books Collection", icon: <FiBook className="text-3xl text-emerald-400" /> },
-    { value: "24/7", label: "Digital Access", icon: <FiClock className="text-3xl text-emerald-400" /> },
-    { value: "100+", label: "Study Spaces", icon: <FiUsers className="text-3xl text-emerald-400" /> },
-    { value: "Free", label: "WiFi Access", icon: <FiAward className="text-3xl text-emerald-400" /> }
+    { value: "50,000+", label: "Books Collection", icon: <FiBook className="text-3xl text-indigo-400" /> },
+    { value: "24/7", label: "Digital Access", icon: <FiClock className="text-3xl text-indigo-400" /> },
+    { value: "100+", label: "Study Spaces", icon: <FiUsers className="text-3xl text-indigo-400" /> },
+    { value: "Free", label: "WiFi Access", icon: <FiAward className="text-3xl text-indigo-400" /> }
   ];
 
   useEffect(() => {
@@ -103,12 +103,12 @@ const Home = () => {
   };
 
   return (
-    <div className="font-poppins bg-zinc-50 min-h-screen pb-20 pt-20">
+    <div className="font-poppins bg-zinc-50 dark:bg-slate-900 min-h-screen pb-20 pt-20 transition-colors duration-300">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-zinc-950 text-white rounded-b-[3rem] shadow-2xl pb-10">
+      <div className="relative overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-b-[3rem] shadow-2xl pb-10 transition-colors duration-300">
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-zinc-900 to-emerald-950/30" />
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-indigo-950/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900/40 transition-colors duration-300" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
         </div>
         
         <div className="container mx-auto px-4 py-24 md:py-32 relative z-10 flex flex-col md:flex-row items-center">
@@ -118,33 +118,33 @@ const Home = () => {
             variants={staggerContainer}
             className="md:w-2/3 mx-auto text-center"
           >
-            <motion.div variants={fadeIn} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-zinc-800 mb-8 backdrop-blur-md">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-medium text-zinc-300 uppercase tracking-wider">Welcome to the future of learning</span>
+            <motion.div variants={fadeIn} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 mb-8 backdrop-blur-md transition-colors duration-300">
+              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Welcome to the future of learning</span>
             </motion.div>
             
             <motion.h1 variants={fadeIn} className="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
               {userName ? `Hello, ${userName}.` : 'Discover.'} <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-teal-300">
                 Expand your mind.
               </span>
             </motion.h1>
             
-            <motion.p variants={fadeIn} className="text-xl text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <motion.p variants={fadeIn} className="text-xl text-slate-500 dark:text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed transition-colors duration-300">
               Explore our premium collection of academic resources, journals, and literature tailored for the UBT community.
             </motion.p>
 
             <motion.div variants={fadeIn} className="relative max-w-2xl mx-auto">
               <form onSubmit={handleSearch}>
-                <div className="flex bg-zinc-900/80 backdrop-blur-md border border-zinc-700/50 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.4)] transition-all focus-within:border-emerald-500/50 focus-within:shadow-[0_8px_30px_rgba(16,185,129,0.15)]">
+                <div className="flex bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.4)] transition-all focus-within:border-indigo-500/50 focus-within:shadow-[0_8px_30px_rgba(16,185,129,0.15)]">
                   <div className="pl-6 flex items-center justify-center">
-                    <FiSearch className="text-zinc-400 h-5 w-5" />
+                    <FiSearch className="text-slate-500 dark:text-slate-400 h-5 w-5" />
                   </div>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-grow h-16 px-4 bg-transparent focus:outline-none text-white placeholder-zinc-500"
+                    className="flex-grow h-16 px-4 bg-transparent focus:outline-none text-slate-900 dark:text-slate-100 placeholder-zinc-500 dark:placeholder-zinc-400"
                     placeholder="Find books, authors, or ISBN..."
                     onFocus={() => setSearchOpen(true)}
                     onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
@@ -152,7 +152,7 @@ const Home = () => {
                   <div className="p-2">
                     <button
                       type="submit"
-                      className="h-full bg-emerald-600 hover:bg-emerald-500 text-white px-8 rounded-xl font-medium transition-all shadow-lg shadow-emerald-900/20"
+                      className="h-full bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white px-8 rounded-xl font-medium transition-all shadow-lg shadow-indigo-900/20"
                     >
                       Search
                     </button>
@@ -161,7 +161,7 @@ const Home = () => {
               </form>
 
               {searchOpen && (
-                <div className="absolute top-full left-0 right-0 bg-zinc-900 border border-zinc-800 rounded-2xl mt-3 z-50 shadow-2xl overflow-hidden backdrop-blur-xl">
+                <div className="absolute top-full left-0 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl mt-3 z-50 shadow-2xl overflow-hidden backdrop-blur-xl transition-colors duration-300">
                   {bookCategories.map(category => (
                     <div
                       key={category.id}
@@ -169,13 +169,13 @@ const Home = () => {
                          navigate(`/${category.id}`);
                          setSearchOpen(false);
                       }}
-                      className="p-4 hover:bg-zinc-800 cursor-pointer flex items-center transition-colors border-b border-zinc-800/50 last:border-0"
+                      className="p-4 hover:bg-slate-100 cursor-pointer flex items-center transition-colors border-b border-slate-200 last:border-0"
                     >
-                      <div className="bg-zinc-800 p-2 rounded-lg mr-4 shadow-inner">
+                      <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg mr-4 shadow-inner">
                         {category.icon}
                       </div>
-                      <span className="text-zinc-200 font-medium">{category.name}</span>
-                      <span className="ml-auto text-zinc-500 text-sm bg-zinc-950 px-3 py-1 rounded-full">{category.count} titles</span>
+                      <span className="text-zinc-900 dark:text-zinc-200 font-medium">{category.name}</span>
+                      <span className="ml-auto text-slate-400 text-sm bg-slate-50 dark:bg-slate-700/50 px-3 py-1 rounded-full">{category.count} titles</span>
                     </div>
                   ))}
                 </div>
@@ -198,29 +198,29 @@ const Home = () => {
             <motion.div 
               variants={fadeIn}
               key={index} 
-              className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-xl shadow-zinc-200/50 border border-white hover:-translate-y-1 transition-transform duration-300"
+              className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-6 rounded-2xl shadow-xl shadow-zinc-200/50 dark:shadow-none border border-white dark:border-slate-700 hover:-translate-y-1 transition-transform duration-300"
             >
-              <div className="bg-emerald-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+              <div className="bg-indigo-50 dark:bg-indigo-900/30 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                 {stat.icon}
               </div>
-              <h3 className="text-3xl font-bold text-zinc-900 mb-1">{stat.value}</h3>
-              <p className="text-zinc-500 font-medium">{stat.label}</p>
+              <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stat.value}</h3>
+              <p className="text-slate-400 font-medium">{stat.label}</p>
             </motion.div>
           ))}
         </motion.div>
       </div>
 
       {/* Featured Books / Carousel Showcase */}
-      <div className="py-24 w-full overflow-hidden bg-zinc-950">
+      <div className="py-24 w-full overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-end mb-8 relative z-10">
             <div>
-              <h2 className="text-4xl font-bold text-white tracking-tight mb-2">Trending Now</h2>
-              <p className="text-zinc-400 text-lg">Premium collection captivating our readers.</p>
+              <h2 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">Trending Now</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-lg">Premium collection captivating our readers.</p>
             </div>
             <button
               onClick={() => navigate('/books')}
-              className="hidden md:flex text-emerald-500 hover:text-emerald-400 font-semibold items-center group transition-colors"
+              className="hidden md:flex text-indigo-500 hover:text-indigo-400 font-semibold items-center group transition-colors"
             >
               Explore collection <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
             </button>
@@ -232,12 +232,12 @@ const Home = () => {
       </div>
 
       {/* Upcoming Events */}
-      <div className="py-24 bg-zinc-950 text-white rounded-3xl mx-4 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-900/20 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>
+      <div className="py-24 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-3xl mx-4 shadow-2xl relative overflow-hidden transition-colors duration-300">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-900/20 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none"></div>
         <div className="container mx-auto px-8 relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Upcoming Events</h2>
-            <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
+            <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-lg">
               Engage with our community. Join seminars, book readings, and research workshops.
             </p>
           </div>
@@ -248,14 +248,14 @@ const Home = () => {
 
           <div className="grid md:grid-cols-3 gap-6">
             {eventsLoading && (
-              <div className="md:col-span-3 text-center text-zinc-500 py-10">
-                <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <div className="md:col-span-3 text-center text-slate-400 py-10">
+                <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                 Loading events...
               </div>
             )}
 
             {!eventsLoading && upcomingEvents.length === 0 && !eventsError && (
-              <div className="md:col-span-3 text-center text-zinc-500 py-10">
+              <div className="md:col-span-3 text-center text-slate-400 py-10">
                 No upcoming events available at the moment.
               </div>
             )}
@@ -267,31 +267,31 @@ const Home = () => {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
                 key={event.EventID} 
-                className="bg-zinc-900/50 backdrop-blur-sm p-8 rounded-3xl border border-zinc-800 hover:border-emerald-500/50 transition-colors group"
+                className="bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm p-8 rounded-3xl border border-slate-200 dark:border-slate-600 hover:border-indigo-500/50 transition-colors group"
               >
                 <div className="flex items-start justify-between mb-6">
-                  <div className="bg-emerald-500/10 p-4 rounded-2xl text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                  <div className="bg-indigo-500/10 p-4 rounded-2xl text-indigo-400 group-hover:bg-indigo-500 group-hover:text-slate-900 transition-colors">
                     <FiCalendar className="text-2xl" />
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-bold text-white">{formatEventDate(event.Date).split(' ')[1]}</div>
-                    <div className="text-sm text-emerald-400 font-medium uppercase">{formatEventDate(event.Date).split(' ')[0]}</div>
+                    <div className="text-xl font-bold text-slate-900 dark:text-white">{formatEventDate(event.Date).split(' ')[1]}</div>
+                    <div className="text-sm text-indigo-400 font-medium uppercase">{formatEventDate(event.Date).split(' ')[0]}</div>
                   </div>
                 </div>
-                <h3 className="font-bold text-xl text-white mb-4 line-clamp-2">{event.Title}</h3>
+                <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-4 line-clamp-2">{event.Title}</h3>
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-zinc-400 text-sm">
-                    <FiClock className="mr-3 text-zinc-500" />
+                  <div className="flex items-center text-slate-500 text-sm">
+                    <FiClock className="mr-3 text-slate-400" />
                     <span>{formatEventTime(event.Time)}</span>
                   </div>
-                  <div className="flex items-center text-zinc-400 text-sm">
-                    <FiBookmark className="mr-3 text-zinc-500" />
+                  <div className="flex items-center text-slate-500 text-sm">
+                    <FiBookmark className="mr-3 text-slate-400" />
                     <span>{event.Location || 'TBA'}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate('/events')}
-                  className="w-full py-3 rounded-xl bg-zinc-800 text-white font-medium hover:bg-emerald-600 transition-colors"
+                  className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-600 text-indigo-600 dark:text-indigo-300 font-medium hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-500 dark:hover:text-white transition-colors"
                 >
                   Reserve Seat
                 </button>

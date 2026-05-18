@@ -23,25 +23,25 @@ const FeaturedCarousel = ({ books = [] }) => {
     return null; // or a loading skeleton
   }
 
-  const getStatusConfig = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'available':
-        return { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <FiCheckCircle className="w-3 h-3" />, text: 'Available' };
-      case 'on-loan':
-      case 'borrowed':
-        return { color: 'bg-amber-50 text-amber-700 border-amber-200', icon: <FiClock className="w-3 h-3" />, text: 'Borrowed' };
-      case 'reserved':
-        return { color: 'bg-blue-50 text-blue-700 border-blue-200', icon: <FiAlertCircle className="w-3 h-3" />, text: 'Reserved' };
-      default:
-        return { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <FiCheckCircle className="w-3 h-3" />, text: 'Available' };
-    }
-  };
+    const getStatusConfig = (status) => {
+      switch (status?.toLowerCase()) {
+        case 'available':
+          return { color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800', icon: <FiCheckCircle className="w-3 h-3" />, text: 'Available' };
+        case 'on-loan':
+        case 'borrowed':
+          return { color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800', icon: <FiClock className="w-3 h-3" />, text: 'Borrowed' };
+        case 'reserved':
+          return { color: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800', icon: <FiAlertCircle className="w-3 h-3" />, text: 'Reserved' };
+        default:
+          return { color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800', icon: <FiCheckCircle className="w-3 h-3" />, text: 'Available' };
+      }
+    };
 
   return (
     <div className="w-full relative py-12 px-4 group">
       
       {/* Decorative background elements */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
       
       <Swiper
         effect={'coverflow'}
@@ -88,15 +88,15 @@ const FeaturedCarousel = ({ books = [] }) => {
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className={cn(
                     "relative h-[500px] rounded-3xl overflow-hidden flex flex-col transition-all duration-300",
-                    "bg-zinc-900 border border-zinc-800 shadow-2xl",
-                    isActive ? "shadow-emerald-900/40 ring-1 ring-emerald-500/30" : "shadow-black/50"
+                    "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl",
+                    isActive ? "shadow-indigo-900/40 ring-1 ring-indigo-500/30" : "shadow-slate-200/50"
                   )}
                 >
                   {/* Image Section */}
-                  <div className="relative h-[280px] w-full bg-zinc-800/50 p-6 flex items-center justify-center overflow-hidden">
+                  <div className="relative h-[280px] w-full bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-center overflow-hidden">
                     {/* Inner glowing effect for active slide */}
                     {isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent z-10" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10" />
                     )}
                     
                     <motion.img 
@@ -115,17 +115,17 @@ const FeaturedCarousel = ({ books = [] }) => {
                     />
 
                     {/* Rating Badge */}
-                    <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/80 backdrop-blur-md rounded-full border border-zinc-700/50 shadow-lg">
+                    <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-full border border-slate-200 dark:border-slate-700 shadow-lg">
                       <FiStar className="text-amber-400 fill-amber-400 w-3.5 h-3.5" />
-                      <span className="text-xs font-bold text-zinc-100">{book.rating?.toFixed(1) || "4.5"}</span>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{book.rating?.toFixed(1) || "4.5"}</span>
                     </div>
                   </div>
 
                   {/* Content Section */}
-                  <div className="flex-1 p-6 flex flex-col justify-between bg-gradient-to-b from-zinc-900 to-zinc-950 z-20">
+                  <div className="flex-1 p-6 flex flex-col justify-between bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 z-20">
                     <div>
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        <span className="text-[10px] font-bold tracking-widest uppercase text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
                           {book.category || book.genre || 'Book'}
                         </span>
                         <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider", statusConfig.color)}>
@@ -134,17 +134,17 @@ const FeaturedCarousel = ({ books = [] }) => {
                         </div>
                       </div>
                       
-                      <h3 className="text-xl font-bold text-white mb-1 line-clamp-1 group-hover:text-emerald-400 transition-colors">
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 line-clamp-1 group-hover:text-indigo-400 dark:group-hover:text-indigo-300 transition-colors">
                         {book.title}
                       </h3>
-                      <p className="text-sm text-zinc-400 font-medium line-clamp-1 mb-3">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium line-clamp-1 mb-3">
                         {book.author}
                       </p>
                       
                       {/* Only show summary on active slide on larger screens, otherwise hide to save space */}
                       <div className="h-10">
                         <p className={cn(
-                          "text-xs text-zinc-500 leading-relaxed line-clamp-2 transition-all duration-300",
+                          "text-xs text-slate-400 leading-relaxed line-clamp-2 transition-all duration-300",
                           isActive ? "opacity-100" : "opacity-0"
                         )}>
                           {book.summary || "Explore this amazing title in our premium collection."}
@@ -153,14 +153,14 @@ const FeaturedCarousel = ({ books = [] }) => {
                     </div>
 
                     {/* Action Button */}
-                    <div className="mt-4 pt-4 border-t border-zinc-800/50">
+                    <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                       <button 
                         onClick={() => navigate(`/books/${book.id}`)}
                         className={cn(
                           "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-300",
                           isActive 
-                            ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-500 hover:shadow-emerald-900/50 hover:-translate-y-0.5" 
-                            : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+                            ? "bg-indigo-600 text-slate-900 dark:text-white shadow-lg shadow-indigo-900/30 hover:bg-indigo-500 hover:shadow-indigo-900/50 hover:-translate-y-0.5" 
+                            : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-zinc-700 hover:text-slate-900 dark:hover:bg-slate-600 dark:hover:text-white"
                         )}
                       >
                         {statusConfig.text === 'Available' ? 'Borrow Now' : 'View Details'}
@@ -177,10 +177,10 @@ const FeaturedCarousel = ({ books = [] }) => {
 
       {/* Custom Navigation Buttons */}
       <div className="hidden md:flex absolute top-1/2 -translate-y-1/2 left-4 right-4 justify-between z-10 pointer-events-none">
-        <button className="swiper-button-prev-custom pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-zinc-900/50 hover:bg-emerald-600 backdrop-blur-md border border-zinc-700/50 text-white transition-all duration-300 hover:scale-110 shadow-xl opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0">
+        <button className="swiper-button-prev-custom pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-white/50 hover:bg-indigo-600 backdrop-blur-md border border-slate-200 text-white transition-all duration-300 hover:scale-110 shadow-xl opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0">
           <svg className="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
         </button>
-        <button className="swiper-button-next-custom pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-zinc-900/50 hover:bg-emerald-600 backdrop-blur-md border border-zinc-700/50 text-white transition-all duration-300 hover:scale-110 shadow-xl opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+        <button className="swiper-button-next-custom pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-white/50 hover:bg-indigo-600 backdrop-blur-md border border-slate-200 text-white transition-all duration-300 hover:scale-110 shadow-xl opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
         </button>
       </div>

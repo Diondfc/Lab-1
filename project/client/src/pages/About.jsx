@@ -15,31 +15,31 @@ const About = () => {
         {
             title: "Book Search",
             description: "Quickly find any book in our physical collection through our comprehensive search system.",
-            icon: <FiBook className="text-emerald-700 text-2xl" />
+            icon: <FiBook className="text-indigo-700 text-2xl" />
         },
         {
             title: "Book Club Chatrooms",
             description: "Join genre-specific discussion groups and connect with fellow readers.",
-            icon: <FiUsers className="text-emerald-700 text-2xl" />
+            icon: <FiUsers className="text-indigo-700 text-2xl" />
         },
         {
             title: "Loan Management",
             description: "Manage book loans and track due dates easily.",
-            icon: <FiClock className="text-emerald-700 text-2xl" />
+            icon: <FiClock className="text-indigo-700 text-2xl" />
         }
     ];
 
     const contactInfo = [
-        { icon: <FiMapPin className="text-emerald-700 text-xl" />, title: "Location", details: ["University for Business and Technology", "Library Building, Floor 2", "Pristina, Kosovo"] },
-        { icon: <FiClock className="text-emerald-700 text-xl" />, title: "Hours", details: ["Monday-Friday: 8:00 AM - 8:00 PM", "Saturday: 10:00 AM - 4:00 PM", "Sunday: Closed"] },
-        { icon: <FiMail className="text-emerald-700 text-xl" />, title: "Email", details: ["ubt.library.gateway@ubt-uni.net"] },
-        { icon: <FiPhone className="text-emerald-700 text-xl" />, title: "Phone", details: ["+383 38 541 400"] }
+        { icon: <FiMapPin className="text-indigo-700 text-xl" />, title: "Location", details: ["University for Business and Technology", "Library Building, Floor 2", "Pristina, Kosovo"] },
+        { icon: <FiClock className="text-indigo-700 text-xl" />, title: "Hours", details: ["Monday-Friday: 8:00 AM - 8:00 PM", "Saturday: 10:00 AM - 4:00 PM", "Sunday: Closed"] },
+        { icon: <FiMail className="text-indigo-700 text-xl" />, title: "Email", details: ["ubt.library.gateway@ubt-uni.net"] },
+        { icon: <FiPhone className="text-indigo-700 text-xl" />, title: "Phone", details: ["+383 38 541 400"] }
     ];
 
     return (
-        <div className="font-poppins bg-white">
+        <div className="font-poppins bg-white dark:bg-slate-900 transition-colors duration-300">
             {/* Hero */}
-            <div className="relative bg-gradient-to-br from-emerald-600 to-green-800 text-white py-20">
+            <div className="relative bg-gradient-to-br from-indigo-600 to-green-800 text-slate-900 dark:text-white py-20">
                 <div className="container mx-auto px-4 text-center">
                     <h1 className="text-4xl md:text-5xl font-bold mb-4">About UBT Library Gateway</h1>
                     <p className="text-xl max-w-2xl mx-auto opacity-90">
@@ -52,7 +52,7 @@ const About = () => {
             <div className="container mx-auto px-4 py-12">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     {libraryStats.map((stat, index) => (
-                        <div key={index} className="p-6 rounded-xl border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 transition text-center">
+                        <div key={index} className="p-6 rounded-xl border border-indigo-700 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-700/10 dark:hover:bg-indigo-500/10 transition text-center">
                             <div className="mb-3 flex justify-center">
                                 {stat.icon}
                             </div>
@@ -64,7 +64,7 @@ const About = () => {
             </div>
 
             {/* Mission */}
-            <div className="py-16 bg-gray-50">
+            <div className="py-16 bg-gray-50 dark:bg-slate-800/50 transition-colors duration-300">
                 <div className="container mx-auto px-4 flex flex-col md:flex-row items-center">
                     <div className="md:w-1/2 mb-8 md:pr-10">
                         <video autoPlay loop muted className="w-full rounded-xl shadow-lg">
@@ -72,12 +72,12 @@ const About = () => {
                         </video>
                     </div>
                     <div className="md:w-1/2">
-                        <div className="w-20 h-1 bg-gradient-to-r from-emerald-600 to-green-800 mb-6"></div>
-                        <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
-                        <p className="text-gray-600 mb-4">
+                        <div className="w-20 h-1 bg-gradient-to-r from-indigo-600 to-green-800 mb-6"></div>
+                        <h2 className="text-3xl font-bold mb-4 dark:text-white">Our Mission</h2>
+                        <p className="text-gray-600 dark:text-slate-400 mb-4">
                             We provide seamless access to knowledge and academic resources.
                         </p>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 dark:text-slate-400">
                             Our goal is to support learning, research, and innovation.
                         </p>
                     </div>
@@ -85,7 +85,7 @@ const About = () => {
             </div>
 
             {/* Team */}
-            <div className="py-16 bg-white">
+            <div className="py-16 bg-white dark:bg-slate-900 transition-colors duration-300">
                 <div className="container mx-auto px-4 flex flex-col md:flex-row-reverse items-center">
                     <div className="md:w-1/2 mb-8 md:pl-10">
                         <video autoPlay loop muted className="w-full rounded-xl shadow-lg">
@@ -93,12 +93,12 @@ const About = () => {
                         </video>
                     </div>
                     <div className="md:w-1/2">
-                        <div className="w-20 h-1 bg-gradient-to-r from-emerald-600 to-green-800 mb-6"></div>
-                        <h2 className="text-3xl font-bold mb-4">Our Team</h2>
-                        <p className="text-gray-600 mb-4">
+                        <div className="w-20 h-1 bg-gradient-to-r from-indigo-600 to-green-800 mb-6"></div>
+                        <h2 className="text-3xl font-bold mb-4 dark:text-white">Our Team</h2>
+                        <p className="text-gray-600 dark:text-slate-400 mb-4">
                             A dedicated team supporting your academic journey.
                         </p>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 dark:text-slate-400">
                             Experts in research, tech, and library systems.
                         </p>
                     </div>
@@ -106,16 +106,16 @@ const About = () => {
             </div>
 
             {/* Services */}
-            <div className="py-16 bg-gray-50">
+            <div className="py-16 bg-gray-50 dark:bg-slate-800/50 transition-colors duration-300">
                 <div className="container mx-auto px-4 text-center mb-12">
-                    <h2 className="text-3xl font-bold mb-2">Our Services</h2>
-                    <div className="w-20 h-1 bg-gradient-to-r from-emerald-600 to-green-800 mx-auto"></div>
+                    <h2 className="text-3xl font-bold mb-2 dark:text-white">Our Services</h2>
+                    <div className="w-20 h-1 bg-gradient-to-r from-indigo-600 to-green-800 mx-auto"></div>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8 px-4">
                     {services.map((service, index) => (
-                        <div key={index} className="p-8 rounded-xl border border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 transition">
-                            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <div key={index} className="p-8 rounded-xl border border-indigo-700 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-700/10 dark:hover:bg-indigo-500/10 transition">
+                            <div className="w-14 h-14 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 mx-auto">
                                 {service.icon}
                             </div>
                             <h3 className="text-xl font-bold mb-2 text-center">{service.title}</h3>
@@ -126,17 +126,17 @@ const About = () => {
             </div>
 
             {/* Contact */}
-            <div className="py-16 bg-white">
+            <div className="py-16 bg-white dark:bg-slate-900 transition-colors duration-300">
                 <div className="container mx-auto px-4 text-center mb-12">
-                    <h2 className="text-3xl font-bold mb-2">Contact Us</h2>
-                    <div className="w-20 h-1 bg-gradient-to-r from-emerald-600 to-green-800 mx-auto"></div>
+                    <h2 className="text-3xl font-bold mb-2 dark:text-white">Contact Us</h2>
+                    <div className="w-20 h-1 bg-gradient-to-r from-indigo-600 to-green-800 mx-auto"></div>
                 </div>
 
-                <div className="rounded-xl p-8 border border-emerald-700 text-emerald-700 mx-4">
+                <div className="rounded-xl p-8 border border-indigo-700 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400 mx-4">
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                         {contactInfo.map((info, index) => (
                             <div key={index} className="text-center">
-                                <div className="p-3 rounded-full border border-emerald-700 inline-block mb-4">
+                                <div className="p-3 rounded-full border border-indigo-700 inline-block mb-4">
                                     {info.icon}
                                 </div>
                                 <h3 className="font-bold text-lg mb-2">{info.title}</h3>
@@ -150,10 +150,10 @@ const About = () => {
             </div>
 
             {/* Testimonial */}
-            <div className="py-16 bg-gradient-to-r from-emerald-600/10 to-green-800/10">
+            <div className="py-16 bg-gradient-to-r from-indigo-600/10 to-green-800/10 dark:from-indigo-900/30 dark:to-green-900/30 transition-colors duration-300">
                 <div className="container mx-auto px-4">
-                    <div className="rounded-xl border border-emerald-700 text-emerald-700 p-8 md:p-12 max-w-4xl mx-auto text-center">
-                        <div className="w-20 h-1 bg-gradient-to-r from-emerald-600 to-green-800 mx-auto mb-6"></div>
+                    <div className="rounded-xl border border-indigo-700 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400 p-8 md:p-12 max-w-4xl mx-auto text-center">
+                        <div className="w-20 h-1 bg-gradient-to-r from-indigo-600 to-green-800 mx-auto mb-6"></div>
                         <h2 className="text-3xl font-bold mb-6">What Our Community Says</h2>
                         <p className="italic text-lg mb-6">
                             "The UBT Library Gateway transformed how I conduct research."
@@ -164,14 +164,14 @@ const About = () => {
             </div>
 
             {/* Map Section */}
-            <div className="py-16 bg-white">
+            <div className="py-16 bg-white dark:bg-slate-900 transition-colors duration-300">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-10">
-                        <h2 className="text-3xl font-bold mb-2">UBT Location in Pristina</h2>
-                        <div className="w-20 h-1 bg-gradient-to-r from-emerald-600 to-green-800 mx-auto"></div>
+                        <h2 className="text-3xl font-bold mb-2 dark:text-white">UBT Location in Pristina</h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-indigo-600 to-green-800 mx-auto"></div>
                     </div>
                     
-                    <div className="max-w-6xl mx-auto bg-gray-50 rounded-2xl border border-gray-200 p-3 shadow-lg">
+                    <div className="max-w-6xl mx-auto bg-gray-50 dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-3 shadow-lg">
                         <iframe
                             title="UBT Location in Pristina"
                             src="https://maps.google.com/maps?q=UBT-Dukagjini,%20Prishtina&t=&z=16&ie=UTF8&iwloc=&output=embed"

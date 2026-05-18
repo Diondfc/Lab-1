@@ -110,9 +110,9 @@ const EventsDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-12 transition-colors duration-300">
       <div className="container mx-auto max-w-6xl px-4">
-        <div className="mb-8 rounded-lg bg-gradient-to-r from-emerald-600 to-green-800 p-6 text-white shadow-md">
+        <div className="mb-8 rounded-lg bg-gradient-to-r from-indigo-600 to-green-800 p-6 text-slate-900 dark:text-white shadow-md">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wider opacity-90">Staff</p>
@@ -121,7 +121,7 @@ const EventsDashboard = () => {
             <button
               type="button"
               onClick={openAdd}
-              className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 font-semibold text-emerald-700 transition hover:bg-emerald-50"
+              className="inline-flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 px-5 py-2.5 font-semibold text-indigo-700 dark:text-indigo-400 transition hover:bg-indigo-50 dark:hover:bg-slate-700"
             >
               <FiPlus className="mr-2" />
               Add event
@@ -135,8 +135,8 @@ const EventsDashboard = () => {
           </p>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md">
-          <div className="grid grid-cols-1 gap-4 border-b border-gray-100 bg-gray-50 p-4 text-sm font-semibold text-gray-600 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md">
+          <div className="grid grid-cols-1 gap-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 p-4 text-sm font-semibold text-gray-600 dark:text-gray-400 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
             <span>Event</span>
             <span>Date</span>
             <span>Location</span>
@@ -144,33 +144,33 @@ const EventsDashboard = () => {
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-600">Loading events…</div>
+            <div className="p-8 text-center text-gray-600 dark:text-gray-400">Loading events…</div>
           ) : events.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No events yet. Add one to get started.</div>
+            <div className="p-8 text-center text-gray-500 dark:text-gray-500">No events yet. Add one to get started.</div>
           ) : (
             events.map((event) => (
               <div
                 key={event.EventID}
-                className="grid grid-cols-1 gap-4 border-b border-gray-100 p-4 last:border-b-0 md:grid-cols-[1.5fr_1fr_1fr_1fr] md:items-center"
+                className="grid grid-cols-1 gap-4 border-b border-gray-100 dark:border-slate-700 p-4 last:border-b-0 md:grid-cols-[1.5fr_1fr_1fr_1fr] md:items-center"
               >
                 <div className="flex items-start">
-                  <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-700/10 text-emerald-700">
+                  <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-700/10 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
                     <FiCalendar />
                   </div>
                   <div>
-                    <h2 className="font-bold text-gray-900">{event.Title}</h2>
-                    <span className="mt-1 inline-block text-xs text-gray-500">
+                    <h2 className="font-bold text-gray-900 dark:text-white">{event.Title}</h2>
+                    <span className="mt-1 inline-block text-xs text-gray-500 dark:text-gray-400">
                       {formatEventTime(event.Time)}
                     </span>
                   </div>
                 </div>
-                <p className="text-gray-600">{formatEventDate(event.Date)}</p>
-                <p className="text-gray-600">{event.Location || '—'}</p>
+                <p className="text-gray-600 dark:text-gray-400">{formatEventDate(event.Date)}</p>
+                <p className="text-gray-600 dark:text-gray-400">{event.Location || '—'}</p>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => navigate(`/admin/events/edit/${event.EventID}`)}
-                    className="inline-flex items-center rounded-lg border border-emerald-700 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-700/10"
+                    className="inline-flex items-center rounded-lg border border-indigo-700 dark:border-indigo-500 px-3 py-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400 transition hover:bg-indigo-700/10 dark:hover:bg-indigo-500/20"
                   >
                     <FiEdit className="mr-1.5" />
                     Edit
@@ -178,7 +178,7 @@ const EventsDashboard = () => {
                   <button
                     type="button"
                     onClick={() => handleDelete(event.EventID)}
-                    className="inline-flex items-center rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                    className="inline-flex items-center rounded-lg border border-red-200 dark:border-red-800/50 px-3 py-2 text-sm font-semibold text-red-600 dark:text-red-400 transition hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <FiTrash2 className="mr-1.5" />
                     Delete
@@ -191,14 +191,14 @@ const EventsDashboard = () => {
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 dark:bg-slate-900/80 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white dark:bg-slate-800 p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">New event</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">New event</h2>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="rounded p-2 text-gray-500 hover:bg-gray-100"
+                className="rounded p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700"
                 aria-label="Close"
               >
                 <FiX size={22} />
@@ -206,43 +206,43 @@ const EventsDashboard = () => {
             </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Title</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
                 <input
                   required
                   value={form.Title}
                   onChange={(e) => setForm((f) => ({ ...f, Title: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                  className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white px-3 py-2 focus:border-indigo-700 dark:focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-700/20 dark:focus:ring-indigo-500/20"
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Date</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
                   <input
                     required
                     type="date"
                     value={form.Date}
                     onChange={(e) => setForm((f) => ({ ...f, Date: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                    className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white px-3 py-2 focus:border-indigo-700 dark:focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-700/20 dark:focus:ring-indigo-500/20"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Time</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
                   <input
                     required
                     type="time"
                     value={form.Time}
                     onChange={(e) => setForm((f) => ({ ...f, Time: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                    className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white px-3 py-2 focus:border-indigo-700 dark:focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-700/20 dark:focus:ring-indigo-500/20"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Location</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
                 <select
                   required
                   value={form.LocationID}
                   onChange={(e) => setForm((f) => ({ ...f, LocationID: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                  className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white px-3 py-2 focus:border-indigo-700 dark:focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-700/20 dark:focus:ring-indigo-500/20"
                 >
                   <option value="">Select…</option>
                   {locations.map((loc) => (
@@ -256,14 +256,14 @@ const EventsDashboard = () => {
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+                  className="rounded-lg bg-indigo-700 dark:bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-800 dark:hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {saving ? 'Saving…' : 'Create'}
                 </button>

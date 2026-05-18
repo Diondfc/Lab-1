@@ -44,7 +44,7 @@ const BookListNovel = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="relative bg-gradient-to-br from-[#3FA34D] to-[#A3D8B3] text-white">
+      <div className="relative bg-gradient-to-br from-[#3FA34D] to-[#A3D8B3] text-slate-900">
         <div className="container mx-auto flex flex-col items-center px-4 py-20 text-center">
           <h1 className="mb-4 text-4xl font-bold leading-tight md:text-5xl">Novel Collection</h1>
           <p className="mb-8 max-w-2xl text-xl opacity-90">
@@ -126,7 +126,7 @@ const BookListNovel = () => {
                         {book.rating.toFixed(1)}
                       </div>
                       {book.genre ? (
-                        <div className="absolute bottom-3 left-3 rounded bg-[#3FA34D] px-2 py-1 text-xs text-white">
+                        <div className="absolute bottom-3 left-3 rounded bg-[#3FA34D] px-2 py-1 text-xs text-slate-900">
                           {book.genre}
                         </div>
                       ) : null}
@@ -175,7 +175,7 @@ const BookListNovel = () => {
                       onClick={() => setCurrentPage(i + 1)}
                       className={`flex h-10 w-10 items-center justify-center rounded-md ${
                         currentPage === i + 1
-                          ? 'bg-[#3FA34D] text-white'
+                          ? 'bg-[#3FA34D] text-slate-900'
                           : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                     >

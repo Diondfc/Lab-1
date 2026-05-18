@@ -27,7 +27,7 @@ const BookListAcademic = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="relative bg-gradient-to-br from-[#00509D] to-[#90CAF9] text-white">
+      <div className="relative bg-gradient-to-br from-[#00509D] to-[#90CAF9] text-slate-900">
         <div className="container mx-auto flex flex-col items-center px-4 py-20 text-center">
           <h1 className="mb-4 text-4xl font-bold leading-tight md:text-5xl">Academic Book Collection</h1>
           <p className="mb-8 max-w-2xl text-xl opacity-90">
@@ -133,7 +133,7 @@ const BookListAcademic = () => {
                       onClick={() => setCurrentPage(i + 1)}
                       className={`flex h-10 w-10 items-center justify-center rounded-md ${
                         currentPage === i + 1
-                          ? 'bg-[#036280] text-white'
+                          ? 'bg-[#036280] text-slate-900'
                           : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                     >
