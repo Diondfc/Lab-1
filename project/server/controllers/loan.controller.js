@@ -4,12 +4,12 @@ const { getUserId, isStaffRole } = require('../middlewares/auth');
 
 exports.createLoan = async (req, res) => {
   try {
-    const { bookId,bookTitle, userId, userName, startDate, dueDate } = req.body;
-    
+    const { bookId, bookTitle, userId, userName, startDate, dueDate } = req.body;
+
     if (!bookId || !bookTitle || !userId || !userName || !startDate || !dueDate) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Missing required fields' 
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
       });
     }
 
@@ -23,56 +23,61 @@ exports.createLoan = async (req, res) => {
     }
 
     const connection = await pool.getConnection();
-    
+
     try {
-      // Check if book exists and has available quantity
+      await connection.beginTransaction();
+
       const [book] = await connection.execute(
-        'SELECT * FROM Books WHERE BookID = ? AND Quantity > 0',
+        'SELECT BookID, Quantity FROM Books WHERE BookID = ? FOR UPDATE',
         [bookId]
       );
-      
-      if (book.length === 0) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Book not found or no available copies' 
+
+      if (book.length === 0 || book[0].Quantity <= 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          message: 'Book not found or no available copies'
         });
       }
 
-      // Check if user exists
       const [user] = await connection.execute(
-        'SELECT * FROM Users WHERE UserID = ?',
+        'SELECT UserID FROM Users WHERE UserID = ?',
         [userId]
       );
-      
+
       if (user.length === 0) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'User not found' 
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
         });
       }
 
-      // Create the loan
       const [result] = await connection.execute(
-        `INSERT INTO Loans 
-         (BookID,BookTitle, UserID, UserName, StartDate, DueDate) 
+        `INSERT INTO Loans
+         (BookID, BookTitle, UserID, UserName, StartDate, DueDate)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [bookId,bookTitle, userId, userName, startDate, dueDate]
+        [bookId, bookTitle, userId, userName, startDate, dueDate]
       );
 
-      // Update book status and decrement quantity
       await connection.execute(
-        `UPDATE Books 
+        `UPDATE Books
          SET AvailabilityStatus = CASE WHEN Quantity - 1 <= 0 THEN 'Checked Out' ELSE AvailabilityStatus END,
-             Quantity = Quantity - 1 
+             Quantity = Quantity - 1
          WHERE BookID = ?`,
         [bookId]
       );
-      
+
+      await connection.commit();
+
       res.status(201).json({
         success: true,
         message: 'Loan created successfully',
         loanId: result.insertId
       });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
     } finally {
       connection.release();
     }
@@ -179,42 +184,52 @@ exports.deleteLoan = async (req, res) => {
   try {
     const { id } = req.params;
     const connection = await pool.getConnection();
-    
+
     try {
       await connection.beginTransaction();
 
-      // First delete any return record
-      await connection.execute(
-        `DELETE FROM ReturnLoans WHERE LoanID=?`,
-        [id]
-      );
-   
-      // Get the book ID before deleting the loan
-      const [loan] = await connection.execute(
-        `SELECT BookID FROM Loans WHERE LoanID=?`,
-        [id]
-      );
-      
-      // Delete the loan record
-      await connection.execute(
-        `DELETE FROM Loans WHERE LoanID=?`,
+      const [loanRows] = await connection.execute(
+        `SELECT BookID FROM Loans WHERE LoanID = ? FOR UPDATE`,
         [id]
       );
 
-      // Update book availability and quantity if loan existed
-      if(loan.length > 0){
+      if (loanRows.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({ success: false, message: 'Loan not found' });
+      }
+
+      const bookId = loanRows[0].BookID;
+
+      const [returnRows] = await connection.execute(
+        `SELECT ReturnID FROM ReturnLoans WHERE LoanID = ?`,
+        [id]
+      );
+
+      const wasReturned = returnRows.length > 0;
+
+      await connection.execute(
+        `DELETE FROM ReturnLoans WHERE LoanID = ?`,
+        [id]
+      );
+
+      await connection.execute(
+        `DELETE FROM Loans WHERE LoanID = ?`,
+        [id]
+      );
+
+      if (!wasReturned) {
         await connection.execute(
-          `UPDATE Books 
+          `UPDATE Books
            SET AvailabilityStatus = CASE WHEN Quantity + 1 > 0 THEN 'Available' ELSE AvailabilityStatus END,
-               Quantity = Quantity + 1 
-           WHERE BookID=?`,
-          [loan[0].BookID]
+               Quantity = Quantity + 1
+           WHERE BookID = ?`,
+          [bookId]
         );
       }
-      
+
       await connection.commit();
       res.json({ success: true });
-    } catch(error){
+    } catch (error) {
       await connection.rollback();
       throw error;
     } finally {
