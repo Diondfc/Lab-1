@@ -5,10 +5,15 @@ const UserAccount = require('../models/user-account');
 
 async function register(req, res) {
   try {
-    const { full_name, email, password } = req.body;
+    const { full_name, Name, email, Email, password } = req.body;
+    const normalizedEmail = (email || Email || '').trim().toLowerCase();
+    const normalizedName = (full_name || Name || '').trim();
+
+    if (!normalizedName || !normalizedEmail || !password) {
+      return res.status(400).json({ message: 'Name, email and password are required' });
+    }
 
     // Check if user exists
-    const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findByEmail(normalizedEmail);
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
@@ -18,7 +23,7 @@ async function register(req, res) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const userId = await User.create({
-      full_name,
+      full_name: normalizedName,
       email: normalizedEmail,
       password: hashedPassword,
     });

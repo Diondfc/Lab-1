@@ -1,42 +1,74 @@
 const pool = require('../config/db');
 
 class User {
-    static async findByEmail(email) {
-        const [rows] = await pool.query('SELECT * FROM Users WHERE email = ?', [email]);
-        return rows[0];
+  static mapUserRow(row) {
+    if (!row) return row;
+
+    return {
+      id: row.UserID,
+      full_name: row.Name,
+      email: row.Email,
+      password: row.Password,
+      role: row.Role,
+      created_at: row.created_at,
+    };
+  }
+
+  static async findByEmail(email) {
+    const [rows] = await pool.query('SELECT * FROM Users WHERE LOWER(Email) = LOWER(?)', [email]);
+    return User.mapUserRow(rows[0]);
+  }
+
+  static async create(userData) {
+    const { full_name, email, password, role } = userData;
+    const [result] = await pool.query(
+      'INSERT INTO Users (Name, Email, Password, Role) VALUES (?, ?, ?, ?)',
+      [full_name, email, password, role || 'Student']
+    );
+    return result.insertId;
+  }
+
+  static async findById(id) {
+    const [rows] = await pool.query('SELECT * FROM Users WHERE UserID = ?', [id]);
+    return User.mapUserRow(rows[0]);
+  }
+
+  static async findAll() {
+    const [rows] = await pool.query('SELECT * FROM Users');
+    return rows.map((row) => User.mapUserRow(row));
+  }
+
+  static async deleteById(id) {
+    await pool.query('DELETE FROM Users WHERE UserID = ?', [id]);
+  }
+
+  static async updateUserById(id, userData) {
+    const updates = [];
+    const values = [];
+
+    if (userData.full_name != null || userData.Name != null) {
+      updates.push('Name = ?');
+      values.push(userData.full_name ?? userData.Name);
     }
 
-    static async create(userData) {
-        const { full_name, email, password } = userData;
-        const [result] = await pool.query(
-            'INSERT INTO Users (full_name, email, password) VALUES (?, ?, ?)',
-            [full_name, email, password]
-        );
-        return result.insertId;
+    if (userData.email != null || userData.Email != null) {
+      updates.push('Email = ?');
+      values.push((userData.email ?? userData.Email).trim().toLowerCase());
     }
 
-    static async findById(id) {
-        const [rows] = await pool.query('SELECT * FROM Users WHERE id = ?', [id]);
-        return rows[0];
+    if (userData.role != null || userData.Role != null) {
+      updates.push('Role = ?');
+      values.push(userData.role ?? userData.Role);
     }
 
-    static async findAll() {
-        const [rows] = await pool.query('SELECT id, full_name, email FROM Users');
-        return rows;
+    if (updates.length === 0) {
+      return { affectedRows: 0 };
     }
 
-    static async deleteById(id) {
-        await pool.query('DELETE FROM Users WHERE id = ?', [id]);
-    }
-
-    static async updateUserById(id, userData) {
-        const { full_name, email } = userData;
-        const [result] = await pool.query(
-            'UPDATE Users SET full_name = ?, email = ? WHERE id = ?',
-            [full_name, email, id]
-        );
-        return result;
-    }
+    values.push(id);
+    const [result] = await pool.query(`UPDATE Users SET ${updates.join(', ')} WHERE UserID = ?`, values);
+    return result;
+  }
 }
 
 module.exports = User;
