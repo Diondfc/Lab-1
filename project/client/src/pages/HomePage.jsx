@@ -103,15 +103,15 @@ const Home = () => {
   };
 
   return (
-    <div className="font-poppins bg-zinc-50 dark:bg-slate-900 min-h-screen pb-20 pt-20 transition-colors duration-300">
+    <div className="font-poppins bg-zinc-50 dark:bg-slate-900 min-h-screen pb-20 pt-0 transition-colors duration-300">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-b-[3rem] shadow-2xl pb-10 transition-colors duration-300">
-        <div className="absolute inset-0 z-0">
+      <div className="relative z-20 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-b-[3rem] shadow-2xl pb-10 transition-colors duration-300">
+        <div className="absolute inset-0 z-0 rounded-b-[3rem] overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-indigo-950/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900/40 transition-colors duration-300" />
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
         </div>
         
-        <div className="container mx-auto px-4 py-24 md:py-32 relative z-10 flex flex-col md:flex-row items-center">
+        <div className="container mx-auto px-4 pt-8 pb-24 md:pt-12 md:pb-32 relative z-10 flex flex-col md:flex-row items-center">
           <motion.div 
             initial="hidden"
             animate="visible"
@@ -161,7 +161,10 @@ const Home = () => {
               </form>
 
               {searchOpen && (
-                <div className="absolute top-full left-0 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl mt-3 z-50 shadow-2xl overflow-hidden backdrop-blur-xl transition-colors duration-300">
+                <div
+                  onMouseDown={(e) => e.preventDefault()}
+                  className="absolute top-full left-0 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl mt-3 z-50 shadow-2xl overflow-y-auto max-h-64 backdrop-blur-xl transition-colors duration-300"
+                >
                   {bookCategories.map(category => (
                     <div
                       key={category.id}
@@ -185,8 +188,8 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Quick Stats - Pulled up to overlap hero */}
-      <div className="container mx-auto px-4 -mt-10 relative z-20">
+      {/* Quick Stats */}
+      <div className="container mx-auto px-4 mt-24 md:mt-32 relative z-10">
         <motion.div 
           initial="hidden"
           whileInView="visible"

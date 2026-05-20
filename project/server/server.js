@@ -18,10 +18,16 @@ const requestRoutes = require('./routes/request.routes')
 
 const PORT = Number(process.env.PORT) || 5001
 
-const defaultOrigins = ['http://localhost:5173', 'http://localhost:3000']
-const allowedOrigins = process.env.CLIENT_ORIGIN
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:3000',
+]
+const envOrigins = process.env.CLIENT_ORIGIN
   ? process.env.CLIENT_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
-  : defaultOrigins
+  : []
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])]
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET is not set. Copy project/server/.env.example to .env and set JWT_SECRET.')
@@ -30,10 +36,22 @@ if (!process.env.JWT_SECRET) {
 
 const app = express()
 
+function isAllowedOrigin(origin) {
+  if (!origin) return true
+  if (allowedOrigins.includes(origin)) return true
+  // Dev: allow any localhost / 127.0.0.1 port (Vite may use 5173, 5174, …)
+  if (process.env.NODE_ENV !== 'production') {
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return true
+    }
+  }
+  return false
+}
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true)
       } else {
         callback(new Error(`CORS blocked for origin: ${origin}`))
