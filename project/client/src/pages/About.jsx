@@ -39,10 +39,19 @@ const About = () => {
     return (
         <div className="font-poppins bg-white dark:bg-slate-900 transition-colors duration-300">
             {/* Hero */}
-            <div className="relative bg-gradient-to-br from-indigo-600 to-green-800 text-slate-900 dark:text-white py-20">
-                <div className="container mx-auto px-4 text-center">
-                    <h1 className="text-4xl md:text-5xl font-bold mb-4">About UBT Library Gateway</h1>
-                    <p className="text-xl max-w-2xl mx-auto opacity-90">
+            <div className="relative bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white py-20 rounded-b-[3rem] shadow-xl transition-colors duration-300">
+                <div className="absolute inset-0 z-0 rounded-b-[3rem] overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-indigo-950/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900/40 transition-colors duration-300" />
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
+                </div>
+                <div className="container mx-auto px-4 text-center relative z-10">
+                    <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight text-slate-900 dark:text-white">
+                        About <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-teal-400 dark:from-indigo-400 dark:to-teal-300">
+                            UBT Library Gateway
+                        </span>
+                    </h1>
+                    <p className="text-xl max-w-2xl mx-auto text-slate-500 dark:text-slate-400 leading-relaxed transition-colors duration-300">
                         Connecting knowledge seekers with world-class resources since 2010
                     </p>
                 </div>
@@ -50,14 +59,17 @@ const About = () => {
 
             {/* Stats */}
             <div className="container mx-auto px-4 py-12">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     {libraryStats.map((stat, index) => (
-                        <div key={index} className="p-6 rounded-xl border border-indigo-700 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-700/10 dark:hover:bg-indigo-500/10 transition text-center">
-                            <div className="mb-3 flex justify-center">
+                        <div 
+                            key={index} 
+                            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-6 rounded-2xl shadow-xl shadow-zinc-200/50 dark:shadow-none border border-white dark:border-slate-700 hover:-translate-y-1 transition-transform duration-300 flex flex-col items-center text-center"
+                        >
+                            <div className="bg-indigo-50 dark:bg-indigo-900/30 w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400">
                                 {stat.icon}
                             </div>
-                            <h3 className="text-2xl font-bold mb-1">{stat.value}</h3>
-                            <p>{stat.label}</p>
+                            <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stat.value}</h3>
+                            <p className="text-slate-400 font-medium">{stat.label}</p>
                         </div>
                     ))}
                 </div>
