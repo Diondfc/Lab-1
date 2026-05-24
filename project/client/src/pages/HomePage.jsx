@@ -5,9 +5,7 @@ import { motion } from 'framer-motion';
 import Journals from '../images/TheCivilWar.png';
 import Academic from '../images/Sedgewick.png';
 import WhiteNights from '../images/WhiteNights.png.webp';
-import StudentReading from '../images/WhiteNights.png.webp';
 import { apiClient } from '../lib/api';
-import { cn } from '../lib/utils';
 import FeaturedCarousel from '../components/Books/FeaturedCarousel';
 import { books as catalogBooks } from '../components/Books/libraryBooks';
 
@@ -26,12 +24,6 @@ const Home = () => {
     { id: 'journals', name: 'Journals', icon: <FiBook className="text-indigo-400" />, count: 1245 },
     { id: 'academic', name: 'Academic', icon: <FiBook className="text-indigo-400" />, count: 876 },
     { id: 'novels', name: 'Novels', icon: <FiBook className="text-indigo-400" />, count: 532 }
-  ];
-
-  const featuredBooks = [
-    { id: 1, title: "White Nights", author: "Fyodor Dostoevsky", image: WhiteNights, available: true, rating: 4.8 },
-    { id: 2, title: "Computer Science: An Interdisciplinary Approach", author: "Robert Sedgewick", image: Academic, available: true, rating: 4.5 },
-    { id: 3, title: "Research Journal", author: "The Civil War Diary of Emma Mordecai", image: Journals, available: false, rating: 4.2 }
   ];
 
   const libraryStats = [

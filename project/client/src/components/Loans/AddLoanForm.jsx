@@ -9,13 +9,16 @@ import {
   FiCalendar,
   FiCheck,
   FiAlertCircle,
-  FiLoader
+  FiLoader,
+  FiDollarSign,
+  FiCheckCircle
 } from 'react-icons/fi';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const AddLoanForm = ({ onSave }) => {
   const location = useLocation();
   const { state } = location;
+  const navigate = useNavigate();
   
   const [currentUser] = useState(() => {
     const storedUser = localStorage.getItem('user');
@@ -33,27 +36,40 @@ const AddLoanForm = ({ onSave }) => {
     bookTitle: state?.bookTitle || '',
     userEmail: currentUser?.email || '',
     userId: currentUser?.id || '',
-    userName: currentUser?.name || '',
+    userName: currentUser?.full_name || currentUser?.name || '',
     startDate: new Date().toISOString().split('T')[0],
     dueDate: getDefaultDueDate(),
+    paymentMethod: 'Credit Card',
+    paymentStatus: 'Paid',
+    paymentAmount: '2.25' // default: $2.00 fee + $0.25 service fee
   });
 
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingUser, setIsFetchingUser] = useState(false);
-  const navigate = useNavigate();
 
-  // Fetch book details when bookId changes
+  // Fetch book details when bookId changes to display title and calculate default amount
   useEffect(() => {
     if (formData.bookId) {
       const fetchBookDetails = async () => {
         try {
           const response = await apiClient.get(`/api/books/book/${formData.bookId}`);
           const book = response.data;
+          
+          // Calculate dynamic fee based on category
+          // Categories: 1: Academic ($3.00), 2: Journal ($5.00), 3: Novel ($1.50)
+          let fee = 2.00;
+          if (book.CategoryID === 1) fee = 3.00;
+          else if (book.CategoryID === 2) fee = 5.00;
+          else if (book.CategoryID === 3) fee = 1.50;
+          
+          const totalFee = fee + 0.25; // fee + serviceFee
+
           setFormData(prev => ({
             ...prev,
-            bookTitle: book.Title
+            bookTitle: book.Title,
+            paymentAmount: totalFee.toFixed(2)
           }));
         } catch (error) {
           console.error('Error fetching book details:', error);
@@ -73,7 +89,7 @@ const AddLoanForm = ({ onSave }) => {
     }, 500);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounced email lookup; stable currentUser from initial state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.userEmail]);
 
   const fetchUserDetails = async () => {
@@ -110,15 +126,18 @@ const AddLoanForm = ({ onSave }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.userId) {
+      setError('A valid library user is required.');
+      return;
+    }
+    if (!formData.bookId) {
+      setError('A valid book ID is required.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
     setSuccessMessage('');
-    
-    if (!formData.userId) {
-      setError('User not found. Please check the email address.');
-      setIsSubmitting(false);
-      return;
-    }
 
     try {
       const response = await apiClient.post('/api/loans', {
@@ -127,103 +146,104 @@ const AddLoanForm = ({ onSave }) => {
         userId: formData.userId,
         userName: formData.userName,
         startDate: formData.startDate,
-        dueDate: formData.dueDate
+        dueDate: formData.dueDate,
+        paymentStatus: formData.paymentStatus,
+        paymentAmount: parseFloat(formData.paymentAmount) || 0.00,
+        paymentMethod: formData.paymentMethod
       });
-      
+
       if (response.data.success) {
         setSuccessMessage('Loan created successfully!');
-        onSave({
-          LoanID: response.data.loanId,
-          BookID: formData.bookId,
-          BookTitle: formData.bookTitle,
-          UserID: formData.userId,
-          UserName: formData.userName,
-          StartDate: formData.startDate,
-          DueDate: formData.dueDate,
-          status: 'active'
-        });
         
+        if (onSave) {
+          onSave({
+            LoanID: response.data.loanId,
+            BookID: formData.bookId,
+            BookTitle: formData.bookTitle,
+            UserID: formData.userId,
+            UserName: formData.userName,
+            StartDate: formData.startDate,
+            DueDate: formData.dueDate,
+            status: 'active'
+          });
+        }
+
         setTimeout(() => {
           if (currentUser?.role === 'Admin') {
             navigate('/admin/loans');
           } else {
-            navigate('/loan-history');
+            navigate('/loan-history', { state: { userId: formData.userId } });
           }
         }, 1500);
       }
-    } catch (error) {
-      console.error('Error saving loan:', error);
-      setError(error.response?.data?.message || 'Failed to save loan');
+    } catch (apiErr) {
+      console.error('Error saving loan:', apiErr);
+      setError(apiErr.response?.data?.message || 'Failed to create loan. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-zinc-50 dark:bg-slate-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 font-poppins">
+      <div className="max-w-3xl mx-auto">
+        
+        {/* Back Button */}
         <button 
           onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
-          className="flex items-center text-[#036280] dark:text-indigo-400 hover:text-[#012F4A] dark:hover:text-indigo-300 mb-6"
+          className="flex items-center text-slate-400 dark:text-slate-500 hover:text-zinc-900 dark:hover:text-white mb-6 text-sm font-semibold transition-colors"
         >
           <FiArrowLeft className="mr-2" /> Back to {currentUser?.role === 'Admin' ? 'Loans Dashboard' : 'Library'}
         </button>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-slate-700 transition-colors duration-300">
-          <div className="bg-gradient-to-r from-[#036280] to-[#233B7D] p-6 text-slate-900 dark:text-white">
+        {/* Error Messaging */}
+        {error && (
+          <div className="relative text-rose-700 bg-rose-50 dark:bg-rose-950/20 p-4 rounded-2xl font-medium mb-8 border border-rose-200 dark:border-rose-900/50 flex items-start">
+            <FiAlertCircle className="text-rose-500 mt-0.5 mr-2 flex-shrink-0" />
+            <div className="flex-1">{error}</div>
+            <button onClick={() => setError('')} className="text-rose-800 dark:text-rose-400 hover:opacity-80">
+              <FiX />
+            </button>
+          </div>
+        )}
+
+        {/* Success Messaging */}
+        {successMessage && (
+          <div className="relative text-emerald-700 bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-2xl font-medium mb-8 border border-emerald-200 dark:border-emerald-900/50 flex items-start animate-fade-in">
+            <FiCheckCircle className="text-emerald-500 mt-0.5 mr-2 flex-shrink-0 animate-bounce" />
+            <div className="flex-1">{successMessage} Redirecting...</div>
+          </div>
+        )}
+
+        {/* Main Card Container */}
+        <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl border border-zinc-100 dark:border-slate-700/80 overflow-hidden transition-colors duration-300">
+          
+          <div className="bg-gradient-to-r from-indigo-900 via-slate-950 to-indigo-950 px-8 py-8 text-white relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="flex items-center">
-              <FiBook className="text-2xl mr-3" />
-              <h2 className="text-2xl font-semibold">Add New Loan</h2>
+              <div className="p-3 bg-white/10 rounded-2xl border border-white/10 mr-4">
+                <FiBook className="text-indigo-400 text-2xl" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-extrabold tracking-tight">Create Book Loan</h2>
+                <p className="text-slate-400 text-sm mt-0.5">Fill in loan specifications and payment details below.</p>
+              </div>
             </div>
-            <p className="mt-1 opacity-90">Fill in the details below to create a new book loan</p>
           </div>
 
-          <div className="p-6">
-            {successMessage && (
-              <div className="relative animate-slide-in text-green-700 bg-green-50 p-4 rounded-lg font-medium mb-6 border border-green-200 flex items-start">
-                <FiCheck className="text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                <div>
-                  {successMessage}
-                  <p className="text-sm font-normal mt-1 text-green-600">Redirecting you shortly...</p>
-                </div>
-                <button
-                  onClick={() => setSuccessMessage('')}
-                  className="absolute top-3 right-3 text-green-800 hover:text-green-600"
-                >
-                  <FiX />
-                </button>
-              </div>
-            )}
-
-            {error && (
-              <div className="relative text-red-700 bg-red-50 p-4 rounded-lg font-medium mb-6 border border-red-200 flex items-start">
-                <FiAlertCircle className="text-red-500 mt-0.5 mr-2 flex-shrink-0" />
-                <div>{error}</div>
-                <button
-                  onClick={() => setError('')}
-                  className="absolute top-3 right-3 text-red-800 hover:text-red-600"
-                >
-                  <FiX />
-                </button>
-              </div>
-            )}
-
-            {isSubmitting && (
-              <div className="text-yellow-700 bg-yellow-50 p-4 rounded-lg font-medium mb-6 border border-yellow-200 flex items-center">
-                <FiLoader className="animate-spin mr-2" />
-                <span>Processing loan, please wait...</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column - Book Information */}
-              <div className="space-y-5">
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Book ID *</label>
+          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Section 1: Book Specifications */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest border-b border-zinc-100 dark:border-slate-700/80 pb-2">Book Info</h3>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-slate-300">Book Catalog ID *</label>
                   <input
                     type="text"
                     name="bookId"
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
+                    className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-900 dark:text-white border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium"
                     value={formData.bookId}
                     onChange={handleChange}
                     required
@@ -231,122 +251,166 @@ const AddLoanForm = ({ onSave }) => {
                   />
                 </div>
                 
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Book Title *</label>
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-slate-300">Book Title</label>
                   <input
                     type="text"
                     name="bookTitle"
                     value={formData.bookTitle}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent bg-gray-50 dark:bg-slate-900 dark:text-white"
-                    required
+                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-slate-900/60 dark:text-zinc-400 border border-zinc-100 dark:border-slate-800 rounded-2xl focus:outline-none font-medium cursor-not-allowed"
                     readOnly
                   />
                 </div>
               </div>
 
-              {/* Right Column - User Information */}
-              <div className="space-y-5">
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">User Email *</label>
+              {/* Section 2: User Specifications */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest border-b border-zinc-100 dark:border-slate-700/80 pb-2">Borrower Details</h3>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-slate-300">User Email Address *</label>
                   <input
                     type="email"
                     name="userEmail"
                     value={formData.userEmail}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2.5 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent dark:text-white ${currentUser?.role !== 'Admin' ? 'bg-gray-50 dark:bg-slate-900' : 'dark:bg-slate-900'}`}
+                    className={`w-full px-4 py-3 bg-zinc-50 border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium dark:text-white ${currentUser?.role !== 'Admin' ? 'bg-zinc-100 dark:bg-slate-900/60 cursor-not-allowed' : 'dark:bg-slate-900'}`}
                     required
                     readOnly={currentUser?.role !== 'Admin'}
                   />
                   {isFetchingUser && (
-                    <p className="text-sm text-[#036280] mt-2 flex items-center">
-                      <FiLoader className="animate-spin mr-2" />
-                      Searching for user...
+                    <p className="text-xs text-indigo-500 mt-2 flex items-center">
+                      <FiLoader className="animate-spin mr-2" /> Searching for user...
                     </p>
                   )}
                   {formData.userName && !isFetchingUser && (
-                    <p className="text-sm text-[#3fa34d] mt-2 flex items-center">
-                      <FiCheck className="mr-2" />
-                      Found user: {formData.userName}
-                    </p>
-                  )}
-                  {!formData.userName && formData.userEmail && !isFetchingUser && (
-                    <p className="text-sm text-[#fd7f2f] mt-2 flex items-center">
-                      <FiAlertCircle className="mr-2" />
-                      User not found. Please check the email address.
+                    <p className="text-xs text-emerald-500 mt-2 flex items-center font-semibold">
+                      <FiCheck className="mr-1.5" /> Account Linked: {formData.userName}
                     </p>
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Full-width fields at bottom */}
-              <div className="space-y-5 md:col-span-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Start Date *</label>
-                    <div className="relative">
-                      <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="date"
-                        name="startDate"
-                        value={formData.startDate}
-                        onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
-                        required
-                      />
-                    </div>
+            {/* Section 3: Dates */}
+            <div className="bg-zinc-50 dark:bg-slate-900/50 p-6 rounded-3xl border border-zinc-100 dark:border-slate-700/50 space-y-4">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-zinc-200/50 dark:border-slate-700/50 pb-2">Rental Window</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-slate-300">Start Date *</label>
+                  <div className="relative">
+                    <FiCalendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleChange}
+                      className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 dark:text-white border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-semibold"
+                      required
+                    />
                   </div>
-                  
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Due Date *</label>
-                    <div className="relative">
-                      <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="date"
-                        name="dueDate"
-                        value={formData.dueDate}
-                        onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-slate-700 dark:bg-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent"
-                        required
-                      />
-                    </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-slate-300">Due Date *</label>
+                  <div className="relative">
+                    <FiCalendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="date"
+                      name="dueDate"
+                      value={formData.dueDate}
+                      onChange={handleChange}
+                      className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 dark:text-white border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-semibold"
+                      required
+                    />
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Submit button */}
-              <div className="md:col-span-2 pt-2">
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
-                    className="px-6 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg text-[#012F4A] dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
-                    disabled={isSubmitting}
+            {/* Section 4: Payment Details */}
+            <div className="bg-zinc-50 dark:bg-slate-900/50 p-6 rounded-3xl border border-zinc-100 dark:border-slate-700/50 space-y-4">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-zinc-200/50 dark:border-slate-700/50 pb-2">Payment Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-slate-300">Payment Method</label>
+                  <select
+                    name="paymentMethod"
+                    value={formData.paymentMethod}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 dark:text-white border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-semibold"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-gradient-to-r from-[#036280] to-[#233B7D] hover:from-[#012F4A] hover:to-[#122B5C] text-slate-900 dark:text-white font-medium rounded-lg shadow-md transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
-                    disabled={isSubmitting || !formData.userId}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <FiLoader className="animate-spin mr-2" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <FiSave className="mr-2" />
-                        Create Loan
-                      </>
-                    )}
-                  </button>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Digital Wallet">Digital Wallet</option>
+                    <option value="Student Wallet">Student Wallet</option>
+                  </select>
                 </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-slate-300">Payment Status</label>
+                  <select
+                    name="paymentStatus"
+                    value={formData.paymentStatus}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 dark:text-white border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-semibold"
+                  >
+                    <option value="Paid">Paid</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-slate-300">Payment Amount ($)</label>
+                  <div className="relative">
+                    <FiDollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="paymentAmount"
+                      value={formData.paymentAmount}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 dark:text-white border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-semibold"
+                      required
+                    />
+                  </div>
+                </div>
+
               </div>
-            </form>
-          </div>
+            </div>
+
+            {/* Actions buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
+                className="px-6 py-3 border border-zinc-200 dark:border-slate-600 rounded-2xl text-zinc-700 dark:text-slate-300 hover:bg-zinc-50 dark:hover:bg-slate-700/60 font-semibold transition"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60"
+                disabled={isSubmitting || !formData.userId}
+              >
+                {isSubmitting ? (
+                  <>
+                    <FiLoader className="animate-spin mr-2" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <FiSave />
+                    Create Loan
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
+
       </div>
     </div>
   );

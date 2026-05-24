@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FiArrowLeft, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { LuBookUp2 } from "react-icons/lu";
 import { getAdjacentBooks, getBookById } from "./libraryBooks.jsx";
 import RatingForm from "../Rating/RatingForm.jsx";
+import { apiClient } from "../../lib/api";
 
 const linkFocus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2";
@@ -14,8 +15,28 @@ const gradientBtn = `inline-flex items-center rounded-lg bg-gradient-to-r from-i
 
 function BookDetail() {
   const { id } = useParams();
-  const book = getBookById(id);
+  const [book, setBook] = useState(() => getBookById(id));
   const { prev, next } = book ? getAdjacentBooks(id) : {};
+
+  useEffect(() => {
+    const staticBook = getBookById(id);
+    setBook(staticBook);
+
+    const fetchLiveBook = async () => {
+      try {
+        const response = await apiClient.get(`/api/books/book/${id}`);
+        if (response.data) {
+          setBook(prev => ({
+            ...prev,
+            status: response.data.AvailabilityStatus?.toLowerCase() === 'available' ? 'available' : 'on-loan'
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching live book details:', err);
+      }
+    };
+    fetchLiveBook();
+  }, [id]);
 
   useEffect(() => {
     if (book) {

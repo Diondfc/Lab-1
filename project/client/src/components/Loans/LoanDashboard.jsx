@@ -103,7 +103,6 @@ const LoansDashboard = () => {
 
   // Calculate statistics
   const totalLoans = loans.length;
-  const returnedLoans = loans.filter(loan => loan.status === 'returned').length;
   const overdueLoans = loans.filter(loan => loan.status === 'overdue').length;
   const activeLoans = loans.filter(loan => loan.status === 'active').length;
   

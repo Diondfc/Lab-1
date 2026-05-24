@@ -4,7 +4,7 @@ const { getUserId, isStaffRole } = require('../middlewares/auth');
 
 exports.createLoan = async (req, res) => {
   try {
-    const { bookId, bookTitle, userId, userName, startDate, dueDate } = req.body;
+    const { bookId, bookTitle, userId, userName, startDate, dueDate, paymentStatus, paymentAmount, paymentMethod } = req.body;
 
     if (!bookId || !bookTitle || !userId || !userName || !startDate || !dueDate) {
       return res.status(400).json({
@@ -55,9 +55,20 @@ exports.createLoan = async (req, res) => {
 
       const [result] = await connection.execute(
         `INSERT INTO Loans
-         (BookID, BookTitle, UserID, UserName, StartDate, DueDate)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [bookId, bookTitle, userId, userName, startDate, dueDate]
+         (BookID, BookTitle, UserID, UserName, StartDate, DueDate, PaymentStatus, PaymentAmount, PaymentMethod, PaymentDate)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          bookId,
+          bookTitle,
+          userId,
+          userName,
+          startDate,
+          dueDate,
+          paymentStatus || 'Paid',
+          paymentAmount || 0.00,
+          paymentMethod || 'Mock Wallet',
+          (paymentStatus || 'Paid') === 'Paid' ? new Date() : null
+        ]
       );
 
       await connection.execute(
@@ -108,6 +119,10 @@ exports.getAllLoans = async (req, res) => {
           r.Conditions,
           r.Notes,
           r.FineAmount,
+          l.PaymentStatus,
+          l.PaymentAmount,
+          l.PaymentMethod,
+          DATE(l.PaymentDate) as PaymentDate,
           CASE 
             WHEN r.ReturnDate IS NOT NULL THEN 'returned'  /* Changed from ReturnID to ReturnDate */
             WHEN l.DueDate < CURDATE() THEN 'overdue'
@@ -152,6 +167,10 @@ exports.getUserLoans = async (req, res) => {
           r.Conditions,
           r.Notes,
           r.FineAmount as FineAmount,
+          l.PaymentStatus,
+          l.PaymentAmount,
+          l.PaymentMethod,
+          DATE(l.PaymentDate) as paymentDate,
           CASE 
             WHEN r.ReturnDate IS NOT NULL THEN 'returned'
             WHEN l.DueDate < CURDATE() THEN 'overdue'

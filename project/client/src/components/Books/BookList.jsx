@@ -1,15 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FiStar, FiArrowRight, FiSearch, FiFilter } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { books } from "./libraryBooks.jsx";
 import { cn } from "../../lib/utils";
+import { apiClient } from "../../lib/api";
 
 const BookList = () => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [displayBooks, setDisplayBooks] = useState(books);
 
-  const filteredBooks = books.filter(book => {
+  useEffect(() => {
+    const fetchLiveBooks = async () => {
+      try {
+        const response = await apiClient.get('/api/books');
+        if (Array.isArray(response.data)) {
+          setDisplayBooks(prevBooks => 
+            prevBooks.map(staticBook => {
+              const dbBook = response.data.find(b => Number(b.BookID) === Number(staticBook.id));
+              if (dbBook) {
+                return {
+                  ...staticBook,
+                  status: dbBook.AvailabilityStatus?.toLowerCase() === 'available' ? 'available' : 'on loan'
+                };
+              }
+              return staticBook;
+            })
+          );
+        }
+      } catch (err) {
+        console.error('Error fetching live books:', err);
+      }
+    };
+    fetchLiveBooks();
+  }, []);
+
+  const filteredBooks = displayBooks.filter(book => {
     const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           book.author.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filter === "all" || book.status === filter;

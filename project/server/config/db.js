@@ -25,8 +25,39 @@ async function verifyConnection() {
   try {
     const conn = await pool.getConnection()
     await conn.ping()
-    conn.release()
     console.log(`Database connected successfully (${DB_HOST}:${DB_PORT}/${DB_NAME}).`)
+
+    // Auto-migration helper for Payments integration
+    try {
+      const [columns] = await conn.execute(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'Loans'
+      `, [DB_NAME]);
+      
+      const columnNames = columns.map(c => c.COLUMN_NAME.toLowerCase());
+      
+      if (!columnNames.includes('paymentstatus')) {
+        console.log('Adding PaymentStatus column to Loans table...');
+        await conn.execute("ALTER TABLE Loans ADD COLUMN PaymentStatus VARCHAR(32) NOT NULL DEFAULT 'Pending'");
+      }
+      if (!columnNames.includes('paymentamount')) {
+        console.log('Adding PaymentAmount column to Loans table...');
+        await conn.execute("ALTER TABLE Loans ADD COLUMN PaymentAmount DECIMAL(10, 2) NOT NULL DEFAULT 0.00");
+      }
+      if (!columnNames.includes('paymentmethod')) {
+        console.log('Adding PaymentMethod column to Loans table...');
+        await conn.execute("ALTER TABLE Loans ADD COLUMN PaymentMethod VARCHAR(64) NULL");
+      }
+      if (!columnNames.includes('paymentdate')) {
+        console.log('Adding PaymentDate column to Loans table...');
+        await conn.execute("ALTER TABLE Loans ADD COLUMN PaymentDate TIMESTAMP NULL");
+      }
+    } catch (migErr) {
+      console.error('Auto-migration warning: Failed to check/add payment columns:', migErr.message);
+    }
+
+    conn.release()
   } catch (err) {
     console.error('Database connection failed. Check DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME in project/server/.env')
     console.error(err.message)
