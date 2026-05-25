@@ -34,6 +34,24 @@ CREATE TABLE IF NOT EXISTS useraccount (
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS RefreshTokens (
+  RefreshTokenID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  TokenHash CHAR(64) NOT NULL,
+  ExpiresAt DATETIME NOT NULL,
+  RevokedAt DATETIME NULL,
+  ReplacedByTokenID BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (RefreshTokenID),
+  UNIQUE KEY uq_refresh_tokens_hash (TokenHash),
+  KEY idx_refresh_tokens_user (UserID),
+  KEY idx_refresh_tokens_expiry (ExpiresAt),
+  CONSTRAINT fk_refresh_tokens_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
+  CONSTRAINT fk_refresh_tokens_replaced_by
+    FOREIGN KEY (ReplacedByTokenID) REFERENCES RefreshTokens (RefreshTokenID) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- -----------------------------------------------------------------------------
 -- Catalog: categories, books
 -- -----------------------------------------------------------------------------
