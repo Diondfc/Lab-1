@@ -64,9 +64,20 @@ async function login(req, res) {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    if (!process.env.JWT_REFRESH_SECRET) {
+      return res.status(500).json({ message: 'Server misconfiguration: JWT_REFRESH_SECRET not set' });
+    }
+
+    const refreshToken = jwt.sign(
+      { id: user.id, email: user.email, role },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
+    );
+
     res.json({
       message: 'Login successful',
       token,
+      refreshToken,
       user: {
         id: user.id,
         full_name: user.full_name,
@@ -80,5 +91,36 @@ async function login(req, res) {
   }
 }
 
+async function refresh(req, res) {
+  try {
+    if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+      return res.status(500).json({ message: 'Server misconfiguration: JWT secrets not set' });
+    }
+
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token is required' });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const role = decoded.role || 'Student';
+
+    const token = jwt.sign(
+      { id: decoded.id, email: decoded.email, role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    return res.json({ token });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Refresh token expired', code: 'REFRESH_TOKEN_EXPIRED' });
+    }
+
+    return res.status(401).json({ message: 'Invalid refresh token' });
+  }
+}
+
 exports.register = register;
 exports.login = login;
+exports.refresh = refresh;

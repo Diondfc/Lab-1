@@ -56,6 +56,10 @@ function LoginForm({ setUser }) {
         localStorage.setItem('token', data.token)
       }
 
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken)
+      }
+
       const destination =
         data.user?.role === 'Admin' || data.user?.role === 'Librarian'
           ? '/admin'
