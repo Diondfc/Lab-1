@@ -2,6 +2,30 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const UserAccount = require('../models/user-account');
+const RefreshToken = require('../models/refresh-token.model');
+
+function getTokenExpiryDate(expiresInValue) {
+  const nowMs = Date.now();
+  if (typeof expiresInValue === 'number') {
+    return new Date(nowMs + (expiresInValue * 1000));
+  }
+
+  const match = String(expiresInValue).match(/^(\d+)([smhd])$/i);
+  if (!match) {
+    return new Date(nowMs + (30 * 24 * 60 * 60 * 1000));
+  }
+
+  const amount = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  const multipliers = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  };
+
+  return new Date(nowMs + (amount * multipliers[unit]));
+}
 
 async function register(req, res) {
   try {
@@ -68,11 +92,18 @@ async function login(req, res) {
       return res.status(500).json({ message: 'Server misconfiguration: JWT_REFRESH_SECRET not set' });
     }
 
+    const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
     const refreshToken = jwt.sign(
       { id: user.id, email: user.email, role },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
+      { expiresIn: refreshExpiresIn }
     );
+
+    await RefreshToken.create({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: getTokenExpiryDate(refreshExpiresIn),
+    });
 
     res.json({
       message: 'Login successful',
@@ -103,6 +134,11 @@ async function refresh(req, res) {
     }
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const storedToken = await RefreshToken.findValidToken(refreshToken);
+    if (!storedToken || Number(storedToken.UserID) !== Number(decoded.id)) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
     const role = decoded.role || 'Student';
 
     const token = jwt.sign(
@@ -111,7 +147,22 @@ async function refresh(req, res) {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
-    return res.json({ token });
+    const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+    const newRefreshToken = jwt.sign(
+      { id: decoded.id, email: decoded.email, role },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: refreshExpiresIn }
+    );
+
+    const newTokenId = await RefreshToken.create({
+      userId: decoded.id,
+      token: newRefreshToken,
+      expiresAt: getTokenExpiryDate(refreshExpiresIn),
+    });
+
+    await RefreshToken.revokeTokenById(storedToken.RefreshTokenID, newTokenId);
+
+    return res.json({ token, refreshToken: newRefreshToken });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Refresh token expired', code: 'REFRESH_TOKEN_EXPIRED' });
