@@ -136,6 +136,7 @@ const AdminPanel = () => {
                       { title: 'Events Control', path: '/events/dashboard', icon: <FiCalendar />, desc: 'Organize library events', color: 'rose' },
                       { title: 'Ratings Overview', path: '/admin/ratings', icon: <FiActivity />, desc: 'View all book ratings', color: 'amber' },
                       { title: 'Role History', path: '/admin/role-history', icon: <FiShield />, desc: 'Track role periods', color: 'violet' },
+                      { title: 'User Management', path: '/admin/users', icon: <FiUsers />, desc: 'Activate/deactivate users', color: 'cyan' },
                     ].map((item, i) => (
                       <button
                         key={i}

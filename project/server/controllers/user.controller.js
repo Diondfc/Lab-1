@@ -5,7 +5,7 @@ const { normalizeRole } = require('../lib/roles');
 
 function sanitizeUser(user) {
   if (!user) return user;
-  const { Password, ...safe } = user;
+  const { Password, password, ...safe } = user;
   return safe;
 }
 
@@ -40,7 +40,7 @@ exports.getUserById = async (req, res) => {
 exports.createUser = async (req, res) => {
   try {
     const bcrypt = require('bcryptjs');
-    const { full_name, Name, email, Email, password, role, Role } = req.body;
+    const { full_name, Name, email, Email, password, role, Role, status, Status } = req.body;
     const name = full_name || Name;
     const userEmail = (email || Email || '').trim().toLowerCase();
     const userRole = normalizeRole(role || Role);
@@ -60,6 +60,7 @@ exports.createUser = async (req, res) => {
       email: userEmail,
       password: hashedPassword,
       role: userRole,
+      status: status || Status,
       changedByUserId: Number(getUserId(req)) || null,
     });
 
@@ -116,6 +117,53 @@ exports.updateUser = async (req, res) => {
       message: "Profile updated successfully",
       affectedRows: result.affectedRows
     });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.deactivateUser = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const callerId = Number(getUserId(req));
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    if (userId === callerId) {
+      return res.status(400).json({ message: "You cannot deactivate your own account" });
+    }
+
+    const userExists = await User.findById(userId);
+    if (!userExists) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.setStatus(userId, 'Inactive');
+    const user = await User.findById(userId);
+    res.json({ message: "User deactivated successfully", user: sanitizeUser(user) });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.activateUser = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const userExists = await User.findById(userId);
+    if (!userExists) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.setStatus(userId, 'Active');
+    const user = await User.findById(userId);
+    res.json({ message: "User activated successfully", user: sanitizeUser(user) });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

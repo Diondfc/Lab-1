@@ -1,6 +1,21 @@
 const pool = require('../config/db');
 const { ROLES, normalizeRole, isValidRole } = require('../lib/roles');
 
+const USER_STATUSES = Object.freeze({
+  ACTIVE: 'Active',
+  INACTIVE: 'Inactive',
+});
+
+function normalizeStatus(status) {
+  if (status === 'active') return USER_STATUSES.ACTIVE;
+  if (status === 'inactive') return USER_STATUSES.INACTIVE;
+  return status || USER_STATUSES.ACTIVE;
+}
+
+function isValidStatus(status) {
+  return Object.values(USER_STATUSES).includes(status);
+}
+
 class User {
   static mapUserRow(row) {
     if (!row) return row;
@@ -11,6 +26,7 @@ class User {
       email: row.Email,
       password: row.Password,
       role: normalizeRole(row.Role),
+      status: normalizeStatus(row.Status),
       created_at: row.created_at,
     };
   }
@@ -23,8 +39,12 @@ class User {
   static async create(userData) {
     const { full_name, email, password } = userData;
     const role = normalizeRole(userData.role);
+    const status = normalizeStatus(userData.status || userData.Status);
     if (!isValidRole(role)) {
       throw new Error(`Invalid role. Allowed roles: ${Object.values(ROLES).join(', ')}`);
+    }
+    if (!isValidStatus(status)) {
+      throw new Error(`Invalid status. Allowed statuses: ${Object.values(USER_STATUSES).join(', ')}`);
     }
     const conn = await pool.getConnection();
 
@@ -32,8 +52,8 @@ class User {
       await conn.beginTransaction();
 
       const [result] = await conn.query(
-        'INSERT INTO Users (Name, Email, Password, Role) VALUES (?, ?, ?, ?)',
-        [full_name, email, password, role]
+        'INSERT INTO Users (Name, Email, Password, Role, Status) VALUES (?, ?, ?, ?, ?)',
+        [full_name, email, password, role, status]
       );
 
       await conn.query(
@@ -57,7 +77,7 @@ class User {
   }
 
   static async findAll() {
-    const [rows] = await pool.query('SELECT * FROM Users');
+    const [rows] = await pool.query('SELECT * FROM Users ORDER BY created_at DESC, UserID DESC');
     return rows.map((row) => User.mapUserRow(row));
   }
 
@@ -87,6 +107,15 @@ class User {
       }
       updates.push('Role = ?');
       values.push(nextRole);
+    }
+
+    if (userData.status != null || userData.Status != null) {
+      const status = normalizeStatus(userData.status ?? userData.Status);
+      if (!isValidStatus(status)) {
+        throw new Error(`Invalid status. Allowed statuses: ${Object.values(USER_STATUSES).join(', ')}`);
+      }
+      updates.push('Status = ?');
+      values.push(status);
     }
 
     if (updates.length === 0) {
@@ -151,6 +180,20 @@ class User {
       Role: normalizeRole(row.Role),
     }));
   }
+
+  static async setStatus(id, status) {
+    const normalizedStatus = normalizeStatus(status);
+    if (!isValidStatus(normalizedStatus)) {
+      throw new Error(`Invalid status. Allowed statuses: ${Object.values(USER_STATUSES).join(', ')}`);
+    }
+
+    const [result] = await pool.query(
+      'UPDATE Users SET Status = ? WHERE UserID = ?',
+      [normalizedStatus, id]
+    );
+    return result;
+  }
 }
 
 module.exports = User;
+module.exports.USER_STATUSES = USER_STATUSES;

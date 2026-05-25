@@ -79,6 +79,24 @@ async function verifyConnection() {
     }
 
     try {
+      const [userColumns] = await conn.execute(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'Users'
+      `, [DB_NAME])
+      const userColumnNames = userColumns.map(c => c.COLUMN_NAME.toLowerCase())
+
+      if (!userColumnNames.includes('status')) {
+        console.log('Adding Status column to Users table...')
+        await conn.execute("ALTER TABLE Users ADD COLUMN Status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active' AFTER Role")
+      } else {
+        await conn.execute("ALTER TABLE Users MODIFY Status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active'")
+      }
+    } catch (statusMigErr) {
+      console.error('Auto-migration warning: Failed to check/add user status:', statusMigErr.message)
+    }
+
+    try {
       await conn.execute(
         "ALTER TABLE Users MODIFY Role ENUM('Student', 'Admin', 'Librarian', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member'"
       )

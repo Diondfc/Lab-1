@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS Users (
   Email VARCHAR(255) NOT NULL,
   Password VARCHAR(255) NOT NULL,
   Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member',
+  Status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (UserID),
   UNIQUE KEY uq_users_email (Email)

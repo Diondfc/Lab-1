@@ -75,6 +75,10 @@ async function login(req, res) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    if (user.status !== 'Active') {
+      return res.status(403).json({ message: 'This account is deactivated. Contact an administrator.' });
+    }
+
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
