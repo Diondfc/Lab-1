@@ -122,8 +122,9 @@ exports.updateUser = async (req, res) => {
 };
 
 exports.getRoleHistory = async (req, res) => {
+  const userId = Number(req.params.id);
+
   try {
-    const userId = Number(req.params.id);
     const callerId = Number(getUserId(req));
 
     if (!userId || isNaN(userId)) {

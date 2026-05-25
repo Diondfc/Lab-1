@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { 
   FiBook, FiUsers, FiClock, FiActivity, FiMessageSquare, FiSettings,
-  FiTrendingUp, FiPlusCircle, FiList, FiCalendar
+  FiTrendingUp, FiPlusCircle, FiList, FiCalendar, FiShield
 } from 'react-icons/fi';
 import { LuBookUp2 } from "react-icons/lu";
 
@@ -65,12 +65,20 @@ const AdminPanel = () => {
                     </p>
                   </div>
                   
-                  <button 
-                    className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-5 py-2.5 rounded-xl shadow-lg shadow-zinc-900/20 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all font-medium"
-                    onClick={() => navigate('/admin/add-book')}
-                  >
-                    <FiPlusCircle /> Add New Book
-                  </button>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <button 
+                      className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-900/20 hover:bg-indigo-500 transition-all font-medium"
+                      onClick={() => navigate('/admin/role-history')}
+                    >
+                      <FiShield /> Role History
+                    </button>
+                    <button 
+                      className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-5 py-2.5 rounded-xl shadow-lg shadow-zinc-900/20 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all font-medium"
+                      onClick={() => navigate('/admin/add-book')}
+                    >
+                      <FiPlusCircle /> Add New Book
+                    </button>
+                  </div>
                 </motion.div>
 
                 {/* KPI Cards */}
@@ -127,6 +135,7 @@ const AdminPanel = () => {
                       { title: 'Journals Config', path: '/admin/journals-dashboard', icon: <FiList />, desc: 'Manage publications', color: 'emerald' },
                       { title: 'Events Control', path: '/events/dashboard', icon: <FiCalendar />, desc: 'Organize library events', color: 'rose' },
                       { title: 'Ratings Overview', path: '/admin/ratings', icon: <FiActivity />, desc: 'View all book ratings', color: 'amber' },
+                      { title: 'Role History', path: '/admin/role-history', icon: <FiShield />, desc: 'Track role periods', color: 'violet' },
                     ].map((item, i) => (
                       <button
                         key={i}
