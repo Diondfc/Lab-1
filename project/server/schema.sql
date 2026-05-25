@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS Users (
   Name VARCHAR(255) NOT NULL,
   Email VARCHAR(255) NOT NULL,
   Password VARCHAR(255) NOT NULL,
-  Role ENUM('Student', 'Admin', 'Librarian') NOT NULL DEFAULT 'Student',
+  Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (UserID),
   UNIQUE KEY uq_users_email (Email)
@@ -32,6 +32,23 @@ CREATE TABLE IF NOT EXISTS useraccount (
   UNIQUE KEY uq_useraccount_user (UserID),
   CONSTRAINT fk_useraccount_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS UserRoleHistory (
+  RoleHistoryID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL,
+  StartedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  EndedAt DATETIME NULL,
+  ChangedByUserID INT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (RoleHistoryID),
+  KEY idx_role_history_user (UserID),
+  KEY idx_role_history_active (UserID, EndedAt),
+  CONSTRAINT fk_role_history_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
+  CONSTRAINT fk_role_history_changed_by
+    FOREIGN KEY (ChangedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS RefreshTokens (
@@ -271,6 +288,13 @@ INSERT IGNORE INTO Users (UserID, Name, Email, Password, Role) VALUES
   );
 
 INSERT IGNORE INTO useraccount (UserID) VALUES (1);
+
+INSERT INTO UserRoleHistory (UserID, Role, StartedAt)
+SELECT u.UserID, u.Role, u.created_at
+FROM Users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM UserRoleHistory h WHERE h.UserID = u.UserID
+);
 
 -- Sample catalog (IDs 1–8 align with the demo client catalog for easier testing)
 INSERT IGNORE INTO Books (

@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useOutletContext } from 'react-router-dom'
+import { isStaffRole } from '../../lib/roles.js'
 
 function AdminRoute() {
   const { user } = useOutletContext() || {}
@@ -9,8 +10,7 @@ function AdminRoute() {
     return <Navigate to="/login" replace />
   }
 
-  const isStaff =
-    currentUser.role === 'Admin' || currentUser.role === 'Librarian'
+  const isStaff = isStaffRole(currentUser.role)
 
   if (!isStaff) {
     return <Navigate to="/home" replace />

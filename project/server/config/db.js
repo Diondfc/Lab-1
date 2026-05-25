@@ -1,6 +1,7 @@
 const path = require('path')
 const mysql = require('mysql2/promise')
 const dotenv = require('dotenv')
+const { ROLES } = require('../lib/roles')
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') })
 
@@ -75,6 +76,51 @@ async function verifyConnection() {
       }
     } catch (migErr) {
       console.error('Auto-migration warning: Failed to check/add payment columns:', migErr.message);
+    }
+
+    try {
+      await conn.execute(
+        "ALTER TABLE Users MODIFY Role ENUM('Student', 'Admin', 'Librarian', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member'"
+      )
+      await conn.execute('UPDATE Users SET Role = ? WHERE Role = ?', [ROLES.USER_MEMBER, 'Student'])
+      await conn.execute('UPDATE Users SET Role = ? WHERE Role = ?', [ROLES.MANAGER, 'Librarian'])
+      await conn.execute(
+        "ALTER TABLE Users MODIFY Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member'"
+      )
+    } catch (roleMigErr) {
+      console.error('Auto-migration warning: Failed to update user roles:', roleMigErr.message)
+    }
+
+    try {
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS UserRoleHistory (
+          RoleHistoryID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          UserID INT UNSIGNED NOT NULL,
+          Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL,
+          StartedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          EndedAt DATETIME NULL,
+          ChangedByUserID INT UNSIGNED NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (RoleHistoryID),
+          KEY idx_role_history_user (UserID),
+          KEY idx_role_history_active (UserID, EndedAt),
+          CONSTRAINT fk_role_history_user
+            FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
+          CONSTRAINT fk_role_history_changed_by
+            FOREIGN KEY (ChangedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+
+      await conn.execute(`
+        INSERT INTO UserRoleHistory (UserID, Role, StartedAt)
+        SELECT u.UserID, u.Role, u.created_at
+        FROM Users u
+        WHERE NOT EXISTS (
+          SELECT 1 FROM UserRoleHistory h WHERE h.UserID = u.UserID
+        )
+      `)
+    } catch (roleHistoryMigErr) {
+      console.error('Auto-migration warning: Failed to create/seed role history:', roleHistoryMigErr.message)
     }
 
     conn.release()

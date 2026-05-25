@@ -1,5 +1,6 @@
 const pool = require('../config/db');
-const { getUserId, isStaffRole } = require('../middlewares/auth');
+const { getUserId, isStaffRole, getUserRole } = require('../middlewares/auth');
+const { ROLES } = require('../lib/roles');
 
 async function refreshBookRating(bookId) {
   await pool.execute(
@@ -17,9 +18,14 @@ exports.createRating = async (req, res) => {
   try {
     const { book_id, user_id, rating_value, comment } = req.body;
     const callerId = Number(getUserId(req));
+    const callerRole = getUserRole(req);
 
     if (!book_id || !user_id || rating_value == null) {
       return res.status(400).json({ message: 'book_id, user_id and rating_value are required' });
+    }
+
+    if (callerRole !== ROLES.USER_MEMBER) {
+      return res.status(403).json({ message: 'Only User/Member accounts can submit book ratings' });
     }
 
     if (Number(user_id) !== callerId) {

@@ -4,6 +4,7 @@ import { FiBook, FiMenu, FiX, FiLogOut, FiUser, FiSun, FiMoon } from 'react-icon
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { useTheme } from '../../contexts/ThemeContext';
+import { isStaffRole } from '../../lib/roles';
 
 function Navbar({ user, setUser }) {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ function Navbar({ user, setUser }) {
     { name: 'My shelf', path: '/bookshelf' },
   ];
 
-  if (user?.role === 'Admin' || user?.role === 'Librarian') {
+  if (isStaffRole(user?.role)) {
     navLinks.push({ name: 'Staff panel', path: '/admin' });
   }
 

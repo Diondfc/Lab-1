@@ -5,6 +5,7 @@ import { LuBookUp2 } from "react-icons/lu";
 import { getAdjacentBooks, getBookById } from "./libraryBooks.jsx";
 import RatingForm from "../Rating/RatingForm.jsx";
 import { apiClient } from "../../lib/api";
+import { isStaffRole } from "../../lib/roles";
 
 const linkFocus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2";
@@ -16,6 +17,8 @@ const gradientBtn = `inline-flex items-center rounded-lg bg-gradient-to-r from-i
 function BookDetail() {
   const { id } = useParams();
   const [book, setBook] = useState(() => getBookById(id));
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const canRateBook = currentUser && !isStaffRole(currentUser.role);
   const { prev, next } = book ? getAdjacentBooks(id) : {};
 
   useEffect(() => {
@@ -215,16 +218,18 @@ function BookDetail() {
                 </nav>
               )}
 
-              <section className="mt-12 border-t border-gray-100 dark:border-slate-700 pt-8" aria-labelledby="rating-form-heading">
-                <h2 id="rating-form-heading" className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                  Leave Your Rating
-                </h2>
-                <RatingForm 
-                  book_id={book.id} 
-                  user_id={JSON.parse(localStorage.getItem('user'))?.id} 
-                  onRatingSubmitted={() => {}} 
-                />
-              </section>
+              {canRateBook && (
+                <section className="mt-12 border-t border-gray-100 dark:border-slate-700 pt-8" aria-labelledby="rating-form-heading">
+                  <h2 id="rating-form-heading" className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                    Leave Your Rating
+                  </h2>
+                  <RatingForm 
+                    book_id={book.id} 
+                    user_id={currentUser.id} 
+                    onRatingSubmitted={() => {}} 
+                  />
+                </section>
+              )}
             </div>
           </div>
         </article>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '../../lib/api.js'
+import { isStaffRole } from '../../lib/roles.js'
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -60,10 +61,7 @@ function LoginForm({ setUser }) {
         localStorage.setItem('refreshToken', data.refreshToken)
       }
 
-      const destination =
-        data.user?.role === 'Admin' || data.user?.role === 'Librarian'
-          ? '/admin'
-          : '/home'
+      const destination = isStaffRole(data.user?.role) ? '/admin' : '/home'
 
       setTimeout(() => {
         navigate(destination, { replace: true })

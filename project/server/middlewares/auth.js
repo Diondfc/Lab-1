@@ -1,15 +1,12 @@
 const jwt = require('jsonwebtoken');
+const { ROLES, isStaffRole, normalizeRole } = require('../lib/roles');
 
 function getUserId(req) {
   return req.user?.id ?? req.user?.user?.id;
 }
 
 function getUserRole(req) {
-  return req.user?.role || req.user?.user?.role;
-}
-
-function isStaffRole(role) {
-  return role === 'Admin' || role === 'Librarian';
+  return normalizeRole(req.user?.role || req.user?.user?.role);
 }
 
 function isStaff(req) {
@@ -75,7 +72,7 @@ const authorizeSelfOrStaff = (paramName = 'userId') => {
   };
 };
 
-const authorizeStaff = authorizeRoles('Admin', 'Librarian');
+const authorizeStaff = authorizeRoles(ROLES.ADMIN, ROLES.MANAGER);
 
 module.exports = {
   auth,

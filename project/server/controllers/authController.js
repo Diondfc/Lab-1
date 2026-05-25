@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const UserAccount = require('../models/user-account');
 const RefreshToken = require('../models/refresh-token.model');
+const { ROLES, normalizeRole } = require('../lib/roles');
 
 function getTokenExpiryDate(expiresInValue) {
   const nowMs = Date.now();
@@ -80,7 +81,7 @@ async function login(req, res) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const role = user.role || 'Student';
+    const role = normalizeRole(user.role);
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role },
@@ -139,7 +140,7 @@ async function refresh(req, res) {
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
-    const role = decoded.role || 'Student';
+    const role = normalizeRole(decoded.role || ROLES.USER_MEMBER);
 
     const token = jwt.sign(
       { id: decoded.id, email: decoded.email, role },

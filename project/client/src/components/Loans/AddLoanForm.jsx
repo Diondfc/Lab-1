@@ -14,6 +14,7 @@ import {
   FiCheckCircle
 } from 'react-icons/fi';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { isStaffRole } from '../../lib/roles';
 
 const AddLoanForm = ({ onSave }) => {
   const location = useLocation();
@@ -81,7 +82,7 @@ const AddLoanForm = ({ onSave }) => {
 
   // Fetch user details when email changes (with debounce)
   useEffect(() => {
-    if (currentUser?.role !== 'Admin' && formData.userEmail === currentUser?.email) return;
+    if (!isStaffRole(currentUser?.role) && formData.userEmail === currentUser?.email) return;
     const timer = setTimeout(() => {
       if (formData.userEmail) {
         fetchUserDetails();
@@ -169,7 +170,7 @@ const AddLoanForm = ({ onSave }) => {
         }
 
         setTimeout(() => {
-          if (currentUser?.role === 'Admin') {
+          if (isStaffRole(currentUser?.role)) {
             navigate('/admin/loans');
           } else {
             navigate('/loan-history', { state: { userId: formData.userId } });
@@ -190,10 +191,10 @@ const AddLoanForm = ({ onSave }) => {
         
         {/* Back Button */}
         <button 
-          onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
+          onClick={() => isStaffRole(currentUser?.role) ? navigate('/admin/loans') : navigate('/books')}
           className="flex items-center text-slate-400 dark:text-slate-500 hover:text-zinc-900 dark:hover:text-white mb-6 text-sm font-semibold transition-colors"
         >
-          <FiArrowLeft className="mr-2" /> Back to {currentUser?.role === 'Admin' ? 'Loans Dashboard' : 'Library'}
+          <FiArrowLeft className="mr-2" /> Back to {isStaffRole(currentUser?.role) ? 'Loans Dashboard' : 'Library'}
         </button>
 
         {/* Error Messaging */}
@@ -274,9 +275,9 @@ const AddLoanForm = ({ onSave }) => {
                     name="userEmail"
                     value={formData.userEmail}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 bg-zinc-50 border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium dark:text-white ${currentUser?.role !== 'Admin' ? 'bg-zinc-100 dark:bg-slate-900/60 cursor-not-allowed' : 'dark:bg-slate-900'}`}
+                    className={`w-full px-4 py-3 bg-zinc-50 border border-zinc-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium dark:text-white ${!isStaffRole(currentUser?.role) ? 'bg-zinc-100 dark:bg-slate-900/60 cursor-not-allowed' : 'dark:bg-slate-900'}`}
                     required
-                    readOnly={currentUser?.role !== 'Admin'}
+                    readOnly={!isStaffRole(currentUser?.role)}
                   />
                   {isFetchingUser && (
                     <p className="text-xs text-indigo-500 mt-2 flex items-center">
@@ -344,7 +345,7 @@ const AddLoanForm = ({ onSave }) => {
                     <option value="Credit Card">Credit Card</option>
                     <option value="Cash">Cash</option>
                     <option value="Digital Wallet">Digital Wallet</option>
-                    <option value="Student Wallet">Student Wallet</option>
+                    <option value="Member Wallet">Member Wallet</option>
                   </select>
                 </div>
 
@@ -384,7 +385,7 @@ const AddLoanForm = ({ onSave }) => {
             <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-slate-700/60">
               <button
                 type="button"
-                onClick={() => currentUser?.role === 'Admin' ? navigate('/admin/loans') : navigate('/books')}
+                onClick={() => isStaffRole(currentUser?.role) ? navigate('/admin/loans') : navigate('/books')}
                 className="px-6 py-3 border border-zinc-200 dark:border-slate-600 rounded-2xl text-zinc-700 dark:text-slate-300 hover:bg-zinc-50 dark:hover:bg-slate-700/60 font-semibold transition"
                 disabled={isSubmitting}
               >

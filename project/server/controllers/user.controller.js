@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const pool = require('../config/db');
 const { getUserId, isStaff } = require('../middlewares/auth');
+const { normalizeRole } = require('../lib/roles');
 
 function sanitizeUser(user) {
   if (!user) return user;
@@ -42,7 +43,7 @@ exports.createUser = async (req, res) => {
     const { full_name, Name, email, Email, password, role, Role } = req.body;
     const name = full_name || Name;
     const userEmail = (email || Email || '').trim().toLowerCase();
-    const userRole = role || Role || 'Student';
+    const userRole = normalizeRole(role || Role);
 
     if (!name || !userEmail || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
@@ -59,6 +60,7 @@ exports.createUser = async (req, res) => {
       email: userEmail,
       password: hashedPassword,
       role: userRole,
+      changedByUserId: Number(getUserId(req)) || null,
     });
 
     const UserAccount = require('../models/user-account');
@@ -99,7 +101,7 @@ exports.updateUser = async (req, res) => {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
 
-    if (!isStaff(req) && updatedInfo.Role != null) {
+    if (!isStaff(req) && (updatedInfo.Role != null || updatedInfo.role != null)) {
       return res.status(403).json({ message: 'Cannot change role on your own account' });
     }
 
@@ -108,6 +110,7 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    updatedInfo.changedByUserId = callerId;
     const result = await User.updateUserById(userId, updatedInfo);
     res.json({
       message: "Profile updated successfully",
@@ -115,6 +118,31 @@ exports.updateUser = async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+exports.getRoleHistory = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const callerId = Number(getUserId(req));
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    if (!isStaff(req) && userId !== callerId) {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const history = await User.getRoleHistory(userId);
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
