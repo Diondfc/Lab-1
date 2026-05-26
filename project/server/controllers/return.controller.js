@@ -33,6 +33,7 @@ exports.processReturn = async (req, res) => {
       );
 
       if (!activeLoan.length) {
+        await connection.rollback();
         return res.status(404).json({
           success: false,
           message: 'No active loan found'
@@ -50,6 +51,17 @@ exports.processReturn = async (req, res) => {
         [activeLoan[0].LoanID, bookId, userId, returnDate, condition, notes, fineAmount]
       );
 
+      let fineId = null;
+      if (fineAmount > 0) {
+        const [fineResult] = await connection.execute(
+          `INSERT INTO Fines
+           (ReturnID, LoanID, UserID, Amount, Status)
+           VALUES (?, ?, ?, ?, 'Unpaid')`,
+          [result.insertId, activeLoan[0].LoanID, userId, fineAmount]
+        );
+        fineId = fineResult.insertId;
+      }
+
       // Update book status and increment quantity
       await connection.execute(
         `UPDATE Books 
@@ -65,7 +77,8 @@ exports.processReturn = async (req, res) => {
         success: true,
         message: 'Return processed successfully',
         returnDate: returnDate,
-        fineAmount: fineAmount
+        fineAmount: fineAmount,
+        fineId
       });
     } catch (error) {
       await connection.rollback();
@@ -83,4 +96,4 @@ exports.processReturn = async (req, res) => {
   }
 };
 
-exports.calculateFine = calculateFine;
+exports.calculateFine = calculateFine;

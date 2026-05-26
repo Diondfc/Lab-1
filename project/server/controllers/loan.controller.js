@@ -119,6 +119,10 @@ exports.getAllLoans = async (req, res) => {
           r.Conditions,
           r.Notes,
           r.FineAmount,
+          f.FineID,
+          f.Status as FineStatus,
+          f.PaymentMethod as FinePaymentMethod,
+          DATE(f.PaidAt) as FinePaidAt,
           l.PaymentStatus,
           l.PaymentAmount,
           l.PaymentMethod,
@@ -130,6 +134,7 @@ exports.getAllLoans = async (req, res) => {
           END as status
         FROM Loans l
         LEFT JOIN ReturnLoans r ON l.LoanID = r.LoanID
+        LEFT JOIN Fines f ON r.ReturnID = f.ReturnID
         ORDER BY l.StartDate DESC
       `);
       
@@ -167,6 +172,10 @@ exports.getUserLoans = async (req, res) => {
           r.Conditions,
           r.Notes,
           r.FineAmount as FineAmount,
+          f.FineID,
+          f.Status as FineStatus,
+          f.PaymentMethod as FinePaymentMethod,
+          DATE(f.PaidAt) as finePaidAt,
           l.PaymentStatus,
           l.PaymentAmount,
           l.PaymentMethod,
@@ -178,6 +187,7 @@ exports.getUserLoans = async (req, res) => {
           END as status
         FROM Loans l
         LEFT JOIN ReturnLoans r ON l.LoanID = r.LoanID
+        LEFT JOIN Fines f ON r.ReturnID = f.ReturnID
         WHERE l.UserID = ?
         ORDER BY l.StartDate DESC
       `, [userId]);
@@ -225,6 +235,13 @@ exports.deleteLoan = async (req, res) => {
       );
 
       const wasReturned = returnRows.length > 0;
+
+      await connection.execute(
+        `DELETE f FROM Fines f
+         JOIN ReturnLoans r ON f.ReturnID = r.ReturnID
+         WHERE r.LoanID = ?`,
+        [id]
+      );
 
       await connection.execute(
         `DELETE FROM ReturnLoans WHERE LoanID = ?`,

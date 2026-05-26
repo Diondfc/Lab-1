@@ -198,6 +198,32 @@ CREATE TABLE IF NOT EXISTS ReturnLoans (
     FOREIGN KEY (UserID) REFERENCES Users (UserID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS Fines (
+  FineID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ReturnID INT UNSIGNED NOT NULL,
+  LoanID INT UNSIGNED NOT NULL,
+  UserID INT UNSIGNED NOT NULL,
+  Amount DECIMAL(10, 2) NOT NULL,
+  Status ENUM('Unpaid', 'Paid', 'Waived') NOT NULL DEFAULT 'Unpaid',
+  PaymentMethod VARCHAR(64) NULL,
+  PaymentReference VARCHAR(128) NULL,
+  PaidAt TIMESTAMP NULL,
+  WaivedAt TIMESTAMP NULL,
+  Notes TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (FineID),
+  UNIQUE KEY uq_fines_return (ReturnID),
+  KEY idx_fines_user_status (UserID, Status),
+  KEY idx_fines_loan (LoanID),
+  CONSTRAINT fk_fines_return
+    FOREIGN KEY (ReturnID) REFERENCES ReturnLoans (ReturnID) ON DELETE CASCADE,
+  CONSTRAINT fk_fines_loan
+    FOREIGN KEY (LoanID) REFERENCES Loans (LoanID) ON DELETE CASCADE,
+  CONSTRAINT fk_fines_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- -----------------------------------------------------------------------------
 -- Events
 -- -----------------------------------------------------------------------------
