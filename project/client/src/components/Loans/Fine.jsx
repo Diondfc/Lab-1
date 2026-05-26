@@ -1,257 +1,263 @@
-import { useState, useEffect } from 'react';
-import { 
-  FiAlertCircle, 
-  FiCheckCircle, 
-  FiClock, 
-  FiDollarSign, 
-  FiInfo, 
+import { useEffect, useState } from 'react';
+import {
+  FiAlertCircle,
   FiBook,
-  FiCalendar
+  FiCalendar,
+  FiCheckCircle,
+  FiClock,
+  FiCreditCard,
+  FiDollarSign,
+  FiInfo,
 } from 'react-icons/fi';
 import { apiClient } from '../../lib/api';
+
+const fineStatusLabel = {
+  paid: 'Paid',
+  unpaid: 'Unpaid',
+  waived: 'Waived',
+};
 
 const Fines = () => {
   const [fines, setFines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payingId, setPayingId] = useState(null);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchFines = async () => {
-      try {
-        setLoading(true);
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) throw new Error("User not logged in");
-        
-        const response = await apiClient.get(`/api/loans/user/${user.id}`);
-        if (response.data.success) {
-          const loans = response.data.data;
-          
-          const calculatedFines = loans.map(loan => {
-            let fineAmount = 0;
-            let status = 'active';
-            
-            if (loan.status === 'returned' && loan.FineAmount) {
-              fineAmount = parseFloat(loan.FineAmount);
-              status = 'paid';
-            } else if (loan.status === 'overdue' && !loan.returnDate) {
-              const dueDate = new Date(loan.dueDate);
-              const today = new Date();
-              const daysLate = Math.max(0, Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)));
-              fineAmount = daysLate * 0.50;
-              status = 'unpaid';
-            }
-            
-            return {
-              ...loan,
-              fineAmount,
-              status,
-              daysLate: loan.returnDate 
-                ? Math.ceil((new Date(loan.returnDate) - new Date(loan.dueDate)) / (1000 * 60 * 60 * 24))
-                : Math.ceil((Date.now() - new Date(loan.dueDate)) / (1000 * 60 * 60 * 24))
-            };
-          }).filter(loan => loan.fineAmount > 0);
+  const fetchFines = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-          setFines(calculatedFines);
-        } else {
-          throw new Error(response.data.message || 'Failed to fetch fines');
-        }
-      } catch (error) {
-        console.error('Error fetching fines:', error);
-        setError(error.message || 'Failed to load fines data');
-      } finally {
-        setLoading(false);
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user) throw new Error('User not logged in');
+
+      const response = await apiClient.get(`/api/fines?userId=${user.id}`);
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to fetch fines');
       }
-    };
 
+      setFines(response.data.data.map((fine) => {
+        const dueDate = new Date(fine.DueDate);
+        const returnDate = new Date(fine.ReturnDate);
+        const daysLate = Math.max(
+          0,
+          Math.floor((returnDate - dueDate) / (1000 * 60 * 60 * 24))
+        );
+
+        return {
+          ...fine,
+          fineAmount: parseFloat(fine.Amount || 0),
+          status: String(fine.Status || '').toLowerCase(),
+          daysLate,
+        };
+      }));
+    } catch (error) {
+      console.error('Error fetching fines:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to load fines data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchFines();
   }, []);
 
+  const handlePayFine = async (fineId) => {
+    try {
+      setPayingId(fineId);
+      setError(null);
+      await apiClient.post(`/api/fines/${fineId}/pay`, {
+        paymentMethod: 'Mock Wallet',
+      });
+      await fetchFines();
+    } catch (error) {
+      console.error('Error paying fine:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to pay fine');
+    } finally {
+      setPayingId(null);
+    }
+  };
+
   const totalFines = fines.reduce((sum, fine) => sum + fine.fineAmount, 0);
-  const unpaidFines = fines.filter(fine => fine.status === 'unpaid').length;
+  const unpaidFines = fines.filter((fine) => fine.status === 'unpaid').length;
 
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="text-lg font-medium text-gray-600">Loading fines…</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-lg font-medium text-red-600">{error}</div>
+        <div className="text-lg font-medium text-gray-600">Loading fines...</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-[#FD7F2F] to-[#233B7D] text-slate-900 rounded-2xl p-6 mb-8 shadow-lg">
-        <h1 className="text-3xl font-bold mb-1">Fines & Payments</h1>
-        <p className="text-[#FFE4C4] opacity-90">View your outstanding and paid fines</p>
+    <div className="container mx-auto max-w-6xl px-4 py-6">
+      <div className="mb-8 rounded-2xl bg-gradient-to-r from-[#FD7F2F] to-[#233B7D] p-6 text-slate-900 shadow-lg">
+        <h1 className="mb-1 text-3xl font-bold">Fines & Payments</h1>
+        <p className="text-[#FFE4C4] opacity-90">View and pay your library fines</p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-        {/* Total Fines Card */}
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+      {error && (
+        <div className="mb-6 flex items-center rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          <FiAlertCircle className="mr-3 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-[#036280] bg-opacity-10 mr-4">
-              <FiDollarSign className="text-[#036280] text-xl" />
+            <div className="mr-4 rounded-lg bg-[#036280] bg-opacity-10 p-3">
+              <FiDollarSign className="text-xl text-[#036280]" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 uppercase tracking-wider">Total Fines</p>
+              <p className="text-sm uppercase tracking-wider text-gray-500">Total Fines</p>
               <p className="text-2xl font-bold text-[#036280]">${totalFines.toFixed(2)}</p>
             </div>
           </div>
         </div>
-        
-        {/* Unpaid Fines Card */}
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+
+        <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-[#FD7F2F] bg-opacity-10 mr-4">
-              <FiAlertCircle className="text-[#FD7F2F] text-xl" />
+            <div className="mr-4 rounded-lg bg-[#FD7F2F] bg-opacity-10 p-3">
+              <FiAlertCircle className="text-xl text-[#FD7F2F]" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 uppercase tracking-wider">Unpaid Fines</p>
+              <p className="text-sm uppercase tracking-wider text-gray-500">Unpaid Fines</p>
               <p className="text-2xl font-bold text-[#FD7F2F]">{unpaidFines}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Policy Section */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-        <h2 className="text-xl font-bold text-[#012F4A] mb-4 flex items-center">
+      <div className="mb-8 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center text-xl font-bold text-[#012F4A]">
           <FiInfo className="mr-3 text-[#FD7F2F]" /> Fine Policy
         </h2>
         <ul className="space-y-3">
           <li className="flex items-start">
-            <span className="inline-block bg-[#036280] rounded-full w-2 h-2 mt-2 mr-3"></span>
+            <span className="mr-3 mt-2 inline-block h-2 w-2 rounded-full bg-[#036280]"></span>
             <span className="text-gray-700">Fines are charged at <strong>$0.50 per day</strong> for overdue books</span>
           </li>
           <li className="flex items-start">
-            <span className="inline-block bg-[#036280] rounded-full w-2 h-2 mt-2 mr-3"></span>
-            <span className="text-gray-700">Maximum fine per book is <strong>$10.00</strong></span>
+            <span className="mr-3 mt-2 inline-block h-2 w-2 rounded-full bg-[#036280]"></span>
+            <span className="text-gray-700">Fine records are created when overdue books are returned</span>
           </li>
           <li className="flex items-start">
-            <span className="inline-block bg-[#036280] rounded-full w-2 h-2 mt-2 mr-3"></span>
-            <span className="text-gray-700">Fines are automatically marked as paid when books are returned</span>
-          </li>
-          <li className="flex items-start">
-            <span className="inline-block bg-[#036280] rounded-full w-2 h-2 mt-2 mr-3"></span>
-            <span className="text-gray-700">Unpaid fines restrict borrowing privileges</span>
+            <span className="mr-3 mt-2 inline-block h-2 w-2 rounded-full bg-[#036280]"></span>
+            <span className="text-gray-700">Unpaid fines can be paid online or resolved by library staff</span>
           </li>
         </ul>
       </div>
 
-      {/* Fines List */}
       <div className="space-y-5">
         {fines.length === 0 ? (
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#3FA34D] bg-opacity-10 rounded-full mb-4">
-              <FiCheckCircle className="text-[#3FA34D] text-3xl" />
+          <div className="rounded-xl border border-gray-100 bg-white p-8 text-center shadow-sm">
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#3FA34D] bg-opacity-10">
+              <FiCheckCircle className="text-3xl text-[#3FA34D]" />
             </div>
-            <h3 className="text-xl font-medium text-[#3FA34D] mb-2">No fines recorded</h3>
-            <p className="text-gray-600">You have no outstanding or paid fines!</p>
+            <h3 className="mb-2 text-xl font-medium text-[#3FA34D]">No fines recorded</h3>
+            <p className="text-gray-600">You have no outstanding or paid fines.</p>
           </div>
         ) : (
           fines.map((fine) => (
-            <div 
-              key={fine.id} 
-              className={`bg-white rounded-xl p-5 shadow-sm border-l-4 ${
-                fine.status === 'paid' ? 'border-[#3FA34D]' : 'border-[#FD7F2F]'
-              } hover:shadow-md transition-shadow`}
+            <div
+              key={fine.FineID}
+              className={`rounded-xl border-l-4 bg-white p-5 shadow-sm transition-shadow hover:shadow-md ${
+                fine.status === 'unpaid' ? 'border-[#FD7F2F]' : 'border-[#3FA34D]'
+              }`}
             >
-              <div className="flex flex-col md:flex-row gap-5">
-                {/* Book Cover Placeholder */}
+              <div className="flex flex-col gap-5 md:flex-row">
                 <div className="flex-shrink-0">
-                  <div className="w-16 h-20 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-100">
-                    <FiBook className="text-gray-400 text-2xl" />
+                  <div className="flex h-20 w-16 items-center justify-center rounded-lg border border-gray-100 bg-gray-50">
+                    <FiBook className="text-2xl text-gray-400" />
                   </div>
                 </div>
-                
-                {/* Fine Details */}
+
                 <div className="flex-1">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                  <div className="mb-4 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
                     <div>
                       <h3 className="text-lg font-bold text-[#012F4A]">{fine.BookTitle}</h3>
-                      
-                      <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+
+                      <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="text-gray-500 mb-1 flex items-center">
+                          <p className="mb-1 flex items-center text-gray-500">
                             <FiCalendar className="mr-2 text-[#036280]" /> Due Date
                           </p>
-                          <p className="text-gray-700">{new Date(fine.dueDate).toLocaleDateString()}</p>
+                          <p className="text-gray-700">{new Date(fine.DueDate).toLocaleDateString()}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500 mb-1 flex items-center">
-                            {fine.returnDate ? (
-                              <FiCheckCircle className="mr-2 text-[#3FA34D]" />
-                            ) : (
-                              <FiClock className="mr-2 text-[#FD7F2F]" />
-                            )}
-                            {fine.returnDate ? "Returned" : "Days Overdue"}
+                          <p className="mb-1 flex items-center text-gray-500">
+                            <FiClock className="mr-2 text-[#FD7F2F]" /> Returned
                           </p>
-                          <p className={!fine.returnDate ? 'text-[#FD7F2F] font-medium' : 'text-gray-700'}>
-                            {fine.returnDate 
-                              ? new Date(fine.returnDate).toLocaleDateString()
-                              : `${fine.daysLate} day${fine.daysLate !== 1 ? 's' : ''}`}
-                          </p>
+                          <p className="text-gray-700">{new Date(fine.ReturnDate).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Fine Amount */}
-                    <div className="mt-4 md:mt-0 text-center md:text-right">
+
+                    <div className="mt-4 text-center md:mt-0 md:text-right">
                       <div className={`text-2xl font-bold ${
-                        fine.status === 'paid' ? 'text-[#3FA34D]' : 'text-[#FD7F2F]'
+                        fine.status === 'unpaid' ? 'text-[#FD7F2F]' : 'text-[#3FA34D]'
                       }`}>
                         ${fine.fineAmount.toFixed(2)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1 uppercase tracking-wider">
-                        {fine.daysLate} day{fine.daysLate !== 1 ? 's' : ''} late
+                      <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">
+                        {fineStatusLabel[fine.status] || fine.Status}
                       </div>
                     </div>
                   </div>
 
-                  {/* Fine Calculation */}
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-[#012F4A] mb-2 flex items-center">
+                  <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                    <h4 className="mb-2 flex items-center font-medium text-[#012F4A]">
                       <FiDollarSign className="mr-2 text-[#036280]" /> Fine Calculation
                     </h4>
-                    <div className="text-sm text-gray-700 grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
                       <span className="text-gray-500">Base rate:</span>
                       <span>$0.50 per day</span>
                       <span className="text-gray-500">Late days:</span>
                       <span>{fine.daysLate}</span>
-                      <span className="text-gray-500 font-medium">Total:</span>
+                      <span className="font-medium text-gray-500">Total:</span>
                       <span className="font-medium">
-                        $0.50 × {fine.daysLate} = ${fine.fineAmount.toFixed(2)}
+                        $0.50 x {fine.daysLate} = ${fine.fineAmount.toFixed(2)}
                       </span>
                     </div>
                   </div>
 
-                  {/* Status Message */}
-                  <div className={`mt-4 p-3 rounded-lg flex items-center ${
-                    fine.status === 'paid' 
-                      ? 'bg-[#3FA34D] bg-opacity-10 text-[#3FA34D]' 
-                      : 'bg-[#FD7F2F] bg-opacity-10 text-[#FD7F2F]'
+                  <div className={`mt-4 flex items-center rounded-lg p-3 ${
+                    fine.status === 'unpaid'
+                      ? 'bg-[#FD7F2F] bg-opacity-10 text-[#FD7F2F]'
+                      : 'bg-[#3FA34D] bg-opacity-10 text-[#3FA34D]'
                   }`}>
-                    {fine.status === 'paid' ? (
+                    {fine.status === 'unpaid' ? (
                       <>
-                        <FiCheckCircle className="mr-2 flex-shrink-0" />
-                        <span>Fine resolved - book was returned on {new Date(fine.returnDate).toLocaleDateString()}</span>
+                        <FiAlertCircle className="mr-2 flex-shrink-0" />
+                        <span>This fine is unpaid.</span>
                       </>
                     ) : (
                       <>
-                        <FiAlertCircle className="mr-2 flex-shrink-0" />
-                        <span>This fine is unpaid. Please visit the library to resolve.</span>
+                        <FiCheckCircle className="mr-2 flex-shrink-0" />
+                        <span>
+                          {fine.status === 'waived'
+                            ? 'Fine waived by library staff'
+                            : `Fine paid${fine.PaidAt ? ` on ${new Date(fine.PaidAt).toLocaleDateString()}` : ''}`}
+                        </span>
                       </>
                     )}
                   </div>
+
+                  {fine.status === 'unpaid' && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handlePayFine(fine.FineID)}
+                        disabled={payingId === fine.FineID}
+                        className="inline-flex items-center rounded-lg bg-[#036280] px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-[#024c63] disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        <FiCreditCard className="mr-2" />
+                        {payingId === fine.FineID ? 'Processing...' : 'Pay Fine'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
