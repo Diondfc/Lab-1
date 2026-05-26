@@ -193,6 +193,126 @@ class User {
     );
     return result;
   }
+
+  static async getRoles(id) {
+    const [rows] = await pool.query(
+      `SELECT UserRoleID, UserID, Role, AssignedAt, RemovedAt, AssignedByUserID
+       FROM UserRoles
+       WHERE UserID = ?
+       ORDER BY RemovedAt IS NULL DESC, AssignedAt DESC, UserRoleID DESC`,
+      [id]
+    );
+
+    return rows.map((row) => ({
+      ...row,
+      Role: normalizeRole(row.Role),
+    }));
+  }
+
+  static async assignRole(id, role, assignedByUserId = null) {
+    const normalizedRole = normalizeRole(role);
+    if (!isValidRole(normalizedRole)) {
+      throw new Error(`Invalid role. Allowed roles: ${Object.values(ROLES).join(', ')}`);
+    }
+
+    const conn = await pool.getConnection();
+
+    try {
+      await conn.beginTransaction();
+
+      const [existingActive] = await conn.query(
+        'SELECT UserRoleID FROM UserRoles WHERE UserID = ? AND Role = ? AND RemovedAt IS NULL FOR UPDATE',
+        [id, normalizedRole]
+      );
+
+      if (!existingActive.length) {
+        await conn.query(
+          'INSERT INTO UserRoles (UserID, Role, AssignedAt, AssignedByUserID) VALUES (?, ?, NOW(), ?)',
+          [id, normalizedRole, assignedByUserId || null]
+        );
+      }
+
+      await conn.query('UPDATE Users SET Role = ? WHERE UserID = ?', [normalizedRole, id]);
+      await User.recordRoleHistory(conn, id, normalizedRole, assignedByUserId);
+
+      await conn.commit();
+      return User.getRoles(id);
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
+  }
+
+  static async removeRole(id, role, changedByUserId = null) {
+    const normalizedRole = normalizeRole(role);
+    if (!isValidRole(normalizedRole)) {
+      throw new Error(`Invalid role. Allowed roles: ${Object.values(ROLES).join(', ')}`);
+    }
+
+    const conn = await pool.getConnection();
+
+    try {
+      await conn.beginTransaction();
+
+      await conn.query(
+        'UPDATE UserRoles SET RemovedAt = NOW() WHERE UserID = ? AND Role = ? AND RemovedAt IS NULL',
+        [id, normalizedRole]
+      );
+
+      const [activeRoles] = await conn.query(
+        `SELECT Role
+         FROM UserRoles
+         WHERE UserID = ? AND RemovedAt IS NULL
+         ORDER BY FIELD(Role, 'Admin', 'Manager', 'User/Member'), AssignedAt DESC
+         LIMIT 1`,
+        [id]
+      );
+      const nextRole = normalizeRole(activeRoles[0]?.Role || ROLES.USER_MEMBER);
+
+      const [remainingDefault] = await conn.query(
+        'SELECT UserRoleID FROM UserRoles WHERE UserID = ? AND Role = ? AND RemovedAt IS NULL',
+        [id, nextRole]
+      );
+      if (!remainingDefault.length) {
+        await conn.query(
+          'INSERT INTO UserRoles (UserID, Role, AssignedAt, AssignedByUserID) VALUES (?, ?, NOW(), ?)',
+          [id, nextRole, changedByUserId || null]
+        );
+      }
+
+      await conn.query('UPDATE Users SET Role = ? WHERE UserID = ?', [nextRole, id]);
+      await User.recordRoleHistory(conn, id, nextRole, changedByUserId);
+
+      await conn.commit();
+      return User.getRoles(id);
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
+  }
+
+  static async recordRoleHistory(conn, id, nextRole, changedByUserId = null) {
+    const [currentRows] = await conn.query(
+      'SELECT Role FROM UserRoleHistory WHERE UserID = ? AND EndedAt IS NULL ORDER BY StartedAt DESC, RoleHistoryID DESC LIMIT 1',
+      [id]
+    );
+    const currentRole = normalizeRole(currentRows[0]?.Role);
+
+    if (currentRole === nextRole) return;
+
+    await conn.query(
+      'UPDATE UserRoleHistory SET EndedAt = NOW() WHERE UserID = ? AND EndedAt IS NULL',
+      [id]
+    );
+    await conn.query(
+      'INSERT INTO UserRoleHistory (UserID, Role, StartedAt, ChangedByUserID) VALUES (?, ?, NOW(), ?)',
+      [id, nextRole, changedByUserId || null]
+    );
+  }
 }
 
 module.exports = User;

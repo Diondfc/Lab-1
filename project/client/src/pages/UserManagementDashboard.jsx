@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { FiRefreshCw, FiSlash, FiUserCheck, FiUsers } from 'react-icons/fi'
+import { FiMinusCircle, FiPlusCircle, FiRefreshCw, FiSlash, FiUserCheck, FiUsers } from 'react-icons/fi'
 import { apiClient } from '../lib/api.js'
+
+const AVAILABLE_ROLES = ['Admin', 'Manager', 'User/Member']
 
 function statusClasses(status) {
   return status === 'Inactive'
@@ -12,6 +14,7 @@ export default function UserManagementDashboard() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [savingId, setSavingId] = useState(null)
+  const [roleSavingKey, setRoleSavingKey] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -20,7 +23,18 @@ export default function UserManagementDashboard() {
       setLoading(true)
       setError('')
       const { data } = await apiClient.get('/api/users')
-      setUsers(Array.isArray(data) ? data : [])
+      const list = Array.isArray(data) ? data : []
+      const usersWithRoles = await Promise.all(
+        list.map(async (user) => {
+          try {
+            const rolesResponse = await apiClient.get(`/api/users/${user.id}/roles`)
+            return { ...user, roles: Array.isArray(rolesResponse.data) ? rolesResponse.data : [] }
+          } catch {
+            return { ...user, roles: [] }
+          }
+        }),
+      )
+      setUsers(usersWithRoles)
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Could not load users.')
     } finally {
@@ -46,6 +60,46 @@ export default function UserManagementDashboard() {
       setError(err.response?.data?.message || err.response?.data?.error || 'Could not update user status.')
     } finally {
       setSavingId(null)
+    }
+  }
+
+  async function assignRole(user, role) {
+    const key = `${user.id}:${role}:assign`
+    try {
+      setRoleSavingKey(key)
+      setMessage('')
+      setError('')
+      const { data } = await apiClient.post(`/api/users/${user.id}/roles`, { role })
+      setUsers((current) =>
+        current.map((item) =>
+          item.id === user.id ? { ...item, ...data.user, roles: data.roles || item.roles } : item,
+        ),
+      )
+      setMessage(data.message || 'Role assigned.')
+    } catch (err) {
+      setError(err.response?.data?.message || err.response?.data?.error || 'Could not assign role.')
+    } finally {
+      setRoleSavingKey('')
+    }
+  }
+
+  async function removeRole(user, role) {
+    const key = `${user.id}:${role}:remove`
+    try {
+      setRoleSavingKey(key)
+      setMessage('')
+      setError('')
+      const { data } = await apiClient.delete(`/api/users/${user.id}/roles/${encodeURIComponent(role)}`)
+      setUsers((current) =>
+        current.map((item) =>
+          item.id === user.id ? { ...item, ...data.user, roles: data.roles || item.roles } : item,
+        ),
+      )
+      setMessage(data.message || 'Role removed.')
+    } catch (err) {
+      setError(err.response?.data?.message || err.response?.data?.error || 'Could not remove role.')
+    } finally {
+      setRoleSavingKey('')
     }
   }
 
@@ -98,7 +152,7 @@ export default function UserManagementDashboard() {
                 <thead className="bg-zinc-50 dark:bg-slate-900/60">
                   <tr>
                     <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500">User</th>
-                    <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Role</th>
+                    <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Roles</th>
                     <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Status</th>
                     <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Action</th>
                   </tr>
@@ -112,7 +166,31 @@ export default function UserManagementDashboard() {
                           <p className="font-semibold text-slate-900 dark:text-white">{user.full_name || user.name || 'Unnamed user'}</p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
                         </td>
-                        <td className="px-5 py-4 text-sm font-medium text-slate-700 dark:text-slate-200">{user.role}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex min-w-[260px] flex-wrap gap-2">
+                            {AVAILABLE_ROLES.map((role) => {
+                              const hasRole = (user.roles || []).some((item) => item.Role === role && !item.RemovedAt) || user.role === role
+                              const key = `${user.id}:${role}:${hasRole ? 'remove' : 'assign'}`
+                              return (
+                                <button
+                                  key={role}
+                                  type="button"
+                                  onClick={() => (hasRole ? removeRole(user, role) : assignRole(user, role))}
+                                  disabled={roleSavingKey === key}
+                                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition disabled:opacity-60 ${
+                                    hasRole
+                                      ? 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-300'
+                                      : 'border-zinc-200 bg-white text-slate-500 hover:bg-zinc-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                                  }`}
+                                >
+                                  {hasRole ? <FiMinusCircle /> : <FiPlusCircle />}
+                                  {roleSavingKey === key ? 'Saving...' : role}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <p className="mt-2 text-xs text-slate-400">Current primary role: {user.role}</p>
+                        </td>
                         <td className="px-5 py-4">
                           <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusClasses(user.status)}`}>
                             {user.status || 'Active'}

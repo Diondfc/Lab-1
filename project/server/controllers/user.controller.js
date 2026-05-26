@@ -169,6 +169,83 @@ exports.activateUser = async (req, res) => {
   }
 };
 
+exports.getUserRoles = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const roles = await User.getRoles(userId);
+    res.json(roles);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.assignRole = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const role = req.body.role || req.body.Role;
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const roles = await User.assignRole(userId, role, Number(getUserId(req)) || null);
+    const updatedUser = await User.findById(userId);
+    res.json({
+      message: "Role assigned successfully",
+      user: sanitizeUser(updatedUser),
+      roles,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.removeRole = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const role = decodeURIComponent(req.params.role || '');
+    const callerId = Number(getUserId(req));
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    if (userId === callerId && role === 'Admin') {
+      return res.status(400).json({ message: "You cannot remove your own Admin role" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const roles = await User.removeRole(userId, role, callerId || null);
+    const updatedUser = await User.findById(userId);
+    res.json({
+      message: "Role removed successfully",
+      user: sanitizeUser(updatedUser),
+      roles,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 exports.getRoleHistory = async (req, res) => {
   const userId = Number(req.params.id);
 

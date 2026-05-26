@@ -52,6 +52,23 @@ CREATE TABLE IF NOT EXISTS UserRoleHistory (
     FOREIGN KEY (ChangedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS UserRoles (
+  UserRoleID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL,
+  AssignedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  RemovedAt DATETIME NULL,
+  AssignedByUserID INT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (UserRoleID),
+  KEY idx_user_roles_user (UserID),
+  KEY idx_user_roles_active (UserID, RemovedAt),
+  CONSTRAINT fk_user_roles_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
+  CONSTRAINT fk_user_roles_assigned_by
+    FOREIGN KEY (AssignedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS RefreshTokens (
   RefreshTokenID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   UserID INT UNSIGNED NOT NULL,
@@ -295,6 +312,13 @@ SELECT u.UserID, u.Role, u.created_at
 FROM Users u
 WHERE NOT EXISTS (
   SELECT 1 FROM UserRoleHistory h WHERE h.UserID = u.UserID
+);
+
+INSERT INTO UserRoles (UserID, Role, AssignedAt)
+SELECT u.UserID, u.Role, u.created_at
+FROM Users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM UserRoles ur WHERE ur.UserID = u.UserID AND ur.Role = u.Role AND ur.RemovedAt IS NULL
 );
 
 -- Sample catalog (IDs 1–8 align with the demo client catalog for easier testing)
