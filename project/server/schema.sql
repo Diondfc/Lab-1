@@ -112,7 +112,9 @@ CREATE TABLE IF NOT EXISTS Books (
   ISBN VARCHAR(32) NOT NULL,
   Title VARCHAR(512) NOT NULL,
   Author VARCHAR(255) NOT NULL,
+  AuthorID INT UNSIGNED NULL,
   Publisher VARCHAR(255) NULL,
+  PublisherID INT UNSIGNED NULL,
   YearOfPublishment SMALLINT UNSIGNED NULL,
   AvailabilityStatus VARCHAR(32) NOT NULL DEFAULT 'Available',
   CategoryID INT UNSIGNED NOT NULL,
@@ -127,10 +129,14 @@ CREATE TABLE IF NOT EXISTS Books (
   KEY idx_books_category (CategoryID),
   KEY idx_books_subcategory (SubCategoryID),
   KEY idx_books_isbn (ISBN),
+  KEY idx_books_author (AuthorID),
+  KEY idx_books_publisher (PublisherID),
   CONSTRAINT fk_books_category
     FOREIGN KEY (CategoryID) REFERENCES Categories (CategoryID),
   CONSTRAINT fk_books_subcategory
-    FOREIGN KEY (SubCategoryID) REFERENCES SubCategories (SubCategoryID) ON DELETE SET NULL
+    FOREIGN KEY (SubCategoryID) REFERENCES SubCategories (SubCategoryID) ON DELETE SET NULL,
+  CONSTRAINT fk_books_author FOREIGN KEY (AuthorID) REFERENCES Authors (AuthorID) ON DELETE SET NULL,
+  CONSTRAINT fk_books_publisher FOREIGN KEY (PublisherID) REFERENCES Publishers (PublisherID) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Book ratings (used by /api/ratings and book average updates)
@@ -159,6 +165,7 @@ CREATE TABLE IF NOT EXISTS Loans (
   BookID INT UNSIGNED NOT NULL,
   BookTitle VARCHAR(512) NOT NULL,
   UserID INT UNSIGNED NOT NULL,
+  MemberID INT UNSIGNED NULL,
   UserName VARCHAR(255) NOT NULL,
   StartDate DATE NOT NULL,
   DueDate DATE NOT NULL,
@@ -170,11 +177,14 @@ CREATE TABLE IF NOT EXISTS Loans (
   PRIMARY KEY (LoanID),
   KEY idx_loans_book (BookID),
   KEY idx_loans_user (UserID),
+  KEY idx_loans_member (MemberID),
   KEY idx_loans_due (DueDate),
   CONSTRAINT fk_loans_book
     FOREIGN KEY (BookID) REFERENCES Books (BookID),
   CONSTRAINT fk_loans_user
-    FOREIGN KEY (UserID) REFERENCES Users (UserID)
+    FOREIGN KEY (UserID) REFERENCES Users (UserID),
+  CONSTRAINT fk_loans_member
+    FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ReturnLoans (

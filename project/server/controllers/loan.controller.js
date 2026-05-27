@@ -45,6 +45,12 @@ exports.createLoan = async (req, res) => {
         [userId]
       );
 
+      const [memberRows] = await connection.execute(
+        'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+        [userId]
+      );
+      const memberId = memberRows[0]?.MemberID || null;
+
       if (user.length === 0) {
         await connection.rollback();
         return res.status(404).json({
@@ -55,12 +61,13 @@ exports.createLoan = async (req, res) => {
 
       const [result] = await connection.execute(
         `INSERT INTO Loans
-         (BookID, BookTitle, UserID, UserName, StartDate, DueDate, PaymentStatus, PaymentAmount, PaymentMethod, PaymentDate)
+         (BookID, BookTitle, UserID, MemberID, UserName, StartDate, DueDate, PaymentStatus, PaymentAmount, PaymentMethod, PaymentDate)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookId,
           bookTitle,
           userId,
+          memberId,
           userName,
           startDate,
           dueDate,
@@ -112,6 +119,7 @@ exports.getAllLoans = async (req, res) => {
           l.BookID,
           l.BookTitle,
           l.UserID,
+          l.MemberID,
           l.UserName,
           DATE(l.StartDate) as StartDate,
           DATE(l.DueDate) as DueDate,
@@ -165,6 +173,7 @@ exports.getUserLoans = async (req, res) => {
           l.BookID,
           l.BookTitle,
           l.UserID,
+          l.MemberID,
           l.UserName,
           DATE(l.StartDate) as startDate,
           DATE(l.DueDate) as dueDate,
