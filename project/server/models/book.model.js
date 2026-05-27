@@ -220,7 +220,8 @@ exports.deleteBook = async (bookId) => {
   try {
     await connection.beginTransaction();
 
-    await connection.query('DELETE FROM ratings WHERE book_id = ?', [bookId]);
+    await connection.query('DELETE FROM ratings WHERE BookID = ?', [bookId]);
+    await connection.query('DELETE FROM BookReviews WHERE BookID = ?', [bookId]);
 
     const [result] = await connection.query(
       'DELETE FROM Books WHERE BookID = ?',
@@ -245,8 +246,8 @@ exports.updateBookRating = async (bookId, averageRating) => {
   } else {
     const rows = await queryRows(
       `SELECT AVG(rating_value) AS averageRating 
-       FROM ratings 
-       WHERE book_id = ?`,
+       FROM BookReviews 
+       WHERE BookID = ?`,
       [bookId],
     );
 
