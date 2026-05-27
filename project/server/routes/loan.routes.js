@@ -9,6 +9,7 @@ router.get('/user/:userId', auth, authorizeSelfOrStaff('userId'), loanController
 
 router.get('/', auth, authorizeStaff, loanController.getAllLoans);
 router.post('/', auth, loanController.createLoan);
+router.put('/:id', auth, authorizeStaff, loanController.updateLoan);
 router.delete('/:id', auth, authorizeStaff, loanController.deleteLoan);
 router.get('/:id', auth, loanController.getLoanById);
 

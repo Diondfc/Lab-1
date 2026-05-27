@@ -336,3 +336,25 @@ exports.getTotalLoansCount = async (req, res) => {
     });
   }
 };
+
+
+exports.updateLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { dueDate, paymentStatus, paymentAmount, paymentMethod } = req.body;
+    const fields = [];
+    const vals = [];
+    if (dueDate !== undefined) { fields.push('DueDate = ?'); vals.push(dueDate); }
+    if (paymentStatus !== undefined) { fields.push('PaymentStatus = ?'); vals.push(paymentStatus); }
+    if (paymentAmount !== undefined) { fields.push('PaymentAmount = ?'); vals.push(paymentAmount); }
+    if (paymentMethod !== undefined) { fields.push('PaymentMethod = ?'); vals.push(paymentMethod); }
+    if (!fields.length) return res.status(400).json({ success:false, message:'No update fields' });
+    vals.push(id);
+    const [r] = await pool.execute(`UPDATE Loans SET ${fields.join(', ')} WHERE LoanID = ?`, vals);
+    if (!r.affectedRows) return res.status(404).json({ success:false, message:'Loan not found' });
+    const [rows] = await pool.execute('SELECT * FROM Loans WHERE LoanID = ?', [id]);
+    res.json({ success:true, data: rows[0] });
+  } catch (error) {
+    res.status(500).json({ success:false, message:error.message });
+  }
+};
