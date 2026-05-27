@@ -17,6 +17,14 @@ const bookshelfRoutes = require('./routes/bookshelf.routes')
 const messageRoutes = require('./routes/message.routes')
 const requestRoutes = require('./routes/request.routes')
 
+const authorsRoutes = require('./routes/authors.routes')
+const categoriesRoutes = require('./routes/categories.routes')
+const publishersRoutes = require('./routes/publishers.routes')
+const membersRoutes = require('./routes/members.routes')
+const reservationsRoutes = require('./routes/reservations.routes')
+const bookreviewsRoutes = require('./routes/bookreviews.routes')
+
+
 const PORT = Number(process.env.PORT) || 5001
 
 const defaultOrigins = [
@@ -83,6 +91,14 @@ app.use('/api/ratings', ratingRoutes)
 app.use('/api/bookshelf', bookshelfRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/requests', requestRoutes)
+
+app.use('/api/authors', authorsRoutes)
+app.use('/api/categories', categoriesRoutes)
+app.use('/api/publishers', publishersRoutes)
+app.use('/api/members', membersRoutes)
+app.use('/api/reservations', reservationsRoutes)
+app.use('/api/bookreviews', bookreviewsRoutes)
+
 
 app.use((err, _req, res, _next) => {
   if (err.message?.startsWith('CORS blocked')) {

@@ -52,15 +52,6 @@ exports.processReturn = async (req, res) => {
       );
 
       let fineId = null;
-      if (fineAmount > 0) {
-        const [fineResult] = await connection.execute(
-          `INSERT INTO Fines
-           (ReturnID, LoanID, UserID, Amount, Status)
-           VALUES (?, ?, ?, ?, 'Unpaid')`,
-          [result.insertId, activeLoan[0].LoanID, userId, fineAmount]
-        );
-        fineId = fineResult.insertId;
-      }
 
       // Update book status and increment quantity
       await connection.execute(
@@ -70,6 +61,16 @@ exports.processReturn = async (req, res) => {
          WHERE BookID = ?`,
         [bookId]
       );
+
+      if (fineAmount > 0) {
+        const [fineResult] = await connection.execute(
+          `INSERT INTO Fines (ReturnID, LoanID, UserID, Amount, Status)
+           VALUES (?, ?, ?, ?, 'Unpaid')
+           ON DUPLICATE KEY UPDATE Amount = VALUES(Amount), Status = 'Unpaid'`,
+          [result.insertId, activeLoan[0].LoanID, userId, fineAmount]
+        );
+        fineId = fineResult.insertId || fineId;
+      }
 
       await connection.commit();
 

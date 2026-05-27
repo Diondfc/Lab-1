@@ -133,3 +133,31 @@ exports.updateFineStatus = async (req, res) => {
     });
   }
 };
+
+
+exports.createFine = async (req, res) => {
+  try {
+    const { ReturnID, LoanID, UserID, Amount, Status } = req.body;
+    const Fine = require('../models/fine.model');
+    const db = require('../config/db');
+    const [r] = await db.execute(
+      `INSERT INTO Fines (ReturnID, LoanID, UserID, Amount, Status) VALUES (?, ?, ?, ?, COALESCE(?, 'Unpaid'))`,
+      [ReturnID, LoanID, UserID, Amount, Status || null]
+    );
+    const fine = await Fine.findById(r.insertId);
+    res.status(201).json({ success: true, data: fine });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.deleteFine = async (req, res) => {
+  try {
+    const db = require('../config/db');
+    const [r] = await db.execute('DELETE FROM Fines WHERE FineID = ?', [req.params.id]);
+    if (!r.affectedRows) return res.status(404).json({ success: false, message: 'Fine not found' });
+    res.json({ success: true, message: 'Fine deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
