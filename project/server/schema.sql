@@ -112,7 +112,9 @@ CREATE TABLE IF NOT EXISTS Books (
   ISBN VARCHAR(32) NOT NULL,
   Title VARCHAR(512) NOT NULL,
   Author VARCHAR(255) NOT NULL,
+  AuthorID INT UNSIGNED NULL,
   Publisher VARCHAR(255) NULL,
+  PublisherID INT UNSIGNED NULL,
   YearOfPublishment SMALLINT UNSIGNED NULL,
   AvailabilityStatus VARCHAR(32) NOT NULL DEFAULT 'Available',
   CategoryID INT UNSIGNED NOT NULL,
@@ -127,10 +129,14 @@ CREATE TABLE IF NOT EXISTS Books (
   KEY idx_books_category (CategoryID),
   KEY idx_books_subcategory (SubCategoryID),
   KEY idx_books_isbn (ISBN),
+  KEY idx_books_author (AuthorID),
+  KEY idx_books_publisher (PublisherID),
   CONSTRAINT fk_books_category
     FOREIGN KEY (CategoryID) REFERENCES Categories (CategoryID),
   CONSTRAINT fk_books_subcategory
-    FOREIGN KEY (SubCategoryID) REFERENCES SubCategories (SubCategoryID) ON DELETE SET NULL
+    FOREIGN KEY (SubCategoryID) REFERENCES SubCategories (SubCategoryID) ON DELETE SET NULL,
+  CONSTRAINT fk_books_author FOREIGN KEY (AuthorID) REFERENCES Authors (AuthorID) ON DELETE SET NULL,
+  CONSTRAINT fk_books_publisher FOREIGN KEY (PublisherID) REFERENCES Publishers (PublisherID) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Book ratings (used by /api/ratings and book average updates)
@@ -159,6 +165,7 @@ CREATE TABLE IF NOT EXISTS Loans (
   BookID INT UNSIGNED NOT NULL,
   BookTitle VARCHAR(512) NOT NULL,
   UserID INT UNSIGNED NOT NULL,
+  MemberID INT UNSIGNED NULL,
   UserName VARCHAR(255) NOT NULL,
   StartDate DATE NOT NULL,
   DueDate DATE NOT NULL,
@@ -170,11 +177,14 @@ CREATE TABLE IF NOT EXISTS Loans (
   PRIMARY KEY (LoanID),
   KEY idx_loans_book (BookID),
   KEY idx_loans_user (UserID),
+  KEY idx_loans_member (MemberID),
   KEY idx_loans_due (DueDate),
   CONSTRAINT fk_loans_book
     FOREIGN KEY (BookID) REFERENCES Books (BookID),
   CONSTRAINT fk_loans_user
-    FOREIGN KEY (UserID) REFERENCES Users (UserID)
+    FOREIGN KEY (UserID) REFERENCES Users (UserID),
+  CONSTRAINT fk_loans_member
+    FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ReturnLoans (
@@ -222,6 +232,68 @@ CREATE TABLE IF NOT EXISTS Fines (
     FOREIGN KEY (LoanID) REFERENCES Loans (LoanID) ON DELETE CASCADE,
   CONSTRAINT fk_fines_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- Extended library entities
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS Authors (
+  AuthorID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(255) NOT NULL,
+  Bio TEXT NULL,
+  PRIMARY KEY (AuthorID),
+  UNIQUE KEY uq_authors_name (Name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS Publishers (
+  PublisherID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(255) NOT NULL,
+  PRIMARY KEY (PublisherID),
+  UNIQUE KEY uq_publishers_name (Name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS Members (
+  MemberID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  MembershipCode VARCHAR(64) NOT NULL,
+  IsActive TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (MemberID),
+  UNIQUE KEY uq_members_user (UserID),
+  UNIQUE KEY uq_members_code (MembershipCode),
+  CONSTRAINT fk_members_user FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS Reservations (
+  ReservationID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  BookID INT UNSIGNED NOT NULL,
+  MemberID INT UNSIGNED NOT NULL,
+  ReservedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ExpiresAt DATETIME NULL,
+  Status ENUM('Active','Fulfilled','Cancelled','Expired') NOT NULL DEFAULT 'Active',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (ReservationID),
+  KEY idx_res_book (BookID),
+  KEY idx_res_member (MemberID),
+  CONSTRAINT fk_res_book FOREIGN KEY (BookID) REFERENCES Books (BookID) ON DELETE CASCADE,
+  CONSTRAINT fk_res_member FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS BookReviews (
+  ReviewID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  BookID INT UNSIGNED NOT NULL,
+  MemberID INT UNSIGNED NOT NULL,
+  Rating TINYINT UNSIGNED NOT NULL,
+  ReviewText TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (ReviewID),
+  KEY idx_review_book (BookID),
+  KEY idx_review_member (MemberID),
+  CONSTRAINT fk_review_book FOREIGN KEY (BookID) REFERENCES Books (BookID) ON DELETE CASCADE,
+  CONSTRAINT fk_review_member FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE CASCADE,
+  CONSTRAINT chk_review_rating CHECK (Rating BETWEEN 1 AND 5)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
