@@ -49,6 +49,7 @@ const AddLoanForm = ({ onSave }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingUser, setIsFetchingUser] = useState(false);
+  const [bookAvailable, setBookAvailable] = useState(true);
 
   // Fetch book details when bookId changes to display title and calculate default amount
   useEffect(() => {
@@ -57,6 +58,7 @@ const AddLoanForm = ({ onSave }) => {
         try {
           const response = await apiClient.get(`/api/books/book/${formData.bookId}`);
           const book = response.data;
+          const available = book.AvailabilityStatus === 'Available' && Number(book.Quantity) > 0;
           
           // Calculate dynamic fee based on category
           // Categories: 1: Academic ($3.00), 2: Journal ($5.00), 3: Novel ($1.50)
@@ -72,8 +74,15 @@ const AddLoanForm = ({ onSave }) => {
             bookTitle: book.Title,
             paymentAmount: totalFee.toFixed(2)
           }));
+          setBookAvailable(available);
+          if (!available) {
+            setError('This book is unavailable and cannot be loaned right now.');
+          } else {
+            setError('');
+          }
         } catch (error) {
           console.error('Error fetching book details:', error);
+          setBookAvailable(false);
         }
       };
       fetchBookDetails();
@@ -133,6 +142,10 @@ const AddLoanForm = ({ onSave }) => {
     }
     if (!formData.bookId) {
       setError('A valid book ID is required.');
+      return;
+    }
+    if (!bookAvailable) {
+      setError('This book is unavailable and cannot be loaned right now.');
       return;
     }
 
@@ -261,6 +274,11 @@ const AddLoanForm = ({ onSave }) => {
                     className="w-full px-4 py-3 bg-zinc-100 dark:bg-slate-900/60 dark:text-zinc-400 border border-zinc-100 dark:border-slate-800 rounded-2xl focus:outline-none font-medium cursor-not-allowed"
                     readOnly
                   />
+                  {formData.bookId && (
+                    <p className={`text-xs font-semibold ${bookAvailable ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {bookAvailable ? 'Book Available' : 'Book Unavailable'}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -394,7 +412,7 @@ const AddLoanForm = ({ onSave }) => {
               <button
                 type="submit"
                 className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60"
-                disabled={isSubmitting || !formData.userId}
+                disabled={isSubmitting || !formData.userId || !bookAvailable}
               >
                 {isSubmitting ? (
                   <>

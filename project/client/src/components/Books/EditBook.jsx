@@ -369,7 +369,7 @@ const EditBook = () => {
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#036280] focus:border-transparent appearance-none bg-white pr-10"
                     >
                       <option value="Available">Available</option>
-                      <option value="Checked Out">Checked Out</option>
+                      <option value="Unavailable">Unavailable</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

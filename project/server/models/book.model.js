@@ -12,8 +12,12 @@ exports.getAllBooks = async () => {
       b.ISBN AS isbn,
       b.Title AS title,
       b.Author AS author,
-      b.AvailabilityStatus AS available,
+      CASE
+        WHEN b.AvailabilityStatus = 'Available' AND b.Quantity > 0 THEN 'Available'
+        ELSE 'Unavailable'
+      END AS available,
       b.Rating AS rating,
+      b.Quantity AS Quantity,
       b.CoverImagePath AS coverImagePath,
       c.CategoryName AS category
     FROM Books b
@@ -28,7 +32,10 @@ exports.getAcademicBooks = async () => {
       b.ISBN AS isbn,
       b.Title AS title,
       b.Author AS author,
-      b.AvailabilityStatus AS available,
+      CASE
+        WHEN b.AvailabilityStatus = 'Available' AND b.Quantity > 0 THEN 'Available'
+        ELSE 'Unavailable'
+      END AS available,
       b.Rating AS rating,
       b.CoverImagePath AS coverImagePath,
       b.Publisher AS publisher,
@@ -48,7 +55,10 @@ exports.getJournalBooks = async () => {
       b.ISBN AS isbn,
       b.Title AS title,
       b.Author AS author,
-      b.AvailabilityStatus AS available,
+      CASE
+        WHEN b.AvailabilityStatus = 'Available' AND b.Quantity > 0 THEN 'Available'
+        ELSE 'Unavailable'
+      END AS available,
       b.Rating AS rating,
       b.CoverImagePath AS coverImagePath,
       b.Publisher AS publisher,
@@ -68,7 +78,10 @@ exports.getNovelBooks = async (subcategory) => {
       b.ISBN AS isbn,
       b.Title AS title,
       b.Author AS author,
-      b.AvailabilityStatus AS available,
+      CASE
+        WHEN b.AvailabilityStatus = 'Available' AND b.Quantity > 0 THEN 'Available'
+        ELSE 'Unavailable'
+      END AS available,
       b.Rating AS rating,
       b.CoverImagePath AS coverImagePath,
       b.Publisher AS publisher,

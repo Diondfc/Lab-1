@@ -28,15 +28,43 @@ exports.createLoan = async (req, res) => {
       await connection.beginTransaction();
 
       const [book] = await connection.execute(
-        'SELECT BookID, Quantity FROM Books WHERE BookID = ? FOR UPDATE',
+        'SELECT BookID, AvailabilityStatus, Quantity FROM Books WHERE BookID = ? FOR UPDATE',
         [bookId]
       );
 
-      if (book.length === 0 || book[0].Quantity <= 0) {
+      if (book.length === 0) {
         await connection.rollback();
         return res.status(404).json({
           success: false,
-          message: 'Book not found or no available copies'
+          message: 'Book not found'
+        });
+      }
+
+      const [activeBookLoan] = await connection.execute(
+        `SELECT LoanID, UserID
+         FROM Loans
+         WHERE BookID = ?
+           AND LoanID NOT IN (SELECT LoanID FROM ReturnLoans)
+         LIMIT 1`,
+        [bookId]
+      );
+
+      if (activeBookLoan.length > 0) {
+        await connection.rollback();
+        const sameUser = Number(activeBookLoan[0].UserID) === targetUserId;
+        return res.status(409).json({
+          success: false,
+          message: sameUser
+            ? 'You already have an active loan for this book'
+            : 'This book is currently unavailable'
+        });
+      }
+
+      if (book[0].AvailabilityStatus !== 'Available' || book[0].Quantity <= 0) {
+        await connection.rollback();
+        return res.status(409).json({
+          success: false,
+          message: 'This book is currently unavailable'
         });
       }
 
@@ -73,8 +101,8 @@ exports.createLoan = async (req, res) => {
 
       await connection.execute(
         `UPDATE Books
-         SET AvailabilityStatus = CASE WHEN Quantity - 1 <= 0 THEN 'Checked Out' ELSE AvailabilityStatus END,
-             Quantity = Quantity - 1
+         SET AvailabilityStatus = 'Unavailable',
+             Quantity = 0
          WHERE BookID = ?`,
         [bookId]
       );
@@ -255,12 +283,12 @@ exports.deleteLoan = async (req, res) => {
 
       if (!wasReturned) {
         await connection.execute(
-          `UPDATE Books
-           SET AvailabilityStatus = CASE WHEN Quantity + 1 > 0 THEN 'Available' ELSE AvailabilityStatus END,
-               Quantity = Quantity + 1
-           WHERE BookID = ?`,
-          [bookId]
-        );
+        `UPDATE Books
+         SET AvailabilityStatus = 'Available',
+             Quantity = 1
+         WHERE BookID = ?`,
+        [bookId]
+      );
       }
 
       await connection.commit();

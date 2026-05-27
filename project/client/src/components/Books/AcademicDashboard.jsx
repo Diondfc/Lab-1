@@ -118,7 +118,7 @@ const AcademicDashboard = () => {
             </div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-sm text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">Checked Out</div>
+            <div className="text-sm text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">Unavailable</div>
             <div className="text-2xl font-bold text-[#FD7F2F]">
               {books.filter(b => b.available !== 'Available').length}
             </div>
@@ -232,7 +232,7 @@ const AcademicDashboard = () => {
                           : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {book.available}
+                      {book.available === 'Available' ? 'Available' : 'Unavailable'}
                     </span>
                     <div className="text-xs text-gray-500 mt-1">
                       Qty: {book.quantity ?? 0}

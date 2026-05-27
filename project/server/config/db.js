@@ -121,6 +121,12 @@ async function verifyConnection() {
     }
 
     try {
+      await conn.execute("UPDATE Books SET AvailabilityStatus = 'Unavailable' WHERE AvailabilityStatus = 'Checked Out'")
+    } catch (bookAvailabilityMigErr) {
+      console.error('Auto-migration warning: Failed to normalize book availability:', bookAvailabilityMigErr.message)
+    }
+
+    try {
       const [userColumns] = await conn.execute(`
         SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
