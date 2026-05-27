@@ -73,6 +73,12 @@ exports.createLoan = async (req, res) => {
         [userId]
       );
 
+      const [memberRows] = await connection.execute(
+        'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+        [userId]
+      );
+      const memberId = memberRows[0]?.MemberID || null;
+
       if (user.length === 0) {
         await connection.rollback();
         return res.status(404).json({
@@ -83,12 +89,13 @@ exports.createLoan = async (req, res) => {
 
       const [result] = await connection.execute(
         `INSERT INTO Loans
-         (BookID, BookTitle, UserID, UserName, StartDate, DueDate, PaymentStatus, PaymentAmount, PaymentMethod, PaymentDate)
+         (BookID, BookTitle, UserID, MemberID, UserName, StartDate, DueDate, PaymentStatus, PaymentAmount, PaymentMethod, PaymentDate)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookId,
           bookTitle,
           userId,
+          memberId,
           userName,
           startDate,
           dueDate,
@@ -140,6 +147,7 @@ exports.getAllLoans = async (req, res) => {
           l.BookID,
           l.BookTitle,
           l.UserID,
+          l.MemberID,
           l.UserName,
           DATE(l.StartDate) as StartDate,
           DATE(l.DueDate) as DueDate,
@@ -193,6 +201,7 @@ exports.getUserLoans = async (req, res) => {
           l.BookID,
           l.BookTitle,
           l.UserID,
+          l.MemberID,
           l.UserName,
           DATE(l.StartDate) as startDate,
           DATE(l.DueDate) as dueDate,
@@ -362,5 +371,27 @@ exports.getTotalLoansCount = async (req, res) => {
       message: 'Failed to count total loans',
       error: error.message 
     });
+  }
+};
+
+
+exports.updateLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { dueDate, paymentStatus, paymentAmount, paymentMethod } = req.body;
+    const fields = [];
+    const vals = [];
+    if (dueDate !== undefined) { fields.push('DueDate = ?'); vals.push(dueDate); }
+    if (paymentStatus !== undefined) { fields.push('PaymentStatus = ?'); vals.push(paymentStatus); }
+    if (paymentAmount !== undefined) { fields.push('PaymentAmount = ?'); vals.push(paymentAmount); }
+    if (paymentMethod !== undefined) { fields.push('PaymentMethod = ?'); vals.push(paymentMethod); }
+    if (!fields.length) return res.status(400).json({ success:false, message:'No update fields' });
+    vals.push(id);
+    const [r] = await pool.execute(`UPDATE Loans SET ${fields.join(', ')} WHERE LoanID = ?`, vals);
+    if (!r.affectedRows) return res.status(404).json({ success:false, message:'Loan not found' });
+    const [rows] = await pool.execute('SELECT * FROM Loans WHERE LoanID = ?', [id]);
+    res.json({ success:true, data: rows[0] });
+  } catch (error) {
+    res.status(500).json({ success:false, message:error.message });
   }
 };

@@ -12,6 +12,7 @@ exports.getAllBooks = async () => {
       b.ISBN AS isbn,
       b.Title AS title,
       b.Author AS author,
+      b.AuthorID AS authorId,
       CASE
         WHEN b.AvailabilityStatus = 'Available' AND b.Quantity > 0 THEN 'Available'
         ELSE 'Unavailable'
@@ -32,6 +33,7 @@ exports.getAcademicBooks = async () => {
       b.ISBN AS isbn,
       b.Title AS title,
       b.Author AS author,
+      b.AuthorID AS authorId,
       CASE
         WHEN b.AvailabilityStatus = 'Available' AND b.Quantity > 0 THEN 'Available'
         ELSE 'Unavailable'
@@ -39,6 +41,7 @@ exports.getAcademicBooks = async () => {
       b.Rating AS rating,
       b.CoverImagePath AS coverImagePath,
       b.Publisher AS publisher,
+      b.PublisherID AS publisherId,
       b.YearOfPublishment AS year,
       b.Quantity AS quantity,
       b.Description AS description
@@ -55,6 +58,7 @@ exports.getJournalBooks = async () => {
       b.ISBN AS isbn,
       b.Title AS title,
       b.Author AS author,
+      b.AuthorID AS authorId,
       CASE
         WHEN b.AvailabilityStatus = 'Available' AND b.Quantity > 0 THEN 'Available'
         ELSE 'Unavailable'
@@ -62,6 +66,7 @@ exports.getJournalBooks = async () => {
       b.Rating AS rating,
       b.CoverImagePath AS coverImagePath,
       b.Publisher AS publisher,
+      b.PublisherID AS publisherId,
       b.YearOfPublishment AS year,
       b.Quantity AS quantity,
       b.Description AS description
@@ -78,6 +83,7 @@ exports.getNovelBooks = async (subcategory) => {
       b.ISBN AS isbn,
       b.Title AS title,
       b.Author AS author,
+      b.AuthorID AS authorId,
       CASE
         WHEN b.AvailabilityStatus = 'Available' AND b.Quantity > 0 THEN 'Available'
         ELSE 'Unavailable'
@@ -85,6 +91,7 @@ exports.getNovelBooks = async (subcategory) => {
       b.Rating AS rating,
       b.CoverImagePath AS coverImagePath,
       b.Publisher AS publisher,
+      b.PublisherID AS publisherId,
       b.YearOfPublishment AS year,
       b.Quantity AS quantity,
       b.Description AS description,
@@ -119,10 +126,12 @@ exports.addBook = async (book) => {
     Title,
     AvailabilityStatus,
     Publisher,
+    PublisherID,
     YearOfPublishment,
     CategoryID,
     SubCategoryID,
     Author,
+    AuthorID,
     Rating,
     CoverImagePath,
     Description,
@@ -132,20 +141,22 @@ exports.addBook = async (book) => {
   const [result] = await db.query(
     `
     INSERT INTO Books (
-      ISBN, Title, AvailabilityStatus, Publisher, YearOfPublishment,
-      CategoryID, SubCategoryID, Author, Rating, CoverImagePath,
+      ISBN, Title, AvailabilityStatus, Publisher, PublisherID, YearOfPublishment,
+      CategoryID, SubCategoryID, Author, AuthorID, Rating, CoverImagePath,
       Description, Quantity
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       ISBN,
       Title,
       AvailabilityStatus,
       Publisher,
+      PublisherID || null,
       YearOfPublishment,
       CategoryID,
       SubCategoryID || null,
       Author,
+      AuthorID || null,
       Rating,
       CoverImagePath,
       Description,
@@ -162,10 +173,12 @@ exports.editBook = async (bookId, updatedBook) => {
     Title,
     AvailabilityStatus,
     Publisher,
+    PublisherID,
     YearOfPublishment,
     CategoryID,
     SubCategoryID,
     Author,
+    AuthorID,
     Rating,
     CoverImagePath,
     Description,
@@ -175,8 +188,8 @@ exports.editBook = async (bookId, updatedBook) => {
   const [result] = await db.query(
     `
     UPDATE Books SET
-      ISBN = ?, Title = ?, AvailabilityStatus = ?, Publisher = ?, YearOfPublishment = ?,
-      CategoryID = ?, SubCategoryID = ?, Author = ?, Rating = ?, CoverImagePath = ?,
+      ISBN = ?, Title = ?, AvailabilityStatus = ?, Publisher = ?, PublisherID = ?, YearOfPublishment = ?,
+      CategoryID = ?, SubCategoryID = ?, Author = ?, AuthorID = ?, Rating = ?, CoverImagePath = ?,
       Description = ?, Quantity = ?
     WHERE BookID = ?
     `,
@@ -185,10 +198,12 @@ exports.editBook = async (bookId, updatedBook) => {
       Title,
       AvailabilityStatus,
       Publisher,
+      PublisherID || null,
       YearOfPublishment,
       CategoryID,
       SubCategoryID || null,
       Author,
+      AuthorID || null,
       Rating,
       CoverImagePath,
       Description,
