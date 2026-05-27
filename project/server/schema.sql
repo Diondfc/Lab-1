@@ -107,6 +107,34 @@ CREATE TABLE IF NOT EXISTS SubCategories (
     FOREIGN KEY (CategoryID) REFERENCES Categories (CategoryID) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS Authors (
+  AuthorID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(255) NOT NULL,
+  Bio TEXT NULL,
+  PRIMARY KEY (AuthorID),
+  UNIQUE KEY uq_authors_name (Name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS Publishers (
+  PublisherID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(255) NOT NULL,
+  PRIMARY KEY (PublisherID),
+  UNIQUE KEY uq_publishers_name (Name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS Members (
+  MemberID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  MembershipCode VARCHAR(64) NOT NULL,
+  IsActive TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (MemberID),
+  UNIQUE KEY uq_members_user (UserID),
+  UNIQUE KEY uq_members_code (MembershipCode),
+  CONSTRAINT fk_members_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS Books (
   BookID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ISBN VARCHAR(32) NOT NULL,
@@ -144,16 +172,20 @@ CREATE TABLE IF NOT EXISTS ratings (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   book_id INT UNSIGNED NOT NULL,
   user_id INT UNSIGNED NOT NULL,
+  MemberID INT UNSIGNED NULL,
   rating_value TINYINT UNSIGNED NOT NULL,
   comment TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_ratings_book (book_id),
   KEY idx_ratings_user (user_id),
+  KEY idx_ratings_member (MemberID),
   CONSTRAINT fk_ratings_book
     FOREIGN KEY (book_id) REFERENCES Books (BookID) ON DELETE CASCADE,
   CONSTRAINT fk_ratings_user
     FOREIGN KEY (user_id) REFERENCES Users (UserID) ON DELETE CASCADE,
+  CONSTRAINT fk_ratings_member
+    FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE SET NULL,
   CONSTRAINT chk_rating_value CHECK (rating_value BETWEEN 1 AND 5)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -165,7 +197,7 @@ CREATE TABLE IF NOT EXISTS Loans (
   BookID INT UNSIGNED NOT NULL,
   BookTitle VARCHAR(512) NOT NULL,
   UserID INT UNSIGNED NOT NULL,
-  MemberID INT UNSIGNED NULL,
+  MemberID INT UNSIGNED NOT NULL,
   UserName VARCHAR(255) NOT NULL,
   StartDate DATE NOT NULL,
   DueDate DATE NOT NULL,
@@ -224,6 +256,7 @@ CREATE TABLE IF NOT EXISTS Fines (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (FineID),
   UNIQUE KEY uq_fines_return (ReturnID),
+  UNIQUE KEY uq_fines_loan (LoanID),
   KEY idx_fines_user_status (UserID, Status),
   KEY idx_fines_loan (LoanID),
   CONSTRAINT fk_fines_return
@@ -237,33 +270,6 @@ CREATE TABLE IF NOT EXISTS Fines (
 -- -----------------------------------------------------------------------------
 -- Extended library entities
 -- -----------------------------------------------------------------------------
-
-CREATE TABLE IF NOT EXISTS Authors (
-  AuthorID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  Name VARCHAR(255) NOT NULL,
-  Bio TEXT NULL,
-  PRIMARY KEY (AuthorID),
-  UNIQUE KEY uq_authors_name (Name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS Publishers (
-  PublisherID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  Name VARCHAR(255) NOT NULL,
-  PRIMARY KEY (PublisherID),
-  UNIQUE KEY uq_publishers_name (Name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS Members (
-  MemberID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  UserID INT UNSIGNED NOT NULL,
-  MembershipCode VARCHAR(64) NOT NULL,
-  IsActive TINYINT(1) NOT NULL DEFAULT 1,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (MemberID),
-  UNIQUE KEY uq_members_user (UserID),
-  UNIQUE KEY uq_members_code (MembershipCode),
-  CONSTRAINT fk_members_user FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS Reservations (
   ReservationID INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -404,6 +410,7 @@ INSERT IGNORE INTO Users (UserID, Name, Email, Password, Role) VALUES
   );
 
 INSERT IGNORE INTO useraccount (UserID) VALUES (1);
+INSERT IGNORE INTO Members (UserID, MembershipCode, IsActive) VALUES (1, 'MEM-1', 1);
 
 INSERT INTO UserRoleHistory (UserID, Role, StartedAt)
 SELECT u.UserID, u.Role, u.created_at
@@ -448,6 +455,24 @@ INSERT IGNORE INTO Books (
   (8, '978-0000000008', 'Clean Code', 'Robert C. Martin', 'Prentice Hall', 2008,
    'Available', 3, 4, 4.50, 3,
    'Software craftsmanship through naming, small functions, error handling, and refactoring patterns.');
+
+INSERT IGNORE INTO Authors (Name)
+SELECT DISTINCT Author FROM Books
+WHERE Author IS NOT NULL AND Author <> '';
+
+INSERT IGNORE INTO Publishers (Name)
+SELECT DISTINCT Publisher FROM Books
+WHERE Publisher IS NOT NULL AND Publisher <> '';
+
+UPDATE Books b
+LEFT JOIN Authors a ON a.Name = b.Author
+SET b.AuthorID = a.AuthorID
+WHERE b.AuthorID IS NULL;
+
+UPDATE Books b
+LEFT JOIN Publishers p ON p.Name = b.Publisher
+SET b.PublisherID = p.PublisherID
+WHERE b.PublisherID IS NULL;
 
 INSERT IGNORE INTO Events (EventID, Title, Date, Time, LocationID) VALUES
   (1, 'Author Meet & Greet', '2026-05-15', '14:00:00', 1),

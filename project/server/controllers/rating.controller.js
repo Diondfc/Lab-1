@@ -14,6 +14,26 @@ async function refreshBookRating(bookId) {
   );
 }
 
+async function getOrCreateMemberId(userId) {
+  const [existing] = await pool.execute(
+    'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+    [userId],
+  );
+  if (existing.length) return existing[0].MemberID;
+
+  await pool.execute(
+    `INSERT IGNORE INTO Members (UserID, MembershipCode, IsActive)
+     VALUES (?, CONCAT('MEM-', ?), 1)`,
+    [userId, userId],
+  );
+
+  const [created] = await pool.execute(
+    'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+    [userId],
+  );
+  return created[0]?.MemberID;
+}
+
 exports.createRating = async (req, res) => {
   try {
     const { book_id, user_id, rating_value, comment } = req.body;
@@ -45,9 +65,20 @@ exports.createRating = async (req, res) => {
       return res.status(404).json({ message: 'Book not found' });
     }
 
+    const memberId = await getOrCreateMemberId(user_id);
+    if (!memberId) {
+      return res.status(400).json({ message: 'Active member record is required to submit a review' });
+    }
+
     const [result] = await pool.execute(
-      'INSERT INTO ratings (book_id, user_id, rating_value, comment) VALUES (?, ?, ?, ?)',
-      [book_id, user_id, rating, comment || null],
+      'INSERT INTO ratings (book_id, user_id, MemberID, rating_value, comment) VALUES (?, ?, ?, ?, ?)',
+      [book_id, user_id, memberId, rating, comment || null],
+    );
+
+    await pool.execute(
+      `INSERT INTO BookReviews (BookID, MemberID, Rating, ReviewText)
+       VALUES (?, ?, ?, ?)`,
+      [book_id, memberId, rating, comment || null],
     );
 
     await refreshBookRating(book_id);

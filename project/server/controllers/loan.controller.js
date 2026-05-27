@@ -73,11 +73,10 @@ exports.createLoan = async (req, res) => {
         [userId]
       );
 
-      const [memberRows] = await connection.execute(
+      let [memberRows] = await connection.execute(
         'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
         [userId]
       );
-      const memberId = memberRows[0]?.MemberID || null;
 
       if (user.length === 0) {
         await connection.rollback();
@@ -87,10 +86,31 @@ exports.createLoan = async (req, res) => {
         });
       }
 
+      if (memberRows.length === 0) {
+        await connection.execute(
+          `INSERT IGNORE INTO Members (UserID, MembershipCode, IsActive)
+           VALUES (?, CONCAT('MEM-', ?), 1)`,
+          [userId, userId]
+        );
+        [memberRows] = await connection.execute(
+          'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+          [userId]
+        );
+      }
+
+      const memberId = memberRows[0]?.MemberID;
+      if (!memberId) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Active member record is required to create a loan'
+        });
+      }
+
       const [result] = await connection.execute(
         `INSERT INTO Loans
          (BookID, BookTitle, UserID, MemberID, UserName, StartDate, DueDate, PaymentStatus, PaymentAmount, PaymentMethod, PaymentDate)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookId,
           bookTitle,
