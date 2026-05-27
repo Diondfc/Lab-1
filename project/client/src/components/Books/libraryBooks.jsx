@@ -14,7 +14,7 @@ import imgSedgewick from '../../images/Sedgewick.png'
  *   author: string,
  *   rating: number,
  *   summary: string,
- *   status: 'available' | 'on-loan',
+ *   status: 'available' | 'unavailable',
  *   category: LibraryCategory,
  *   genre?: string
  * }} LibraryBook

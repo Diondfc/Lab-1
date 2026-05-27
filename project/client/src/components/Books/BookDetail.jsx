@@ -31,7 +31,9 @@ function BookDetail() {
         if (response.data) {
           setBook(prev => ({
             ...prev,
-            status: response.data.AvailabilityStatus?.toLowerCase() === 'available' ? 'available' : 'on-loan'
+            status: response.data.AvailabilityStatus === 'Available' && Number(response.data.Quantity) > 0
+              ? 'available'
+              : 'unavailable'
           }));
         }
       } catch (err) {
@@ -127,7 +129,7 @@ function BookDetail() {
 
             <div className="flex flex-col">
               <span className="mb-3 inline-flex w-fit rounded-full border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                {book.status === "available" ? "Available" : "On loan"}
+                {book.status === "available" ? "Available" : "Unavailable"}
               </span>
 
               <h1 className="text-2xl font-bold leading-tight text-gray-900 dark:text-white md:text-3xl">{book.title}</h1>
@@ -145,7 +147,7 @@ function BookDetail() {
                 <div>
                   <dt className="font-medium text-gray-500 dark:text-gray-400">Status</dt>
                   <dd className="mt-0.5 text-gray-900 dark:text-gray-200">
-                    {book.status === "available" ? "On shelf" : "Checked out"}
+                    {book.status === "available" ? "On shelf" : "Unavailable"}
                   </dd>
                 </div>
                 <div>

@@ -92,7 +92,7 @@ const BookListJournal = () => {
                       </div>
                       {!available && (
                         <div className="absolute bottom-3 left-3 rounded bg-red-500 px-2 py-1 text-xs text-white">
-                          Checked Out
+                          Unavailable
                         </div>
                       )}
                     </div>

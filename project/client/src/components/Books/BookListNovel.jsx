@@ -148,7 +148,7 @@ const BookListNovel = () => {
                             available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {available ? 'Available' : 'On loan'}
+                          {available ? 'Available' : 'Unavailable'}
                         </span>
                       </div>
                     </div>

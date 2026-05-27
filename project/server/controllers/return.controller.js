@@ -56,8 +56,8 @@ exports.processReturn = async (req, res) => {
       // Update book status and increment quantity
       await connection.execute(
         `UPDATE Books 
-         SET Quantity = Quantity + 1,
-             AvailabilityStatus = CASE WHEN Quantity + 1 > 0 THEN 'Available' ELSE AvailabilityStatus END
+         SET Quantity = 1,
+             AvailabilityStatus = 'Available'
          WHERE BookID = ?`,
         [bookId]
       );

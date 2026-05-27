@@ -22,7 +22,9 @@ const BookList = () => {
               if (dbBook) {
                 return {
                   ...staticBook,
-                  status: dbBook.AvailabilityStatus?.toLowerCase() === 'available' ? 'available' : 'on loan'
+                  status: dbBook.AvailabilityStatus === 'Available' && Number(dbBook.Quantity) > 0
+                    ? 'available'
+                    : 'unavailable'
                 };
               }
               return staticBook;
@@ -100,7 +102,7 @@ const BookList = () => {
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto hide-scrollbar">
-            {["all", "available", "on loan"].map((status) => (
+            {["all", "available", "unavailable"].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
@@ -171,7 +173,7 @@ const BookList = () => {
                         ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" 
                         : "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300"
                     )}>
-                      {book.status === "available" ? "Available" : "Checked Out"}
+                      {book.status === "available" ? "Available" : "Unavailable"}
                     </span>
                   </div>
                 </div>

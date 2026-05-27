@@ -28,15 +28,43 @@ exports.createLoan = async (req, res) => {
       await connection.beginTransaction();
 
       const [book] = await connection.execute(
-        'SELECT BookID, Quantity FROM Books WHERE BookID = ? FOR UPDATE',
+        'SELECT BookID, AvailabilityStatus, Quantity FROM Books WHERE BookID = ? FOR UPDATE',
         [bookId]
       );
 
-      if (book.length === 0 || book[0].Quantity <= 0) {
+      if (book.length === 0) {
         await connection.rollback();
         return res.status(404).json({
           success: false,
-          message: 'Book not found or no available copies'
+          message: 'Book not found'
+        });
+      }
+
+      const [activeBookLoan] = await connection.execute(
+        `SELECT LoanID, UserID
+         FROM Loans
+         WHERE BookID = ?
+           AND LoanID NOT IN (SELECT LoanID FROM ReturnLoans)
+         LIMIT 1`,
+        [bookId]
+      );
+
+      if (activeBookLoan.length > 0) {
+        await connection.rollback();
+        const sameUser = Number(activeBookLoan[0].UserID) === targetUserId;
+        return res.status(409).json({
+          success: false,
+          message: sameUser
+            ? 'You already have an active loan for this book'
+            : 'This book is currently unavailable'
+        });
+      }
+
+      if (book[0].AvailabilityStatus !== 'Available' || book[0].Quantity <= 0) {
+        await connection.rollback();
+        return res.status(409).json({
+          success: false,
+          message: 'This book is currently unavailable'
         });
       }
 
@@ -45,18 +73,10 @@ exports.createLoan = async (req, res) => {
         [userId]
       );
 
-      const [memberRows] = await connection.execute(
+      let [memberRows] = await connection.execute(
         'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
         [userId]
       );
-      const memberId = memberRows[0]?.MemberID || null;
-      if (!memberId) {
-        await connection.rollback();
-        return res.status(400).json({
-          success: false,
-          message: 'Active member profile is required to create a loan'
-        });
-      }
 
       if (user.length === 0) {
         await connection.rollback();
@@ -66,10 +86,31 @@ exports.createLoan = async (req, res) => {
         });
       }
 
+      if (memberRows.length === 0) {
+        await connection.execute(
+          `INSERT IGNORE INTO Members (UserID, MembershipCode, IsActive)
+           VALUES (?, CONCAT('MEM-', ?), 1)`,
+          [userId, userId]
+        );
+        [memberRows] = await connection.execute(
+          'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+          [userId]
+        );
+      }
+
+      const memberId = memberRows[0]?.MemberID;
+      if (!memberId) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Active member record is required to create a loan'
+        });
+      }
+
       const [result] = await connection.execute(
         `INSERT INTO Loans
          (BookID, BookTitle, UserID, MemberID, UserName, StartDate, DueDate, PaymentStatus, PaymentAmount, PaymentMethod, PaymentDate)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookId,
           bookTitle,
@@ -87,8 +128,8 @@ exports.createLoan = async (req, res) => {
 
       await connection.execute(
         `UPDATE Books
-         SET AvailabilityStatus = CASE WHEN Quantity - 1 <= 0 THEN 'Checked Out' ELSE AvailabilityStatus END,
-             Quantity = Quantity - 1
+         SET AvailabilityStatus = 'Unavailable',
+             Quantity = 0
          WHERE BookID = ?`,
         [bookId]
       );
@@ -271,12 +312,12 @@ exports.deleteLoan = async (req, res) => {
 
       if (!wasReturned) {
         await connection.execute(
-          `UPDATE Books
-           SET AvailabilityStatus = CASE WHEN Quantity + 1 > 0 THEN 'Available' ELSE AvailabilityStatus END,
-               Quantity = Quantity + 1
-           WHERE BookID = ?`,
-          [bookId]
-        );
+        `UPDATE Books
+         SET AvailabilityStatus = 'Available',
+             Quantity = 1
+         WHERE BookID = ?`,
+        [bookId]
+      );
       }
 
       await connection.commit();
