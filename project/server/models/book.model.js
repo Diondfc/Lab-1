@@ -120,6 +120,75 @@ exports.getBookById = async (bookId) => {
   return rows[0] || null;
 };
 
+exports.getAvailabilityTimeline = async (bookId, userId = null) => {
+  const [bookRows] = await db.query(
+    `SELECT
+      BookID,
+      Title,
+      AvailabilityStatus,
+      Quantity
+     FROM Books
+     WHERE BookID = ?`,
+    [bookId],
+  );
+
+  if (!bookRows.length) return null;
+
+  const book = bookRows[0];
+  const isAvailable = book.AvailabilityStatus === 'Available' && Number(book.Quantity) > 0;
+
+  const [activeLoanRows] = await db.query(
+    `SELECT
+      l.LoanID,
+      l.UserID,
+      l.UserName,
+      DATE_FORMAT(l.StartDate, '%Y-%m-%d') AS StartDate,
+      DATE_FORMAT(l.DueDate, '%Y-%m-%d') AS DueDate,
+      CASE
+        WHEN l.DueDate < CURDATE() THEN 'overdue'
+        ELSE 'on_loan'
+      END AS LoanStatus
+     FROM Loans l
+     LEFT JOIN ReturnLoans r ON r.LoanID = l.LoanID
+     WHERE l.BookID = ? AND r.ReturnID IS NULL
+     ORDER BY l.StartDate DESC, l.LoanID DESC
+     LIMIT 1`,
+    [bookId],
+  );
+
+  const [queueRows] = await db.query(
+    `SELECT
+      r.ReservationID,
+      m.UserID,
+      u.Name AS UserName,
+      r.Status,
+      DATE_FORMAT(r.ReservedAt, '%Y-%m-%d %H:%i:%s') AS ReservedAt,
+      ROW_NUMBER() OVER (ORDER BY r.ReservedAt ASC, r.ReservationID ASC) AS QueuePosition
+     FROM Reservations r
+     JOIN Members m ON m.MemberID = r.MemberID
+     JOIN Users u ON u.UserID = m.UserID
+     WHERE r.BookID = ? AND r.Status = 'Active'
+     ORDER BY r.ReservedAt ASC, r.ReservationID ASC`,
+    [bookId],
+  );
+
+  const currentUserReservation = userId
+    ? queueRows.find((item) => Number(item.UserID) === Number(userId)) || null
+    : null;
+
+  return {
+    bookId: book.BookID,
+    title: book.Title,
+    status: isAvailable ? 'available' : activeLoanRows.length ? activeLoanRows[0].LoanStatus : 'unavailable',
+    isAvailable,
+    quantity: Number(book.Quantity) || 0,
+    currentLoan: activeLoanRows[0] || null,
+    queueCount: queueRows.length,
+    currentUserReservation,
+    queuePreview: queueRows.slice(0, 5),
+  };
+};
+
 exports.addBook = async (book) => {
   const {
     ISBN,

@@ -72,6 +72,21 @@ exports.getBookById = async (req, res) => {
   }
 };
 
+exports.getAvailabilityTimeline = async (req, res) => {
+  try {
+    const timeline = await Book.getAvailabilityTimeline(req.params.id, req.user?.id);
+
+    if (!timeline) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+
+    res.json(timeline);
+  } catch (error) {
+    console.error('Error fetching availability timeline:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.addBook = async (req, res) => {
   try {
     const body = req.body;
