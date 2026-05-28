@@ -6,6 +6,8 @@ const { auth, optionalAuth, authorizeStaff } = require('../middlewares/auth');
 
 // Public catalog reads
 router.get('/', booksController.getAllBooks);
+router.get('/search', auth, authorizeStaff, booksController.searchBooks);
+router.get('/reports', auth, authorizeStaff, booksController.getReports);
 router.get('/academic', booksController.getAcademicBooks);
 router.get('/journals', booksController.getJournalBooks);
 router.get('/novels', booksController.getNovelBooks);

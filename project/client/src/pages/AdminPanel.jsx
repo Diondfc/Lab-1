@@ -137,6 +137,7 @@ const AdminPanel = () => {
                       { title: 'Ratings Overview', path: '/admin/ratings', icon: <FiActivity />, desc: 'View all book ratings', color: 'amber' },
                       { title: 'Reservation Queue', path: '/admin/reservations', icon: <FiClock />, desc: 'Manage book holds', color: 'lime' },
                       { title: 'Audit Logs', path: '/admin/audit-logs', icon: <FiActivity />, desc: 'Track important actions', color: 'sky' },
+                      { title: 'Library Reports', path: '/admin/reports', icon: <FiTrendingUp />, desc: 'Search & reports', color: 'green' },
                       { title: 'Role History', path: '/admin/role-history', icon: <FiShield />, desc: 'Track role periods', color: 'violet' },
                       { title: 'User Management', path: '/admin/users', icon: <FiUsers />, desc: 'Activate/deactivate users', color: 'cyan' },
                     ].map((item, i) => (

@@ -72,6 +72,34 @@ exports.getBookById = async (req, res) => {
   }
 };
 
+exports.searchBooks = async (req, res) => {
+  try {
+    const books = await Book.searchBooks({
+      title: req.query.title?.trim(),
+      author: req.query.author?.trim(),
+      category: req.query.category?.trim(),
+      isbn: req.query.isbn?.trim(),
+    });
+    res.json(books);
+  } catch (error) {
+    console.error('Error searching books:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getReports = async (_req, res) => {
+  try {
+    const [mostReadBooks, activeMembers] = await Promise.all([
+      Book.getMostReadBooks(),
+      Book.getActiveMembersReport(),
+    ]);
+    res.json({ mostReadBooks, activeMembers });
+  } catch (error) {
+    console.error('Error fetching library reports:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.getAvailabilityTimeline = async (req, res) => {
   try {
     const timeline = await Book.getAvailabilityTimeline(req.params.id, req.user?.id);

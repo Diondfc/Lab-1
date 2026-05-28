@@ -120,6 +120,100 @@ exports.getBookById = async (bookId) => {
   return rows[0] || null;
 };
 
+exports.searchBooks = async ({ title, author, category, isbn }) => {
+  const where = [];
+  const params = [];
+
+  if (title) {
+    where.push('b.Title LIKE ?');
+    params.push(`%${title}%`);
+  }
+  if (author) {
+    where.push('b.Author LIKE ?');
+    params.push(`%${author}%`);
+  }
+  if (category) {
+    where.push('c.CategoryName = ?');
+    params.push(category);
+  }
+  if (isbn) {
+    where.push('b.ISBN LIKE ?');
+    params.push(`%${isbn}%`);
+  }
+
+  return queryRows(
+    `
+    SELECT
+      b.BookID AS id,
+      b.ISBN AS isbn,
+      b.Title AS title,
+      b.Author AS author,
+      b.Publisher AS publisher,
+      b.YearOfPublishment AS year,
+      b.AvailabilityStatus AS availabilityStatus,
+      b.Quantity AS quantity,
+      b.Rating AS rating,
+      c.CategoryName AS category,
+      COUNT(l.LoanID) AS loanCount
+    FROM Books b
+    JOIN Categories c ON b.CategoryID = c.CategoryID
+    LEFT JOIN Loans l ON l.BookID = b.BookID
+    ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+    GROUP BY
+      b.BookID,
+      b.ISBN,
+      b.Title,
+      b.Author,
+      b.Publisher,
+      b.YearOfPublishment,
+      b.AvailabilityStatus,
+      b.Quantity,
+      b.Rating,
+      c.CategoryName
+    ORDER BY b.Title ASC
+    LIMIT 100
+    `,
+    params,
+  );
+};
+
+exports.getMostReadBooks = async () => {
+  return queryRows(`
+    SELECT
+      b.BookID AS id,
+      b.Title AS title,
+      b.Author AS author,
+      b.ISBN AS isbn,
+      c.CategoryName AS category,
+      COUNT(l.LoanID) AS loanCount
+    FROM Books b
+    JOIN Categories c ON b.CategoryID = c.CategoryID
+    LEFT JOIN Loans l ON l.BookID = b.BookID
+    GROUP BY b.BookID, b.Title, b.Author, b.ISBN, c.CategoryName
+    ORDER BY loanCount DESC, b.Title ASC
+    LIMIT 10
+  `);
+};
+
+exports.getActiveMembersReport = async () => {
+  return queryRows(`
+    SELECT
+      u.UserID AS id,
+      u.Name AS name,
+      u.Email AS email,
+      m.MembershipCode AS membershipCode,
+      COUNT(l.LoanID) AS loanCount,
+      MAX(l.StartDate) AS lastLoanDate
+    FROM Members m
+    JOIN Users u ON u.UserID = m.UserID
+    LEFT JOIN Loans l ON l.UserID = u.UserID
+    WHERE m.IsActive = 1 AND u.Status = 'Active'
+    GROUP BY u.UserID, u.Name, u.Email, m.MembershipCode
+    ORDER BY loanCount DESC, u.Name ASC
+    LIMIT 10
+  `);
+};
+
 exports.getAvailabilityTimeline = async (bookId, userId = null) => {
   const [bookRows] = await db.query(
     `SELECT

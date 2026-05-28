@@ -32,6 +32,7 @@ import RoleHistoryDashboard from '../pages/RoleHistoryDashboard.jsx'
 import UserManagementDashboard from '../pages/UserManagementDashboard.jsx'
 import ReservationQueueDashboard from '../pages/ReservationQueueDashboard.jsx'
 import AuditLogsDashboard from '../pages/AuditLogsDashboard.jsx'
+import LibraryReportsDashboard from '../pages/LibraryReportsDashboard.jsx'
 
 export default function AppRoutes() {
   return (
@@ -58,6 +59,7 @@ export default function AppRoutes() {
           <Route path="/admin/users" element={<UserManagementDashboard />} />
           <Route path="/admin/reservations" element={<ReservationQueueDashboard />} />
           <Route path="/admin/audit-logs" element={<AuditLogsDashboard />} />
+          <Route path="/admin/reports" element={<LibraryReportsDashboard />} />
           <Route path="/edit/:id" element={<EditBook />} />
           <Route path="/admin/add-book" element={<AddBook />} />
           <Route path="/admin/journals-dashboard" element={<JournalsDashboard />} />
