@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes')
 const eventsRoutes = require('./routes/events.routes')
 const locationsRoutes = require('./routes/locations.routes')
 const userRoutes = require('./routes/user.routes')
+const rolesRoutes = require('./routes/roles.routes')
 const booksRoutes = require('./routes/books.routes')
 const loanRoutes = require('./routes/loan.routes')
 const returnRoutes = require('./routes/return.routes')
@@ -16,6 +17,14 @@ const ratingRoutes = require('./routes/rating.routes')
 const bookshelfRoutes = require('./routes/bookshelf.routes')
 const messageRoutes = require('./routes/message.routes')
 const requestRoutes = require('./routes/request.routes')
+
+const authorsRoutes = require('./routes/authors.routes')
+const categoriesRoutes = require('./routes/categories.routes')
+const publishersRoutes = require('./routes/publishers.routes')
+const membersRoutes = require('./routes/members.routes')
+const reservationsRoutes = require('./routes/reservations.routes')
+const bookreviewsRoutes = require('./routes/bookreviews.routes')
+
 
 const PORT = Number(process.env.PORT) || 5001
 
@@ -75,6 +84,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/events', eventsRoutes)
 app.use('/api/locations', locationsRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/roles', rolesRoutes)
 app.use('/api/books', booksRoutes)
 app.use('/api/loans', loanRoutes)
 app.use('/api/returns', returnRoutes)
@@ -83,6 +93,14 @@ app.use('/api/ratings', ratingRoutes)
 app.use('/api/bookshelf', bookshelfRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/requests', requestRoutes)
+
+app.use('/api/authors', authorsRoutes)
+app.use('/api/categories', categoriesRoutes)
+app.use('/api/publishers', publishersRoutes)
+app.use('/api/members', membersRoutes)
+app.use('/api/reservations', reservationsRoutes)
+app.use('/api/bookreviews', bookreviewsRoutes)
+
 
 app.use((err, _req, res, _next) => {
   if (err.message?.startsWith('CORS blocked')) {

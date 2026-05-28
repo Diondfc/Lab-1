@@ -74,10 +74,12 @@ exports.addBook = async (req, res) => {
       Title: body.Title,
       AvailabilityStatus: body.AvailabilityStatus || 'Available',
       Publisher: body.Publisher || null,
+      PublisherID: body.PublisherID ? Number(body.PublisherID) : null,
       YearOfPublishment: body.YearOfPublishment || null,
       CategoryID: Number(body.CategoryID),
       SubCategoryID: body.SubCategoryID ? Number(body.SubCategoryID) : null,
       Author: body.Author,
+      AuthorID: body.AuthorID ? Number(body.AuthorID) : null,
       Rating: body.Rating ?? 0,
       CoverImagePath: coverImagePath,
       Description: body.Description || '',
@@ -111,6 +113,7 @@ exports.editBook = async (req, res) => {
       AvailabilityStatus:
         body.AvailabilityStatus ?? existing.AvailabilityStatus,
       Publisher: body.Publisher ?? existing.Publisher,
+      PublisherID: body.PublisherID ? Number(body.PublisherID) : existing.PublisherID,
       YearOfPublishment:
         body.YearOfPublishment ?? existing.YearOfPublishment,
       CategoryID: Number(body.CategoryID ?? existing.CategoryID),
@@ -118,6 +121,7 @@ exports.editBook = async (req, res) => {
         ? Number(body.SubCategoryID)
         : existing.SubCategoryID,
       Author: body.Author ?? existing.Author,
+      AuthorID: body.AuthorID ? Number(body.AuthorID) : existing.AuthorID,
       Rating: body.Rating ?? existing.Rating,
       CoverImagePath: coverImagePath,
       Description: body.Description ?? existing.Description,
