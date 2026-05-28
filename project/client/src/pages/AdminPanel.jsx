@@ -135,6 +135,7 @@ const AdminPanel = () => {
                       { title: 'Journals Config', path: '/admin/journals-dashboard', icon: <FiList />, desc: 'Manage publications', color: 'emerald' },
                       { title: 'Events Control', path: '/events/dashboard', icon: <FiCalendar />, desc: 'Organize library events', color: 'rose' },
                       { title: 'Ratings Overview', path: '/admin/ratings', icon: <FiActivity />, desc: 'View all book ratings', color: 'amber' },
+                      { title: 'Reservation Queue', path: '/admin/reservations', icon: <FiClock />, desc: 'Manage book holds', color: 'lime' },
                       { title: 'Role History', path: '/admin/role-history', icon: <FiShield />, desc: 'Track role periods', color: 'violet' },
                       { title: 'User Management', path: '/admin/users', icon: <FiUsers />, desc: 'Activate/deactivate users', color: 'cyan' },
                     ].map((item, i) => (

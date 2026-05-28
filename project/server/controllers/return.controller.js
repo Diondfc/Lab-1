@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const Reservation = require('../models/reservations.model');
 
 const calculateFine = (dueDate, returnDate) => {
   const due = new Date(dueDate);
@@ -72,14 +73,36 @@ exports.processReturn = async (req, res) => {
         fineId = fineResult.insertId || fineId;
       }
 
+      const [nextReservations] = await connection.execute(
+        `SELECT
+          r.ReservationID,
+          r.BookID,
+          r.MemberID,
+          m.UserID,
+          u.Name AS UserName,
+          u.Email AS UserEmail,
+          r.ReservedAt
+         FROM Reservations r
+         JOIN Members m ON m.MemberID = r.MemberID
+         JOIN Users u ON u.UserID = m.UserID
+         WHERE r.BookID = ? AND r.Status = 'Active'
+         ORDER BY r.ReservedAt ASC, r.ReservationID ASC
+         LIMIT 1`,
+        [bookId],
+      );
+
       await connection.commit();
+
+      const reservationQueue = await Reservation.getByBookId(bookId);
 
       res.status(200).json({
         success: true,
         message: 'Return processed successfully',
         returnDate: returnDate,
         fineAmount: fineAmount,
-        fineId
+        fineId,
+        nextReservation: nextReservations[0] || null,
+        reservationQueue,
       });
     } catch (error) {
       await connection.rollback();

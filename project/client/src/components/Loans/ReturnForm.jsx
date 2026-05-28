@@ -61,12 +61,19 @@ const ReturnForm = () => {
       });
       
       if (response.data.success) {
-        setSuccessMessage('Return processed successfully!');
+        const nextReservation = response.data.nextReservation;
+        setSuccessMessage(
+          nextReservation
+            ? `Return processed successfully. Next hold: ${nextReservation.UserName} (${nextReservation.UserEmail}).`
+            : 'Return processed successfully!'
+        );
         
         setTimeout(() => {
           navigate('/admin/loans', {
             state: { 
-              successMessage: 'Return processed successfully!',
+              successMessage: nextReservation
+                ? `Return processed successfully. Next hold: ${nextReservation.UserName}.`
+                : 'Return processed successfully!',
               fineAmount: response.data.fineAmount
             }
           });

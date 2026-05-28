@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { FiArrowLeft, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiArrowLeft, FiBookmark, FiCheckCircle, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { LuBookUp2 } from "react-icons/lu";
 import { getAdjacentBooks, getBookById } from "./libraryBooks.jsx";
 import RatingForm from "../Rating/RatingForm.jsx";
@@ -17,8 +17,13 @@ const gradientBtn = `inline-flex items-center rounded-lg bg-gradient-to-r from-i
 function BookDetail() {
   const { id } = useParams();
   const [book, setBook] = useState(() => getBookById(id));
+  const [reservationQueue, setReservationQueue] = useState([]);
+  const [reservationMessage, setReservationMessage] = useState("");
+  const [reservationError, setReservationError] = useState("");
+  const [isReserving, setIsReserving] = useState(false);
   const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
   const canRateBook = currentUser && !isStaffRole(currentUser.role);
+  const canReserveBook = currentUser && !isStaffRole(currentUser.role) && book?.status !== "available";
   const { prev, next } = book ? getAdjacentBooks(id) : {};
 
   useEffect(() => {
@@ -42,6 +47,41 @@ function BookDetail() {
     };
     fetchLiveBook();
   }, [id]);
+
+  useEffect(() => {
+    async function fetchReservationQueue() {
+      if (!currentUser || book?.status === "available") {
+        setReservationQueue([]);
+        return;
+      }
+
+      try {
+        const response = await apiClient.get(`/api/reservations/book/${id}`);
+        setReservationQueue(Array.isArray(response.data) ? response.data : []);
+      } catch (err) {
+        console.error('Error fetching reservation queue:', err);
+      }
+    }
+
+    fetchReservationQueue();
+  }, [book?.status, currentUser, id]);
+
+  const reserveBook = async () => {
+    if (!currentUser) return;
+    try {
+      setIsReserving(true);
+      setReservationMessage("");
+      setReservationError("");
+      const response = await apiClient.post('/api/reservations', { bookId: Number(id) });
+      setReservationMessage(response.data?.message || 'Book reserved successfully.');
+      const queueResponse = await apiClient.get(`/api/reservations/book/${id}`);
+      setReservationQueue(Array.isArray(queueResponse.data) ? queueResponse.data : []);
+    } catch (err) {
+      setReservationError(err.response?.data?.message || 'Could not reserve this book.');
+    } finally {
+      setIsReserving(false);
+    }
+  };
 
   useEffect(() => {
     if (book) {
@@ -178,6 +218,17 @@ function BookDetail() {
                     Loan This Book
                   </Link>
                 )}
+                {canReserveBook && (
+                  <button
+                    type="button"
+                    onClick={reserveBook}
+                    disabled={isReserving}
+                    className={gradientBtn}
+                  >
+                    <FiBookmark className="mr-2" aria-hidden />
+                    {isReserving ? 'Reserving...' : 'Reserve / Hold Book'}
+                  </button>
+                )}
                 <Link to="/books" className={outlineBtn}>
                   Browse more books
                 </Link>
@@ -185,6 +236,40 @@ function BookDetail() {
                   Back to home
                 </Link>
               </div>
+
+              {reservationMessage && (
+                <div className="mt-5 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  <FiCheckCircle className="mt-0.5 shrink-0" />
+                  {reservationMessage}
+                </div>
+              )}
+
+              {reservationError && (
+                <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
+                  {reservationError}
+                </div>
+              )}
+
+              {canReserveBook && reservationQueue.length > 0 && (
+                <div className="mt-6 rounded-xl border border-gray-100 bg-gray-50/80 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/50">
+                  <p className="font-semibold text-gray-900 dark:text-white">Current hold queue</p>
+                  <p className="mt-1 text-gray-600 dark:text-gray-400">
+                    {reservationQueue.length} user{reservationQueue.length === 1 ? '' : 's'} waiting for this book.
+                  </p>
+                  <ul className="mt-3 space-y-2">
+                    {reservationQueue.slice(0, 3).map((item) => (
+                      <li key={item.ReservationID} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 dark:bg-slate-800">
+                        <span className="font-medium text-gray-800 dark:text-gray-200">
+                          #{item.QueuePosition} {Number(item.UserID) === Number(currentUser.id) ? 'You' : item.UserName}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {item.ReservedAt ? new Date(item.ReservedAt).toLocaleDateString() : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {(prev || next) && (
                 <nav

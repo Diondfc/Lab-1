@@ -30,6 +30,7 @@ import EditEvents from '../pages/EditEvents.jsx'
 import RatingDashboard from '../components/Rating/RatingDashboard.jsx'
 import RoleHistoryDashboard from '../pages/RoleHistoryDashboard.jsx'
 import UserManagementDashboard from '../pages/UserManagementDashboard.jsx'
+import ReservationQueueDashboard from '../pages/ReservationQueueDashboard.jsx'
 
 export default function AppRoutes() {
   return (
@@ -54,6 +55,7 @@ export default function AppRoutes() {
           <Route path="/admin/ratings" element={<RatingDashboard />} />
           <Route path="/admin/role-history" element={<RoleHistoryDashboard />} />
           <Route path="/admin/users" element={<UserManagementDashboard />} />
+          <Route path="/admin/reservations" element={<ReservationQueueDashboard />} />
           <Route path="/edit/:id" element={<EditBook />} />
           <Route path="/admin/add-book" element={<AddBook />} />
           <Route path="/admin/journals-dashboard" element={<JournalsDashboard />} />
