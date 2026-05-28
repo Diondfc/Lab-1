@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { FiArrowLeft, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiAlertTriangle, FiArrowLeft, FiBookmark, FiCalendar, FiCheckCircle, FiClock, FiStar, FiChevronLeft, FiChevronRight, FiUsers } from "react-icons/fi";
 import { LuBookUp2 } from "react-icons/lu";
 import { getAdjacentBooks, getBookById } from "./libraryBooks.jsx";
 import RatingForm from "../Rating/RatingForm.jsx";
@@ -17,8 +17,14 @@ const gradientBtn = `inline-flex items-center rounded-lg bg-gradient-to-r from-i
 function BookDetail() {
   const { id } = useParams();
   const [book, setBook] = useState(() => getBookById(id));
-  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const [availabilityTimeline, setAvailabilityTimeline] = useState(null);
+  const [reservationQueue, setReservationQueue] = useState([]);
+  const [reservationMessage, setReservationMessage] = useState("");
+  const [reservationError, setReservationError] = useState("");
+  const [isReserving, setIsReserving] = useState(false);
+  const currentUser = useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
   const canRateBook = currentUser && !isStaffRole(currentUser.role);
+  const canReserveBook = currentUser && !isStaffRole(currentUser.role) && book?.status !== "available";
   const { prev, next } = book ? getAdjacentBooks(id) : {};
 
   useEffect(() => {
@@ -31,7 +37,9 @@ function BookDetail() {
         if (response.data) {
           setBook(prev => ({
             ...prev,
-            status: response.data.AvailabilityStatus?.toLowerCase() === 'available' ? 'available' : 'on-loan'
+            status: response.data.AvailabilityStatus === 'Available' && Number(response.data.Quantity) > 0
+              ? 'available'
+              : 'unavailable'
           }));
         }
       } catch (err) {
@@ -40,6 +48,55 @@ function BookDetail() {
     };
     fetchLiveBook();
   }, [id]);
+
+  const loadAvailabilityTimeline = async () => {
+    try {
+      const response = await apiClient.get(`/api/books/book/${id}/timeline`);
+      setAvailabilityTimeline(response.data || null);
+      setReservationQueue(Array.isArray(response.data?.queuePreview) ? response.data.queuePreview : []);
+    } catch (err) {
+      console.error('Error fetching availability timeline:', err);
+      setAvailabilityTimeline(null);
+    }
+  };
+
+  useEffect(() => {
+    loadAvailabilityTimeline();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  useEffect(() => {
+    async function fetchReservationQueue() {
+      if (!currentUser || book?.status === "available") {
+        setReservationQueue([]);
+        return;
+      }
+
+      try {
+        await loadAvailabilityTimeline();
+      } catch (err) {
+        console.error('Error fetching reservation queue:', err);
+      }
+    }
+
+    fetchReservationQueue();
+  }, [book?.status, currentUser, id]);
+
+  const reserveBook = async () => {
+    if (!currentUser) return;
+    try {
+      setIsReserving(true);
+      setReservationMessage("");
+      setReservationError("");
+      const response = await apiClient.post('/api/reservations', { bookId: Number(id) });
+      setReservationMessage(response.data?.message || 'Book reserved successfully.');
+      await loadAvailabilityTimeline();
+    } catch (err) {
+      setReservationError(err.response?.data?.message || 'Could not reserve this book.');
+    } finally {
+      setIsReserving(false);
+    }
+  };
 
   useEffect(() => {
     if (book) {
@@ -54,6 +111,24 @@ function BookDetail() {
       document.title = "client";
     };
   }, []);
+
+  const timelineStatusLabel = (() => {
+    if (!availabilityTimeline) return book?.status === "available" ? "Available now" : "Unavailable";
+    if (availabilityTimeline.status === "available") return "Available now";
+    if (availabilityTimeline.status === "overdue") return "Currently on loan - overdue";
+    if (availabilityTimeline.status === "on_loan") return "Currently on loan";
+    return "Unavailable";
+  })();
+
+  const timelineStatusClass = (() => {
+    if (availabilityTimeline?.status === "available" || book?.status === "available") {
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300";
+    }
+    if (availabilityTimeline?.status === "overdue") {
+      return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300";
+    }
+    return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300";
+  })();
 
   if (!book) {
     return (
@@ -127,7 +202,7 @@ function BookDetail() {
 
             <div className="flex flex-col">
               <span className="mb-3 inline-flex w-fit rounded-full border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                {book.status === "available" ? "Available" : "On loan"}
+                {book.status === "available" ? "Available" : "Unavailable"}
               </span>
 
               <h1 className="text-2xl font-bold leading-tight text-gray-900 dark:text-white md:text-3xl">{book.title}</h1>
@@ -145,7 +220,7 @@ function BookDetail() {
                 <div>
                   <dt className="font-medium text-gray-500 dark:text-gray-400">Status</dt>
                   <dd className="mt-0.5 text-gray-900 dark:text-gray-200">
-                    {book.status === "available" ? "On shelf" : "Checked out"}
+                    {book.status === "available" ? "On shelf" : "Unavailable"}
                   </dd>
                 </div>
                 <div>
@@ -153,6 +228,58 @@ function BookDetail() {
                   <dd className="mt-0.5 font-mono text-gray-900 dark:text-gray-200">{book.id}</dd>
                 </div>
               </dl>
+
+              <section className="mt-6 rounded-xl border border-gray-100 bg-gray-50/80 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/50" aria-labelledby="availability-timeline-heading">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h2 id="availability-timeline-heading" className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Availability Timeline
+                  </h2>
+                  <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${timelineStatusClass}`}>
+                    {availabilityTimeline?.status === "overdue" ? <FiAlertTriangle /> : availabilityTimeline?.status === "available" ? <FiCheckCircle /> : <FiClock />}
+                    {timelineStatusLabel}
+                  </span>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg bg-white p-3 dark:bg-slate-800">
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      <FiCalendar />
+                      Due date
+                    </p>
+                    <p className="mt-2 font-semibold text-gray-900 dark:text-gray-100">
+                      {availabilityTimeline?.currentLoan?.DueDate || "No active loan"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-white p-3 dark:bg-slate-800">
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      <FiUsers />
+                      Queue count
+                    </p>
+                    <p className="mt-2 font-semibold text-gray-900 dark:text-gray-100">
+                      {availabilityTimeline?.queueCount ?? reservationQueue.length} waiting
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-white p-3 dark:bg-slate-800">
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      <FiBookmark />
+                      Your hold
+                    </p>
+                    <p className="mt-2 font-semibold text-gray-900 dark:text-gray-100">
+                      {availabilityTimeline?.currentUserReservation
+                        ? `#${availabilityTimeline.currentUserReservation.QueuePosition} in queue`
+                        : currentUser
+                          ? "No active hold"
+                          : "Sign in to reserve"}
+                    </p>
+                  </div>
+                </div>
+
+                {availabilityTimeline?.currentLoan && (
+                  <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    Loaned to {availabilityTimeline.currentLoan.UserName || "a member"} since {availabilityTimeline.currentLoan.StartDate}.
+                  </p>
+                )}
+              </section>
 
               <section className="mt-8" aria-labelledby="summary-heading">
                 <h2 id="summary-heading" className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -176,6 +303,17 @@ function BookDetail() {
                     Loan This Book
                   </Link>
                 )}
+                {canReserveBook && (
+                  <button
+                    type="button"
+                    onClick={reserveBook}
+                    disabled={isReserving}
+                    className={gradientBtn}
+                  >
+                    <FiBookmark className="mr-2" aria-hidden />
+                    {isReserving ? 'Reserving...' : 'Reserve / Hold Book'}
+                  </button>
+                )}
                 <Link to="/books" className={outlineBtn}>
                   Browse more books
                 </Link>
@@ -183,6 +321,40 @@ function BookDetail() {
                   Back to home
                 </Link>
               </div>
+
+              {reservationMessage && (
+                <div className="mt-5 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  <FiCheckCircle className="mt-0.5 shrink-0" />
+                  {reservationMessage}
+                </div>
+              )}
+
+              {reservationError && (
+                <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
+                  {reservationError}
+                </div>
+              )}
+
+              {canReserveBook && reservationQueue.length > 0 && (
+                <div className="mt-6 rounded-xl border border-gray-100 bg-gray-50/80 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/50">
+                  <p className="font-semibold text-gray-900 dark:text-white">Current hold queue</p>
+                  <p className="mt-1 text-gray-600 dark:text-gray-400">
+                    {reservationQueue.length} user{reservationQueue.length === 1 ? '' : 's'} waiting for this book.
+                  </p>
+                  <ul className="mt-3 space-y-2">
+                    {reservationQueue.slice(0, 3).map((item) => (
+                      <li key={item.ReservationID} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 dark:bg-slate-800">
+                        <span className="font-medium text-gray-800 dark:text-gray-200">
+                          #{item.QueuePosition} {Number(item.UserID) === Number(currentUser.id) ? 'You' : item.UserName}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {item.ReservedAt ? new Date(item.ReservedAt).toLocaleDateString() : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {(prev || next) && (
                 <nav

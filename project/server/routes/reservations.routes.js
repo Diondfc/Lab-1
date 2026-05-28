@@ -1,9 +1,10 @@
 const router = require('express').Router();
 const c = require('../controllers/reservations.controller');
 const { auth, authorizeStaff } = require('../middlewares/auth');
-router.get('/', auth, c.getAll);
+router.get('/', auth, authorizeStaff, c.getAll);
+router.get('/queue', auth, authorizeStaff, c.getQueue);
+router.get('/book/:bookId', auth, c.getBookQueue);
 router.get('/:id', auth, c.getById);
-router.post('/', auth, authorizeStaff, c.create);
-router.put('/:id', auth, authorizeStaff, c.update);
-router.delete('/:id', auth, authorizeStaff, c.remove);
+router.post('/', auth, c.createHold);
+router.patch('/:id/status', auth, authorizeStaff, c.updateStatus);
 module.exports = router;

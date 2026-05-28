@@ -38,6 +38,20 @@ const auth = async (req, res, next) => {
   }
 };
 
+const optionalAuth = async (req, _res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token || !process.env.JWT_SECRET) {
+      return next();
+    }
+
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    return next();
+  } catch {
+    return next();
+  }
+};
+
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     const userRole = getUserRole(req);
@@ -76,6 +90,7 @@ const authorizeStaff = authorizeRoles(ROLES.ADMIN, ROLES.MANAGER);
 
 module.exports = {
   auth,
+  optionalAuth,
   authorizeRoles,
   authorizeStaff,
   authorizeSelfOrStaff,

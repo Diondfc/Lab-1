@@ -1,47 +1,47 @@
-const Role = require('../models/roles.model');
+const Roles = require('../models/roles.model');
 
-exports.getRoles = async (_req, res) => {
+exports.getAll = async (_req, res) => {
   try {
-    res.json(await Role.findAll());
+    res.json(await Roles.getAll());
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.getRoleById = async (req, res) => {
+exports.getById = async (req, res) => {
   try {
-    const role = await Role.findById(req.params.id);
+    const role = await Roles.getById(req.params.id);
     if (!role) return res.status(404).json({ message: 'Role not found' });
-    res.json(role);
+    return res.json(role);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
-exports.createRole = async (req, res) => {
+exports.create = async (req, res) => {
   try {
-    res.status(201).json(await Role.create(req.body));
+    res.status(201).json(await Roles.create(req.body));
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
 
-exports.updateRole = async (req, res) => {
+exports.update = async (req, res) => {
   try {
-    const affected = await Role.update(req.params.id, req.body);
-    if (!affected) return res.status(404).json({ message: 'Role not found or no changes provided' });
-    res.json(await Role.findById(req.params.id));
+    const affectedRows = await Roles.update(req.params.id, req.body);
+    if (!affectedRows) return res.status(404).json({ message: 'Role not found' });
+    return res.json(await Roles.getById(req.params.id));
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(400).json({ message: error.message });
   }
 };
 
-exports.deleteRole = async (req, res) => {
+exports.remove = async (req, res) => {
   try {
-    const affected = await Role.delete(req.params.id);
-    if (!affected) return res.status(404).json({ message: 'Role not found' });
-    res.json({ message: 'Role deleted successfully' });
+    const affectedRows = await Roles.delete(req.params.id);
+    if (!affectedRows) return res.status(404).json({ message: 'Role not found' });
+    return res.json({ message: 'Role deleted' });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };

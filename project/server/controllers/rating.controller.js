@@ -18,15 +18,37 @@ async function getCallerMemberId(req) {
   const callerId = Number(getUserId(req));
   const [rows] = await pool.execute('SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1', [callerId]);
   return rows[0]?.MemberID || null;
+async function getOrCreateMemberId(userId) {
+  const [existing] = await pool.execute(
+    'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+    [userId],
+  );
+  if (existing.length) return existing[0].MemberID;
+
+  await pool.execute(
+    `INSERT IGNORE INTO Members (UserID, MembershipCode, IsActive)
+     VALUES (?, CONCAT('MEM-', ?), 1)`,
+    [userId, userId],
+  );
+
+  const [created] = await pool.execute(
+    'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+    [userId],
+  );
+  return created[0]?.MemberID;
 }
 
 exports.createRating = async (req, res) => {
   try {
     const { book_id, rating_value, comment } = req.body;
     const callerRole = getUserRole(req);
+    const userId = getUserId(req);
 
     if (!book_id || rating_value == null) {
       return res.status(400).json({ message: 'book_id and rating_value are required' });
+    }
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
     if (callerRole !== ROLES.USER_MEMBER) {
@@ -51,6 +73,25 @@ exports.createRating = async (req, res) => {
 
     await refreshBookRating(book_id);
     const [rows] = await pool.execute('SELECT * FROM BookReviews WHERE ReviewID = ?', [result.insertId]);
+
+    const memberId = await getOrCreateMemberId(userId);
+    if (!memberId) {
+      return res.status(400).json({ message: 'Active member record is required to submit a review' });
+    }
+
+    await pool.execute(
+      'INSERT INTO ratings (book_id, user_id, MemberID, rating_value, comment) VALUES (?, ?, ?, ?, ?)',
+      [book_id, userId, memberId, rating, comment || null],
+    );
+
+    const [reviewResult] = await pool.execute(
+      `INSERT INTO BookReviews (BookID, MemberID, Rating, ReviewText)
+       VALUES (?, ?, ?, ?)`,
+      [book_id, memberId, rating, comment || null],
+    );
+
+    await refreshBookRating(book_id);
+    const [rows] = await pool.execute('SELECT * FROM BookReviews WHERE ReviewID = ?', [reviewResult.insertId]);
     res.status(201).json(rows[0]);
   } catch (error) {
     console.error('Error creating rating:', error);
@@ -101,6 +142,10 @@ exports.deleteRating = async (req, res) => {
     );
 
     if (!existing.length) return res.status(404).json({ message: 'Rating not found' });
+
+    const ownerUserId = Number(existing[0].UserID);
+    const bookId = existing[0].BookID;
+
 
     const ownerUserId = Number(existing[0].UserID);
     const bookId = existing[0].BookID;

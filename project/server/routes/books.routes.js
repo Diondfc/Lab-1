@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const booksController = require('../controllers/books.controller');
 const { uploadCover } = require('../middlewares/upload.middleware');
-const { auth, authorizeStaff } = require('../middlewares/auth');
+const { auth, optionalAuth, authorizeStaff } = require('../middlewares/auth');
 
 // Public catalog reads
 router.get('/', booksController.getAllBooks);
 router.get('/academic', booksController.getAcademicBooks);
 router.get('/journals', booksController.getJournalBooks);
 router.get('/novels', booksController.getNovelBooks);
+router.get('/book/:id/timeline', optionalAuth, booksController.getAvailabilityTimeline);
 router.get('/book/:id', booksController.getBookById);
 
 // Staff-only catalog mutations

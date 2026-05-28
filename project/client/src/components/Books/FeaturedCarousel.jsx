@@ -28,8 +28,9 @@ const FeaturedCarousel = ({ books = [] }) => {
         case 'available':
           return { color: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800', icon: <FiCheckCircle className="w-3 h-3" />, text: 'Available' };
         case 'on-loan':
+        case 'unavailable':
         case 'borrowed':
-          return { color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800', icon: <FiClock className="w-3 h-3" />, text: 'Borrowed' };
+          return { color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800', icon: <FiClock className="w-3 h-3" />, text: 'Unavailable' };
         case 'reserved':
           return { color: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800', icon: <FiAlertCircle className="w-3 h-3" />, text: 'Reserved' };
         default:

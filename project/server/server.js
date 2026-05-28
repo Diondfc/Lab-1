@@ -17,6 +17,19 @@ const ratingRoutes = require('./routes/rating.routes')
 const bookshelfRoutes = require('./routes/bookshelf.routes')
 const messageRoutes = require('./routes/message.routes')
 const requestRoutes = require('./routes/request.routes')
+const notificationRoutes = require('./routes/notification.routes')
+const auditLogRoutes = require('./routes/audit-log.routes')
+const rolesRoutes = require('./routes/roles.routes')
+const userClaimsRoutes = require('./routes/user-claims.routes')
+const userTokensRoutes = require('./routes/user-tokens.routes')
+
+const authorsRoutes = require('./routes/authors.routes')
+const categoriesRoutes = require('./routes/categories.routes')
+const publishersRoutes = require('./routes/publishers.routes')
+const membersRoutes = require('./routes/members.routes')
+const reservationsRoutes = require('./routes/reservations.routes')
+const bookreviewsRoutes = require('./routes/bookreviews.routes')
+
 
 const authorsRoutes = require('./routes/authors.routes')
 const categoriesRoutes = require('./routes/categories.routes')
@@ -39,8 +52,8 @@ const envOrigins = process.env.CLIENT_ORIGIN
   : []
 const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])]
 
-if (!process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET is not set. Copy project/server/.env.example to .env and set JWT_SECRET.')
+if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+  console.error('FATAL: JWT_SECRET and JWT_REFRESH_SECRET must be set in project/server/.env.')
   process.exit(1)
 }
 
@@ -93,6 +106,19 @@ app.use('/api/ratings', ratingRoutes)
 app.use('/api/bookshelf', bookshelfRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/requests', requestRoutes)
+app.use('/api/notifications', notificationRoutes)
+app.use('/api/audit-logs', auditLogRoutes)
+app.use('/api/roles', rolesRoutes)
+app.use('/api/user-claims', userClaimsRoutes)
+app.use('/api/user-tokens', userTokensRoutes)
+
+app.use('/api/authors', authorsRoutes)
+app.use('/api/categories', categoriesRoutes)
+app.use('/api/publishers', publishersRoutes)
+app.use('/api/members', membersRoutes)
+app.use('/api/reservations', reservationsRoutes)
+app.use('/api/bookreviews', bookreviewsRoutes)
+
 
 app.use('/api/authors', authorsRoutes)
 app.use('/api/categories', categoriesRoutes)

@@ -26,11 +26,11 @@ class User {
       first_name: row.FirstName,
       last_name: row.LastName,
       email: row.Email,
+      password: row.Password,
       phone_number: row.PhoneNumber,
       email_confirmed: Boolean(row.EmailConfirmed),
       lockout_enabled: Boolean(row.LockoutEnabled),
       access_failed_count: row.AccessFailedCount,
-      password: row.PasswordHash || row.Password,
       role: normalizeRole(row.Role),
       status: normalizeStatus(row.Status),
       created_at: row.created_at,
@@ -50,6 +50,10 @@ class User {
     const emailConfirmed = userData.email_confirmed ?? userData.EmailConfirmed ?? 0;
     const role = normalizeRole(userData.role);
     const status = normalizeStatus(userData.status || userData.Status);
+    const phoneNumber = userData.phone_number || userData.PhoneNumber || null;
+    const emailConfirmed = userData.email_confirmed ?? userData.EmailConfirmed ?? 0;
+    const lockoutEnabled = userData.lockout_enabled ?? userData.LockoutEnabled ?? 0;
+    const accessFailedCount = userData.access_failed_count ?? userData.AccessFailedCount ?? 0;
     if (!isValidRole(role)) {
       throw new Error(`Invalid role. Allowed roles: ${Object.values(ROLES).join(', ')}`);
     }
@@ -62,19 +66,34 @@ class User {
       await conn.beginTransaction();
 
       const [result] = await conn.query(
-        'INSERT INTO Users (Name, FirstName, LastName, Email, PhoneNumber, EmailConfirmed, Password, PasswordHash, Role, Status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [full_name, firstName, lastName, email, phoneNumber, emailConfirmed ? 1 : 0, password, password, role, status]
-      );
-
-      await conn.query(
-        `INSERT INTO UserRoles (UserID, RoleID, AssignedAt, AssignedByUserID)
-         SELECT ?, RoleID, NOW(), ? FROM Roles WHERE Name = ?`,
-        [result.insertId, userData.changedByUserId || null, role]
+        `INSERT INTO Users
+         (Name, Email, Password, PhoneNumber, EmailConfirmed, LockoutEnabled, AccessFailedCount, Role, Status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          full_name,
+          email,
+          password,
+          phoneNumber,
+          emailConfirmed ? 1 : 0,
+          lockoutEnabled ? 1 : 0,
+          Number(accessFailedCount) || 0,
+          role,
+          status,
+        ]
       );
 
       await conn.query(
         'INSERT INTO UserRoleHistory (UserID, Role, StartedAt, ChangedByUserID) VALUES (?, ?, NOW(), ?)',
         [result.insertId, role, userData.changedByUserId || null]
+      );
+
+      await conn.query(
+        `INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt, AssignedByUserID)
+         SELECT ?, RoleID, ?, NOW(), ?
+         FROM Roles
+         WHERE Name = ?
+         LIMIT 1`,
+        [result.insertId, role, userData.changedByUserId || null, role]
       );
 
       await conn.commit();
@@ -144,6 +163,26 @@ class User {
     if (userData.email != null || userData.Email != null) {
       updates.push('Email = ?');
       values.push((userData.email ?? userData.Email).trim().toLowerCase());
+    }
+
+    if (userData.phone_number != null || userData.PhoneNumber != null) {
+      updates.push('PhoneNumber = ?');
+      values.push(userData.phone_number ?? userData.PhoneNumber);
+    }
+
+    if (userData.email_confirmed != null || userData.EmailConfirmed != null) {
+      updates.push('EmailConfirmed = ?');
+      values.push(userData.email_confirmed ?? userData.EmailConfirmed ? 1 : 0);
+    }
+
+    if (userData.lockout_enabled != null || userData.LockoutEnabled != null) {
+      updates.push('LockoutEnabled = ?');
+      values.push(userData.lockout_enabled ?? userData.LockoutEnabled ? 1 : 0);
+    }
+
+    if (userData.access_failed_count != null || userData.AccessFailedCount != null) {
+      updates.push('AccessFailedCount = ?');
+      values.push(Number(userData.access_failed_count ?? userData.AccessFailedCount) || 0);
     }
 
     if (userData.role != null || userData.Role != null) {
@@ -288,9 +327,12 @@ class User {
 
       if (!existingActive.length) {
         await conn.query(
-          `INSERT INTO UserRoles (UserID, RoleID, AssignedAt, AssignedByUserID)
-           SELECT ?, RoleID, NOW(), ? FROM Roles WHERE Name = ?`,
-          [id, assignedByUserId || null, normalizedRole]
+          `INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt, AssignedByUserID)
+           SELECT ?, RoleID, ?, NOW(), ?
+           FROM Roles
+           WHERE Name = ?
+           LIMIT 1`,
+          [id, normalizedRole, assignedByUserId || null, normalizedRole]
         );
       }
 
@@ -346,9 +388,12 @@ class User {
       );
       if (!remainingDefault.length) {
         await conn.query(
-          `INSERT INTO UserRoles (UserID, RoleID, AssignedAt, AssignedByUserID)
-           SELECT ?, RoleID, NOW(), ? FROM Roles WHERE Name = ?`,
-          [id, changedByUserId || null, nextRole]
+          `INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt, AssignedByUserID)
+           SELECT ?, RoleID, ?, NOW(), ?
+           FROM Roles
+           WHERE Name = ?
+           LIMIT 1`,
+          [id, nextRole, changedByUserId || null, nextRole]
         );
       }
 

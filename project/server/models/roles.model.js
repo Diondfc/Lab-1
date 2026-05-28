@@ -1,73 +1,52 @@
-const pool = require('../config/db');
-const { normalizeRole, isValidRole } = require('../lib/roles');
+const db = require('../config/db');
+const { buildUpdate, findAll, findById, removeById } = require('./generic-crud.model');
+
+const TABLE = 'Roles';
+const ID = 'RoleID';
 
 function normalizeName(name) {
   return String(name || '').trim();
 }
 
-function normalizedName(name) {
-  return normalizeName(name).toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+function normalizeRoleName(name) {
+  return normalizeName(name).toUpperCase();
 }
 
-class Role {
-  static async findAll() {
-    const [rows] = await pool.query('SELECT * FROM Roles ORDER BY RoleID ASC');
-    return rows;
+exports.getAll = () => findAll(TABLE);
+exports.getById = (id) => findById(TABLE, ID, id);
+
+exports.create = async (body) => {
+  const name = normalizeName(body.Name || body.name);
+  const description = body.Description || body.description || null;
+  const normalizedName = normalizeRoleName(body.NormalizedName || body.normalizedName || name);
+
+  if (!name) {
+    throw new Error('Role name is required');
   }
 
-  static async findById(id) {
-    const [rows] = await pool.query('SELECT * FROM Roles WHERE RoleID = ?', [id]);
-    return rows[0] || null;
-  }
+  const [result] = await db.query(
+    'INSERT INTO Roles (Name, Description, NormalizedName) VALUES (?, ?, ?)',
+    [name, description, normalizedName],
+  );
+  return exports.getById(result.insertId);
+};
 
-  static async findByName(name) {
-    const roleName = normalizeRole(name);
-    const [rows] = await pool.query('SELECT * FROM Roles WHERE Name = ? OR NormalizedName = ?', [roleName, normalizedName(roleName)]);
-    return rows[0] || null;
-  }
+exports.update = async (id, body) => {
+  const name = body.Name ?? body.name;
+  const normalizedName = body.NormalizedName ?? body.normalizedName;
+  const { set, values } = buildUpdate({
+    Name: name === undefined ? undefined : normalizeName(name),
+    Description: body.Description ?? body.description,
+    NormalizedName: normalizedName === undefined
+      ? name === undefined ? undefined : normalizeRoleName(name)
+      : normalizeRoleName(normalizedName),
+  });
 
-  static async create({ Name, name, Description, description, NormalizedName }) {
-    const roleName = normalizeRole(Name || name);
-    if (!isValidRole(roleName)) {
-      throw new Error('Role must be one of: Admin, Manager, User/Member');
-    }
-    const [result] = await pool.query(
-      'INSERT INTO Roles (Name, Description, NormalizedName) VALUES (?, ?, ?)',
-      [roleName, Description ?? description ?? null, NormalizedName || normalizedName(roleName)],
-    );
-    return Role.findById(result.insertId);
-  }
+  if (!set.length) return 0;
 
-  static async update(id, { Name, name, Description, description, NormalizedName }) {
-    const updates = [];
-    const values = [];
-    if (Name != null || name != null) {
-      const roleName = normalizeRole(Name ?? name);
-      if (!isValidRole(roleName)) {
-        throw new Error('Role must be one of: Admin, Manager, User/Member');
-      }
-      updates.push('Name = ?');
-      values.push(roleName);
-      updates.push('NormalizedName = ?');
-      values.push(NormalizedName || normalizedName(roleName));
-    } else if (NormalizedName != null) {
-      updates.push('NormalizedName = ?');
-      values.push(NormalizedName);
-    }
-    if (Description !== undefined || description !== undefined) {
-      updates.push('Description = ?');
-      values.push(Description ?? description ?? null);
-    }
-    if (!updates.length) return 0;
-    values.push(id);
-    const [result] = await pool.query(`UPDATE Roles SET ${updates.join(', ')} WHERE RoleID = ?`, values);
-    return result.affectedRows;
-  }
+  values.push(id);
+  const [result] = await db.query(`UPDATE Roles SET ${set.join(', ')} WHERE ${ID} = ?`, values);
+  return result.affectedRows;
+};
 
-  static async delete(id) {
-    const [result] = await pool.query('DELETE FROM Roles WHERE RoleID = ?', [id]);
-    return result.affectedRows;
-  }
-}
-
-module.exports = Role;
+exports.delete = (id) => removeById(TABLE, ID, id);

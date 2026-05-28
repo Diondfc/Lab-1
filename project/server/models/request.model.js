@@ -14,10 +14,10 @@ class Request {
     }
   
     const [result] = await db.query(
-      'INSERT INTO BookRequests (user_id, username, book_title, book_author, room) VALUES (?, ?, ?, ?, ?)',
-      [userId, username, book_title, book_author, room]
+      'INSERT INTO BookRequests (user_id, username, book_title, book_author, room, Status) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, username, book_title, book_author, room, 'Pending']
     );
-    return { id: result.insertId, userId, username, book_title, book_author, room };
+    return { id: result.insertId, userId, username, book_title, book_author, room, Status: 'Pending' };
   }
 
   static async getByRoom(room) {
@@ -38,6 +38,23 @@ class Request {
     }
     
     // Return the updated request
+    const [updatedRequest] = await db.query(
+      'SELECT * FROM BookRequests WHERE id = ?',
+      [id]
+    );
+    return updatedRequest[0];
+  }
+
+  static async updateStatus(id, status) {
+    const [result] = await db.query(
+      "UPDATE BookRequests SET Status = ? WHERE id = ?",
+      [status, id]
+    );
+
+    if (result.affectedRows === 0) {
+      throw new Error('Request not found');
+    }
+
     const [updatedRequest] = await db.query(
       'SELECT * FROM BookRequests WHERE id = ?',
       [id]

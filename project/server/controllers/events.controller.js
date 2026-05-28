@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const Notification = require('../models/notification.model');
+const { NOTIFICATION_TYPES } = require('../models/notification.model');
 
 exports.getAllEvents = async (req, res) => {
   try {
@@ -92,8 +94,17 @@ exports.createEvent = async (req, res) => {
           LEFT JOIN EventLocations el ON e.LocationID = el.LocationID
           WHERE e.EventID = ?
       `, [result.insertId]);
+
+      const event = newEvent[0];
+      await Notification.createForActiveUsers({
+          title: 'New event added',
+          message: `${event.Title} is scheduled for ${event.Date} at ${event.Time}.`,
+          type: NOTIFICATION_TYPES.EVENT_CREATED,
+          referenceType: 'Event',
+          referenceId: event.EventID,
+      });
       
-      res.status(201).json(newEvent[0]);
+      res.status(201).json(event);
   } catch (error) {
       console.error('Server error:', error);
       res.status(500).json({ 

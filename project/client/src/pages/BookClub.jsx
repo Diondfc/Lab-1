@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { FiBook, FiMessageCircle, FiSend, FiTrash2 } from 'react-icons/fi'
+import { FiBook, FiCheck, FiMessageCircle, FiSend, FiTrash2, FiXCircle } from 'react-icons/fi'
 import { apiClient } from '../lib/api'
+import { isStaffRole } from '../lib/roles'
 
 const ROOMS = [
   { id: 'journals', label: 'Journals' },
@@ -18,6 +19,15 @@ function displayName() {
     return u.full_name || u.name || u.email || 'Reader'
   } catch {
     return 'Reader'
+  }
+}
+
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem('user')
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
   }
 }
 
@@ -38,6 +48,9 @@ export default function BookClub() {
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+  const currentUser = useMemo(() => getStoredUser(), [])
+  const userId = currentUser?.id ?? null
+  const canModerateRequests = isStaffRole(currentUser?.role)
 
   const setRoom = (id) => {
     setSearchParams(id === 'general' ? {} : { room: id })
@@ -134,15 +147,16 @@ export default function BookClub() {
     }
   }
 
-  const userId = (() => {
+  const updateRequestStatus = async (id, status) => {
+    if (!token || !canModerateRequests) return
     try {
-      const raw = localStorage.getItem('user')
-      if (!raw) return null
-      return JSON.parse(raw).id
-    } catch {
-      return null
+      await apiClient.patch(`/api/requests/${id}/status`, { status })
+      await loadRoomData()
+    } catch (err) {
+      console.error(err)
+      setError(err.response?.data?.message || 'Could not update request status.')
     }
-  })()
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 transition-colors duration-300">
@@ -274,7 +288,19 @@ export default function BookClub() {
                       className="flex items-start justify-between gap-2 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 px-3 py-2"
                     >
                       <div>
-                        <p className="font-semibold text-slate-800 dark:text-slate-200">{r.book_title}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-slate-800 dark:text-slate-200">{r.book_title}</p>
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                            r.Status === 'Approved'
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                              : r.Status === 'Rejected'
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                          }`}
+                          >
+                            {r.Status || 'Pending'}
+                          </span>
+                        </div>
                         {r.book_author && (
                           <p className="text-slate-600 dark:text-slate-400">by {r.book_author}</p>
                         )}
@@ -294,6 +320,26 @@ export default function BookClub() {
                         >
                           <FiTrash2 />
                         </button>
+                      )}
+                      {canModerateRequests && token && (
+                        <div className="flex shrink-0 gap-1">
+                          <button
+                            type="button"
+                            onClick={() => updateRequestStatus(rid, 'Approved')}
+                            className="rounded p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+                            title="Approve"
+                          >
+                            <FiCheck />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateRequestStatus(rid, 'Rejected')}
+                            className="rounded p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                            title="Reject"
+                          >
+                            <FiXCircle />
+                          </button>
+                        </div>
                       )}
                     </li>
                   )

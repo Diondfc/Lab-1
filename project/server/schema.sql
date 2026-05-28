@@ -24,12 +24,26 @@ CREATE TABLE IF NOT EXISTS Users (
   LockoutEnabled TINYINT(1) NOT NULL DEFAULT 1,
   AccessFailedCount INT UNSIGNED NOT NULL DEFAULT 0,
   Password VARCHAR(255) NOT NULL,
-  PasswordHash VARCHAR(255) NOT NULL,
+  PhoneNumber VARCHAR(32) NULL,
+  EmailConfirmed TINYINT(1) NOT NULL DEFAULT 0,
+  LockoutEnabled TINYINT(1) NOT NULL DEFAULT 0,
+  AccessFailedCount INT UNSIGNED NOT NULL DEFAULT 0,
   Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member',
   Status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (UserID),
   UNIQUE KEY uq_users_email (Email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS Roles (
+  RoleID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(64) NOT NULL,
+  Description VARCHAR(255) NULL,
+  NormalizedName VARCHAR(64) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (RoleID),
+  UNIQUE KEY uq_roles_name (Name),
+  UNIQUE KEY uq_roles_normalized (NormalizedName)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS useraccount (
@@ -74,7 +88,8 @@ CREATE TABLE IF NOT EXISTS UserRoleHistory (
 CREATE TABLE IF NOT EXISTS UserRoles (
   UserRoleID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   UserID INT UNSIGNED NOT NULL,
-  RoleID INT UNSIGNED NOT NULL,
+  RoleID INT UNSIGNED NULL,
+  Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL,
   AssignedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   RemovedAt DATETIME NULL,
   AssignedByUserID INT UNSIGNED NULL,
@@ -86,9 +101,34 @@ CREATE TABLE IF NOT EXISTS UserRoles (
   CONSTRAINT fk_user_roles_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
   CONSTRAINT fk_user_roles_role
-    FOREIGN KEY (RoleID) REFERENCES Roles (RoleID),
+    FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE SET NULL,
   CONSTRAINT fk_user_roles_assigned_by
     FOREIGN KEY (AssignedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS UserClaims (
+  UserClaimID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  ClaimType VARCHAR(128) NOT NULL,
+  ClaimValue VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (UserClaimID),
+  KEY idx_user_claims_user (UserID),
+  CONSTRAINT fk_user_claims_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS UserTokens (
+  UserTokenID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  LoginProvider VARCHAR(128) NOT NULL,
+  TokenName VARCHAR(128) NOT NULL,
+  TokenValue TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (UserTokenID),
+  UNIQUE KEY uq_user_tokens (UserID, LoginProvider, TokenName),
+  CONSTRAINT fk_user_tokens_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS RefreshTokens (
@@ -135,6 +175,46 @@ CREATE TABLE IF NOT EXISTS UserTokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
+-- Notification
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS Notifications (
+  NotificationID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  Title VARCHAR(255) NOT NULL,
+  Message TEXT NOT NULL,
+  Type ENUM('loan_overdue', 'loan_due_soon', 'event_created', 'request_approved', 'manual') NOT NULL DEFAULT 'manual',
+  ReferenceType VARCHAR(64) NULL,
+  ReferenceID BIGINT UNSIGNED NULL,
+  IsRead TINYINT(1) NOT NULL DEFAULT 0,
+  CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (NotificationID),
+  UNIQUE KEY uq_notifications_reference (UserID, Type, ReferenceType, ReferenceID),
+  KEY idx_notifications_user_read (UserID, IsRead, CreatedAt),
+  CONSTRAINT fk_notifications_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS AuditLogs (
+  AuditLogID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ActorUserID INT UNSIGNED NULL,
+  ActorEmail VARCHAR(255) NULL,
+  ActorRole VARCHAR(64) NULL,
+  Action VARCHAR(64) NOT NULL,
+  EntityType VARCHAR(64) NOT NULL,
+  EntityID BIGINT UNSIGNED NULL,
+  Description VARCHAR(512) NOT NULL,
+  Details JSON NULL,
+  IpAddress VARCHAR(64) NULL,
+  CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (AuditLogID),
+  KEY idx_audit_created (CreatedAt),
+  KEY idx_audit_actor (ActorUserID),
+  KEY idx_audit_entity (EntityType, EntityID),
+  CONSTRAINT fk_audit_actor
+    FOREIGN KEY (ActorUserID) REFERENCES Users (UserID) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
 -- Catalog: categories, books
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS Categories (
@@ -178,7 +258,8 @@ CREATE TABLE IF NOT EXISTS Members (
   PRIMARY KEY (MemberID),
   UNIQUE KEY uq_members_user (UserID),
   UNIQUE KEY uq_members_code (MembershipCode),
-  CONSTRAINT fk_members_user FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+  CONSTRAINT fk_members_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS Books (
@@ -218,16 +299,20 @@ CREATE TABLE IF NOT EXISTS ratings (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   book_id INT UNSIGNED NOT NULL,
   user_id INT UNSIGNED NOT NULL,
+  MemberID INT UNSIGNED NULL,
   rating_value TINYINT UNSIGNED NOT NULL,
   comment TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_ratings_book (book_id),
   KEY idx_ratings_user (user_id),
+  KEY idx_ratings_member (MemberID),
   CONSTRAINT fk_ratings_book
     FOREIGN KEY (book_id) REFERENCES Books (BookID) ON DELETE CASCADE,
   CONSTRAINT fk_ratings_user
     FOREIGN KEY (user_id) REFERENCES Users (UserID) ON DELETE CASCADE,
+  CONSTRAINT fk_ratings_member
+    FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE SET NULL,
   CONSTRAINT chk_rating_value CHECK (rating_value BETWEEN 1 AND 5)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -258,7 +343,7 @@ CREATE TABLE IF NOT EXISTS Loans (
   CONSTRAINT fk_loans_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID),
   CONSTRAINT fk_loans_member
-    FOREIGN KEY (MemberID) REFERENCES Members (MemberID)
+    FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ReturnLoans (
@@ -311,7 +396,6 @@ CREATE TABLE IF NOT EXISTS Fines (
 -- -----------------------------------------------------------------------------
 -- Extended library entities
 -- -----------------------------------------------------------------------------
-
 
 CREATE TABLE IF NOT EXISTS Reservations (
   ReservationID INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -410,6 +494,7 @@ CREATE TABLE IF NOT EXISTS BookRequests (
   book_title VARCHAR(255) NOT NULL,
   book_author VARCHAR(255) NULL,
   room VARCHAR(64) NOT NULL,
+  Status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_requests_room (room),
@@ -447,6 +532,11 @@ INSERT IGNORE INTO EventLocations (LocationID, Name) VALUES
   (3, 'Reading Lounge'),
   (4, 'Auditorium');
 
+INSERT IGNORE INTO Roles (Name, Description, NormalizedName) VALUES
+  ('Admin', 'Full system access', 'ADMIN'),
+  ('Manager', 'Manages core library operations', 'MANAGER'),
+  ('User/Member', 'Limited member access', 'USER/MEMBER');
+
 -- Default admin — email: admin@ubt.edu  password: Admin123!
 INSERT IGNORE INTO Users (UserID, Name, FirstName, LastName, Email, Password, PasswordHash, Role) VALUES
   (
@@ -461,8 +551,7 @@ INSERT IGNORE INTO Users (UserID, Name, FirstName, LastName, Email, Password, Pa
   );
 
 INSERT IGNORE INTO useraccount (UserID) VALUES (1);
-INSERT IGNORE INTO UserRoles (UserID, RoleID, AssignedAt)
-SELECT 1, RoleID, NOW() FROM Roles WHERE Name = 'Admin';
+INSERT IGNORE INTO Members (UserID, MembershipCode, IsActive) VALUES (1, 'MEM-1', 1);
 
 INSERT INTO UserRoleHistory (UserID, Role, StartedAt)
 SELECT u.UserID, u.Role, u.created_at
@@ -478,6 +567,11 @@ JOIN Roles r ON r.Name = u.Role
 WHERE NOT EXISTS (
   SELECT 1 FROM UserRoles ur WHERE ur.UserID = u.UserID AND ur.RoleID = r.RoleID AND ur.RemovedAt IS NULL
 );
+
+UPDATE UserRoles ur
+JOIN Roles r ON r.Name = ur.Role
+SET ur.RoleID = r.RoleID
+WHERE ur.RoleID IS NULL;
 
 -- Sample catalog (IDs 1–8 align with the demo client catalog for easier testing)
 INSERT IGNORE INTO Books (
@@ -508,6 +602,24 @@ INSERT IGNORE INTO Books (
   (8, '978-0000000008', 'Clean Code', 'Robert C. Martin', 'Prentice Hall', 2008,
    'Available', 3, 4, 4.50, 3,
    'Software craftsmanship through naming, small functions, error handling, and refactoring patterns.');
+
+INSERT IGNORE INTO Authors (Name)
+SELECT DISTINCT Author FROM Books
+WHERE Author IS NOT NULL AND Author <> '';
+
+INSERT IGNORE INTO Publishers (Name)
+SELECT DISTINCT Publisher FROM Books
+WHERE Publisher IS NOT NULL AND Publisher <> '';
+
+UPDATE Books b
+LEFT JOIN Authors a ON a.Name = b.Author
+SET b.AuthorID = a.AuthorID
+WHERE b.AuthorID IS NULL;
+
+UPDATE Books b
+LEFT JOIN Publishers p ON p.Name = b.Publisher
+SET b.PublisherID = p.PublisherID
+WHERE b.PublisherID IS NULL;
 
 INSERT IGNORE INTO Events (EventID, Title, Date, Time, LocationID) VALUES
   (1, 'Author Meet & Greet', '2026-05-15', '14:00:00', 1),

@@ -1,4 +1,6 @@
 const Request = require('../models/request.model');
+const Notification = require('../models/notification.model');
+const { NOTIFICATION_TYPES } = require('../models/notification.model');
 
 function getUserId(req) {
   return req.user?.id ?? req.user?.user?.id;
@@ -81,6 +83,36 @@ exports.remove = async (req, res) => {
   } catch (error) {
     console.error('Error deleting book request:', error);
     const status = error.message.includes('not authorized') ? 403 : 404;
+    res.status(status).json({ message: error.message });
+  }
+};
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const status = req.body?.status;
+
+    if (!['Approved', 'Rejected', 'Pending'].includes(status)) {
+      return res.status(400).json({ message: 'Status must be Pending, Approved, or Rejected' });
+    }
+
+    const updated = await Request.updateStatus(id, status);
+
+    if (status === 'Approved') {
+      await Notification.create({
+        userId: updated.user_id,
+        title: 'Book request approved',
+        message: `Your request for "${updated.book_title}" was approved.`,
+        type: NOTIFICATION_TYPES.REQUEST_APPROVED,
+        referenceType: 'BookRequest',
+        referenceId: updated.id,
+      });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating book request status:', error);
+    const status = error.message.includes('not found') ? 404 : 500;
     res.status(status).json({ message: error.message });
   }
 };
