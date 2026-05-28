@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
-import { FiMinusCircle, FiPlusCircle, FiRefreshCw, FiSlash, FiUserCheck, FiUsers } from 'react-icons/fi'
+import {
+  FiClock,
+  FiMinusCircle,
+  FiPlusCircle,
+  FiRefreshCw,
+  FiSearch,
+  FiShield,
+  FiSlash,
+  FiUserCheck,
+  FiUsers,
+} from 'react-icons/fi'
 import { apiClient } from '../lib/api.js'
 
 const AVAILABLE_ROLES = ['Admin', 'Manager', 'User/Member']
@@ -10,11 +20,38 @@ function statusClasses(status) {
     : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50'
 }
 
+function formatDate(value) {
+  if (!value) return 'Present'
+  return new Date(value).toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function durationLabel(start, end) {
+  if (!start) return 'Unknown'
+
+  const startDate = new Date(start)
+  const endDate = end ? new Date(end) : new Date()
+  const days = Math.max(0, Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)))
+
+  if (days === 0) return 'Less than 1 day'
+  if (days === 1) return '1 day'
+  return `${days} days`
+}
+
 export default function UserManagementDashboard() {
   const [users, setUsers] = useState([])
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [savingId, setSavingId] = useState(null)
   const [roleSavingKey, setRoleSavingKey] = useState('')
+  const [selectedUserId, setSelectedUserId] = useState('')
+  const [roleHistory, setRoleHistory] = useState([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -35,6 +72,9 @@ export default function UserManagementDashboard() {
         }),
       )
       setUsers(usersWithRoles)
+      if (!selectedUserId && usersWithRoles[0]?.id) {
+        setSelectedUserId(usersWithRoles[0].id)
+      }
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Could not load users.')
     } finally {
@@ -44,7 +84,26 @@ export default function UserManagementDashboard() {
 
   useEffect(() => {
     loadUsers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!selectedUserId) return
+    loadRoleHistory(selectedUserId)
+  }, [selectedUserId])
+
+  async function loadRoleHistory(userId) {
+    try {
+      setLoadingHistory(true)
+      const { data } = await apiClient.get(`/api/users/${userId}/role-history`)
+      setRoleHistory(Array.isArray(data) ? data : [])
+    } catch (err) {
+      setRoleHistory([])
+      setError(err.response?.data?.message || err.response?.data?.error || 'Could not load role history.')
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
 
   async function setUserStatus(user, nextAction) {
     try {
@@ -75,6 +134,9 @@ export default function UserManagementDashboard() {
           item.id === user.id ? { ...item, ...data.user, roles: data.roles || item.roles } : item,
         ),
       )
+      if (Number(selectedUserId) === Number(user.id)) {
+        await loadRoleHistory(user.id)
+      }
       setMessage(data.message || 'Role assigned.')
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Could not assign role.')
@@ -95,6 +157,9 @@ export default function UserManagementDashboard() {
           item.id === user.id ? { ...item, ...data.user, roles: data.roles || item.roles } : item,
         ),
       )
+      if (Number(selectedUserId) === Number(user.id)) {
+        await loadRoleHistory(user.id)
+      }
       setMessage(data.message || 'Role removed.')
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Could not remove role.')
@@ -102,6 +167,19 @@ export default function UserManagementDashboard() {
       setRoleSavingKey('')
     }
   }
+
+  const filteredUsers = users.filter((user) => {
+    const q = search.trim().toLowerCase()
+    if (!q) return true
+    return [user.full_name, user.name, user.email, user.role, user.status]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(q))
+  })
+
+  const selectedUser = users.find((user) => Number(user.id) === Number(selectedUserId))
+  const activeUsers = users.filter((user) => user.status !== 'Inactive').length
+  const inactiveUsers = users.filter((user) => user.status === 'Inactive').length
+  const staffUsers = users.filter((user) => ['Admin', 'Manager'].includes(user.role)).length
 
   return (
     <div className="min-h-screen bg-zinc-50 px-4 py-10 text-slate-900 dark:bg-slate-900 dark:text-white">
@@ -114,7 +192,7 @@ export default function UserManagementDashboard() {
             </div>
             <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-              Activate or deactivate accounts without deleting user records, loans, ratings, or role history.
+              Manage account status, assign or remove roles, and inspect each user's role history in one place.
             </p>
           </div>
 
@@ -129,6 +207,21 @@ export default function UserManagementDashboard() {
           </button>
         </div>
 
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Active users</p>
+            <p className="mt-2 text-3xl font-bold text-emerald-600 dark:text-emerald-300">{activeUsers}</p>
+          </div>
+          <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Inactive users</p>
+            <p className="mt-2 text-3xl font-bold text-rose-600 dark:text-rose-300">{inactiveUsers}</p>
+          </div>
+          <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Staff accounts</p>
+            <p className="mt-2 text-3xl font-bold text-indigo-600 dark:text-indigo-300">{staffUsers}</p>
+          </div>
+        </div>
+
         {message && (
           <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
             {message}
@@ -141,10 +234,20 @@ export default function UserManagementDashboard() {
           </div>
         )}
 
+        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <FiSearch className="shrink-0 text-slate-400" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by name, email, role, or status"
+            className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+          />
+        </div>
+
         <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
           {loading ? (
             <div className="py-12 text-center text-sm text-slate-500">Loading users...</div>
-          ) : users.length === 0 ? (
+          ) : filteredUsers.length === 0 ? (
             <div className="py-12 text-center text-sm text-slate-500">No users found.</div>
           ) : (
             <div className="overflow-x-auto">
@@ -158,13 +261,25 @@ export default function UserManagementDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-slate-700">
-                  {users.map((user) => {
+                  {filteredUsers.map((user) => {
                     const isInactive = user.status === 'Inactive'
+                    const isSelected = Number(selectedUserId) === Number(user.id)
                     return (
-                      <tr key={user.id} className="hover:bg-zinc-50 dark:hover:bg-slate-900/40">
+                      <tr
+                        key={user.id}
+                        className={isSelected ? 'bg-indigo-50/70 dark:bg-indigo-950/30' : 'hover:bg-zinc-50 dark:hover:bg-slate-900/40'}
+                      >
                         <td className="px-5 py-4">
                           <p className="font-semibold text-slate-900 dark:text-white">{user.full_name || user.name || 'Unnamed user'}</p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedUserId(user.id)}
+                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300"
+                          >
+                            <FiShield />
+                            View role history
+                          </button>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex min-w-[260px] flex-wrap gap-2">
@@ -216,6 +331,75 @@ export default function UserManagementDashboard() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+                <FiShield />
+                Role History
+              </div>
+              <h2 className="text-xl font-bold">
+                {selectedUser ? selectedUser.full_name || selectedUser.name || selectedUser.email : 'Select a user'}
+              </h2>
+              {selectedUser && (
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  {selectedUser.email} - Current role: {selectedUser.role}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => selectedUserId && loadRoleHistory(selectedUserId)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 disabled:opacity-60 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700"
+              disabled={!selectedUserId || loadingHistory}
+            >
+              <FiRefreshCw className={loadingHistory ? 'animate-spin' : ''} />
+              Refresh history
+            </button>
+          </div>
+
+          {loadingHistory ? (
+            <div className="py-10 text-center text-sm text-slate-500">Loading role history...</div>
+          ) : !selectedUserId ? (
+            <div className="py-10 text-center text-sm text-slate-500">Choose a user from the table.</div>
+          ) : roleHistory.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">No role history found for this user.</div>
+          ) : (
+            <div className="grid gap-3">
+              {roleHistory.map((item) => (
+                <div
+                  key={item.RoleHistoryID}
+                  className="grid gap-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-slate-700 dark:bg-slate-900/40 md:grid-cols-[150px_1fr_150px]"
+                >
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Role</p>
+                    <p className="mt-1 text-lg font-bold text-indigo-600 dark:text-indigo-300">{item.Role}</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-400">From</p>
+                      <p className="mt-1 font-medium">{formatDate(item.StartedAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Until</p>
+                      <p className="mt-1 font-medium">{formatDate(item.EndedAt)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <FiClock className="text-indigo-500" />
+                    {durationLabel(item.StartedAt, item.EndedAt)}
+                  </div>
+                  {item.ChangedByName && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 md:col-span-3">
+                      Changed by {item.ChangedByName}
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
