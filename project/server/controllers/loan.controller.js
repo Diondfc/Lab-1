@@ -82,6 +82,18 @@ exports.createLoan = async (req, res) => {
         [userId]
       );
 
+      const [memberRows] = await connection.execute(
+        'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
+        [userId]
+      );
+      const memberId = memberRows[0]?.MemberID || null;
+      if (!memberId) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Active member profile is required to create a loan'
+        });
+      }
       let [memberRows] = await connection.execute(
         'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
         [userId]
@@ -119,6 +131,7 @@ exports.createLoan = async (req, res) => {
       const [result] = await connection.execute(
         `INSERT INTO Loans
          (BookID, BookTitle, UserID, MemberID, UserName, StartDate, DueDate, PaymentStatus, PaymentAmount, PaymentMethod, PaymentDate)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookId,

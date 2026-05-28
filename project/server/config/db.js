@@ -162,6 +162,53 @@ async function verifyConnection() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
 
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS Roles (
+          RoleID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+          Name VARCHAR(64) NOT NULL,
+          Description VARCHAR(255) NULL,
+          NormalizedName VARCHAR(64) NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (RoleID),
+          UNIQUE KEY uq_roles_name (Name),
+          UNIQUE KEY uq_roles_normalized_name (NormalizedName)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      await conn.execute(`
+        INSERT IGNORE INTO Roles (Name, Description, NormalizedName) VALUES
+          ('Admin', 'Full system administrator', 'ADMIN'),
+          ('Manager', 'Library manager/staff user', 'MANAGER'),
+          ('User/Member', 'Regular library member', 'USER_MEMBER')
+      `)
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS UserClaims (
+          UserClaimID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          UserID INT UNSIGNED NOT NULL,
+          ClaimType VARCHAR(128) NOT NULL,
+          ClaimValue VARCHAR(512) NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (UserClaimID),
+          KEY idx_user_claims_user (UserID),
+          CONSTRAINT fk_user_claims_user FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS UserTokens (
+          UserTokenID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          UserID INT UNSIGNED NOT NULL,
+          LoginProvider VARCHAR(128) NOT NULL,
+          Name VARCHAR(128) NOT NULL,
+          Value TEXT NOT NULL,
+          ExpiresAt DATETIME NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (UserTokenID),
+          KEY idx_user_tokens_user (UserID),
+          UNIQUE KEY uq_user_tokens_provider_name (UserID, LoginProvider, Name),
+          CONSTRAINT fk_user_tokens_user FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+
       const [columns] = await conn.execute(`
         SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
@@ -420,6 +467,23 @@ async function verifyConnection() {
       `, [DB_NAME])
       const userColumnNames = userColumns.map(c => c.COLUMN_NAME.toLowerCase())
 
+      const userColumnAdds = [
+        ['firstname', 'FirstName VARCHAR(120) NULL AFTER Name'],
+        ['lastname', 'LastName VARCHAR(120) NULL AFTER FirstName'],
+        ['phonenumber', 'PhoneNumber VARCHAR(32) NULL AFTER Email'],
+        ['emailconfirmed', 'EmailConfirmed TINYINT(1) NOT NULL DEFAULT 0 AFTER PhoneNumber'],
+        ['lockoutenabled', 'LockoutEnabled TINYINT(1) NOT NULL DEFAULT 1 AFTER EmailConfirmed'],
+        ['accessfailedcount', 'AccessFailedCount INT UNSIGNED NOT NULL DEFAULT 0 AFTER LockoutEnabled'],
+        ['passwordhash', 'PasswordHash VARCHAR(255) NULL AFTER Password'],
+      ]
+      for (const [column, ddl] of userColumnAdds) {
+        if (!userColumnNames.includes(column)) {
+          await conn.execute(`ALTER TABLE Users ADD COLUMN ${ddl}`)
+        }
+      }
+      await conn.execute('UPDATE Users SET PasswordHash = Password WHERE PasswordHash IS NULL')
+      await conn.execute('ALTER TABLE Users MODIFY PasswordHash VARCHAR(255) NOT NULL')
+
       if (!userColumnNames.includes('status')) {
         console.log('Adding Status column to Users table...')
         await conn.execute("ALTER TABLE Users ADD COLUMN Status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active' AFTER Role")
@@ -480,6 +544,7 @@ async function verifyConnection() {
         CREATE TABLE IF NOT EXISTS UserRoles (
           UserRoleID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
           UserID INT UNSIGNED NOT NULL,
+          RoleID INT UNSIGNED NOT NULL,
           RoleID INT UNSIGNED NULL,
           Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL,
           AssignedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -488,16 +553,35 @@ async function verifyConnection() {
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (UserRoleID),
           KEY idx_user_roles_user (UserID),
+          KEY idx_user_roles_role (RoleID),
           KEY idx_user_roles_active (UserID, RemovedAt),
           CONSTRAINT fk_user_roles_user
             FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
           CONSTRAINT fk_user_roles_role
+            FOREIGN KEY (RoleID) REFERENCES Roles (RoleID),
             FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE SET NULL,
           CONSTRAINT fk_user_roles_assigned_by
             FOREIGN KEY (AssignedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
 
+      const [userRoleColumns] = await conn.execute(`
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'UserRoles'
+      `, [DB_NAME])
+      const userRoleColumnNames = userRoleColumns.map(c => c.COLUMN_NAME.toLowerCase())
+      if (!userRoleColumnNames.includes('roleid')) {
+        await conn.execute('ALTER TABLE UserRoles ADD COLUMN RoleID INT UNSIGNED NULL AFTER UserID')
+      }
+      if (userRoleColumnNames.includes('role')) {
+        await conn.execute(`
+          UPDATE UserRoles ur
+          JOIN Roles r ON r.Name = ur.Role
+          SET ur.RoleID = r.RoleID
+          WHERE ur.RoleID IS NULL
+        `)
+      }
       await conn.execute(`
         INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt)
         SELECT u.UserID, r.RoleID, u.Role, u.created_at
@@ -506,7 +590,7 @@ async function verifyConnection() {
         WHERE NOT EXISTS (
           SELECT 1
           FROM UserRoles ur
-          WHERE ur.UserID = u.UserID AND ur.Role = u.Role AND ur.RemovedAt IS NULL
+          WHERE ur.UserID = u.UserID AND ur.RoleID = r.RoleID AND ur.RemovedAt IS NULL
         )
       `)
 

@@ -13,6 +13,12 @@ router.patch('/:id/activate', auth, authorizeStaff, userController.activateUser)
 router.get('/:id/roles', auth, authorizeStaff, userController.getUserRoles);
 router.post('/:id/roles', auth, authorizeStaff, userController.assignRole);
 router.delete('/:id/roles/:role', auth, authorizeStaff, userController.removeRole);
+router.get('/:id/claims', auth, authorizeStaff, userController.getUserClaims);
+router.post('/:id/claims', auth, authorizeStaff, userController.addUserClaim);
+router.delete('/:id/claims/:claimId', auth, authorizeStaff, userController.deleteUserClaim);
+router.get('/:id/tokens', auth, authorizeStaff, userController.getUserTokens);
+router.post('/:id/tokens', auth, authorizeStaff, userController.upsertUserToken);
+router.delete('/:id/tokens/:tokenId', auth, authorizeStaff, userController.deleteUserToken);
 router.get('/:id/role-history', auth, userController.getRoleHistory);
 router.get('/:id', auth, userController.getUserById);
 router.put('/:id', auth, userController.updateUser);

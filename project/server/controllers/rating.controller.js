@@ -14,6 +14,10 @@ async function refreshBookRating(bookId) {
   );
 }
 
+async function getCallerMemberId(req) {
+  const callerId = Number(getUserId(req));
+  const [rows] = await pool.execute('SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1', [callerId]);
+  return rows[0]?.MemberID || null;
 async function getOrCreateMemberId(userId) {
   const [existing] = await pool.execute(
     'SELECT MemberID FROM Members WHERE UserID = ? AND IsActive = 1 LIMIT 1',
@@ -51,6 +55,9 @@ exports.createRating = async (req, res) => {
       return res.status(403).json({ message: 'Only User/Member accounts can submit book ratings' });
     }
 
+    const memberId = await getCallerMemberId(req);
+    if (!memberId) return res.status(403).json({ message: 'Active member profile required' });
+
     const rating = Number(rating_value);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return res.status(400).json({ message: 'rating_value must be between 1 and 5' });
@@ -58,6 +65,14 @@ exports.createRating = async (req, res) => {
 
     const [bookRows] = await pool.execute('SELECT BookID FROM Books WHERE BookID = ?', [book_id]);
     if (!bookRows.length) return res.status(404).json({ message: 'Book not found' });
+
+    const [result] = await pool.execute(
+      'INSERT INTO BookReviews (BookID, MemberID, Rating, ReviewText) VALUES (?, ?, ?, ?)',
+      [book_id, memberId, rating, comment || null],
+    );
+
+    await refreshBookRating(book_id);
+    const [rows] = await pool.execute('SELECT * FROM BookReviews WHERE ReviewID = ?', [result.insertId]);
 
     const memberId = await getOrCreateMemberId(userId);
     if (!memberId) {
@@ -127,6 +142,10 @@ exports.deleteRating = async (req, res) => {
     );
 
     if (!existing.length) return res.status(404).json({ message: 'Rating not found' });
+
+    const ownerUserId = Number(existing[0].UserID);
+    const bookId = existing[0].BookID;
+
 
     const ownerUserId = Number(existing[0].UserID);
     const bookId = existing[0].BookID;

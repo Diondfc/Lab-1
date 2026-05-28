@@ -23,6 +23,8 @@ class User {
     return {
       id: row.UserID,
       full_name: row.Name,
+      first_name: row.FirstName,
+      last_name: row.LastName,
       email: row.Email,
       password: row.Password,
       phone_number: row.PhoneNumber,
@@ -42,6 +44,10 @@ class User {
 
   static async create(userData) {
     const { full_name, email, password } = userData;
+    const firstName = userData.first_name ?? userData.FirstName ?? null;
+    const lastName = userData.last_name ?? userData.LastName ?? null;
+    const phoneNumber = userData.phone_number ?? userData.PhoneNumber ?? null;
+    const emailConfirmed = userData.email_confirmed ?? userData.EmailConfirmed ?? 0;
     const role = normalizeRole(userData.role);
     const status = normalizeStatus(userData.status || userData.Status);
     const phoneNumber = userData.phone_number || userData.PhoneNumber || null;
@@ -124,6 +130,36 @@ class User {
       values.push(userData.full_name ?? userData.Name);
     }
 
+    if (userData.first_name != null || userData.FirstName != null) {
+      updates.push('FirstName = ?');
+      values.push(userData.first_name ?? userData.FirstName);
+    }
+
+    if (userData.last_name != null || userData.LastName != null) {
+      updates.push('LastName = ?');
+      values.push(userData.last_name ?? userData.LastName);
+    }
+
+    if (userData.phone_number != null || userData.PhoneNumber != null) {
+      updates.push('PhoneNumber = ?');
+      values.push(userData.phone_number ?? userData.PhoneNumber);
+    }
+
+    if (userData.email_confirmed != null || userData.EmailConfirmed != null) {
+      updates.push('EmailConfirmed = ?');
+      values.push((userData.email_confirmed ?? userData.EmailConfirmed) ? 1 : 0);
+    }
+
+    if (userData.lockout_enabled != null || userData.LockoutEnabled != null) {
+      updates.push('LockoutEnabled = ?');
+      values.push((userData.lockout_enabled ?? userData.LockoutEnabled) ? 1 : 0);
+    }
+
+    if (userData.access_failed_count != null || userData.AccessFailedCount != null) {
+      updates.push('AccessFailedCount = ?');
+      values.push(Number(userData.access_failed_count ?? userData.AccessFailedCount));
+    }
+
     if (userData.email != null || userData.Email != null) {
       updates.push('Email = ?');
       values.push((userData.email ?? userData.Email).trim().toLowerCase());
@@ -188,6 +224,15 @@ class User {
 
       if (nextRole && nextRole !== currentRole) {
         await conn.query(
+          'UPDATE UserRoles SET RemovedAt = NOW() WHERE UserID = ? AND RemovedAt IS NULL',
+          [id]
+        );
+        await conn.query(
+          `INSERT INTO UserRoles (UserID, RoleID, AssignedAt, AssignedByUserID)
+           SELECT ?, RoleID, NOW(), ? FROM Roles WHERE Name = ?`,
+          [id, userData.changedByUserId || null, nextRole]
+        );
+        await conn.query(
           'UPDATE UserRoleHistory SET EndedAt = NOW() WHERE UserID = ? AND EndedAt IS NULL',
           [id]
         );
@@ -245,10 +290,12 @@ class User {
 
   static async getRoles(id) {
     const [rows] = await pool.query(
-      `SELECT UserRoleID, UserID, Role, AssignedAt, RemovedAt, AssignedByUserID
-       FROM UserRoles
-       WHERE UserID = ?
-       ORDER BY RemovedAt IS NULL DESC, AssignedAt DESC, UserRoleID DESC`,
+      `SELECT ur.UserRoleID, ur.UserID, ur.RoleID, r.Name AS Role, r.Description, r.NormalizedName,
+              ur.AssignedAt, ur.RemovedAt, ur.AssignedByUserID
+       FROM UserRoles ur
+       JOIN Roles r ON r.RoleID = ur.RoleID
+       WHERE ur.UserID = ?
+       ORDER BY ur.RemovedAt IS NULL DESC, ur.AssignedAt DESC, ur.UserRoleID DESC`,
       [id]
     );
 
@@ -270,7 +317,11 @@ class User {
       await conn.beginTransaction();
 
       const [existingActive] = await conn.query(
-        'SELECT UserRoleID FROM UserRoles WHERE UserID = ? AND Role = ? AND RemovedAt IS NULL FOR UPDATE',
+        `SELECT ur.UserRoleID
+         FROM UserRoles ur
+         JOIN Roles r ON r.RoleID = ur.RoleID
+         WHERE ur.UserID = ? AND r.Name = ? AND ur.RemovedAt IS NULL
+         FOR UPDATE`,
         [id, normalizedRole]
       );
 
@@ -310,22 +361,29 @@ class User {
       await conn.beginTransaction();
 
       await conn.query(
-        'UPDATE UserRoles SET RemovedAt = NOW() WHERE UserID = ? AND Role = ? AND RemovedAt IS NULL',
+        `UPDATE UserRoles ur
+         JOIN Roles r ON r.RoleID = ur.RoleID
+         SET ur.RemovedAt = NOW()
+         WHERE ur.UserID = ? AND r.Name = ? AND ur.RemovedAt IS NULL`,
         [id, normalizedRole]
       );
 
       const [activeRoles] = await conn.query(
-        `SELECT Role
-         FROM UserRoles
-         WHERE UserID = ? AND RemovedAt IS NULL
-         ORDER BY FIELD(Role, 'Admin', 'Manager', 'User/Member'), AssignedAt DESC
+        `SELECT r.Name AS Role
+         FROM UserRoles ur
+         JOIN Roles r ON r.RoleID = ur.RoleID
+         WHERE ur.UserID = ? AND ur.RemovedAt IS NULL
+         ORDER BY FIELD(r.Name, 'Admin', 'Manager', 'User/Member'), ur.AssignedAt DESC
          LIMIT 1`,
         [id]
       );
       const nextRole = normalizeRole(activeRoles[0]?.Role || ROLES.USER_MEMBER);
 
       const [remainingDefault] = await conn.query(
-        'SELECT UserRoleID FROM UserRoles WHERE UserID = ? AND Role = ? AND RemovedAt IS NULL',
+        `SELECT ur.UserRoleID
+         FROM UserRoles ur
+         JOIN Roles r ON r.RoleID = ur.RoleID
+         WHERE ur.UserID = ? AND r.Name = ? AND ur.RemovedAt IS NULL`,
         [id, nextRole]
       );
       if (!remainingDefault.length) {
@@ -370,6 +428,51 @@ class User {
       [id, nextRole, changedByUserId || null]
     );
   }
+
+  static async getClaims(id) {
+    const [rows] = await pool.query('SELECT * FROM UserClaims WHERE UserID = ? ORDER BY UserClaimID DESC', [id]);
+    return rows;
+  }
+
+  static async addClaim(id, { claim_type, claim_value, ClaimType, ClaimValue }) {
+    const [result] = await pool.query(
+      'INSERT INTO UserClaims (UserID, ClaimType, ClaimValue) VALUES (?, ?, ?)',
+      [id, claim_type ?? ClaimType, claim_value ?? ClaimValue]
+    );
+    const [rows] = await pool.query('SELECT * FROM UserClaims WHERE UserClaimID = ?', [result.insertId]);
+    return rows[0];
+  }
+
+  static async deleteClaim(id, claimId) {
+    const [result] = await pool.query('DELETE FROM UserClaims WHERE UserID = ? AND UserClaimID = ?', [id, claimId]);
+    return result.affectedRows;
+  }
+
+  static async getTokens(id) {
+    const [rows] = await pool.query('SELECT UserTokenID, UserID, LoginProvider, Name, ExpiresAt, created_at FROM UserTokens WHERE UserID = ? ORDER BY UserTokenID DESC', [id]);
+    return rows;
+  }
+
+  static async upsertToken(id, { login_provider, LoginProvider, name, Name, value, Value, expires_at, ExpiresAt }) {
+    const provider = login_provider ?? LoginProvider;
+    const tokenName = name ?? Name;
+    const tokenValue = value ?? Value;
+    const expiry = expires_at ?? ExpiresAt ?? null;
+    await pool.query(
+      `INSERT INTO UserTokens (UserID, LoginProvider, Name, Value, ExpiresAt)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE Value = VALUES(Value), ExpiresAt = VALUES(ExpiresAt)`,
+      [id, provider, tokenName, tokenValue, expiry]
+    );
+    const [rows] = await pool.query('SELECT UserTokenID, UserID, LoginProvider, Name, ExpiresAt, created_at FROM UserTokens WHERE UserID = ? AND LoginProvider = ? AND Name = ?', [id, provider, tokenName]);
+    return rows[0];
+  }
+
+  static async deleteToken(id, tokenId) {
+    const [result] = await pool.query('DELETE FROM UserTokens WHERE UserID = ? AND UserTokenID = ?', [id, tokenId]);
+    return result.affectedRows;
+  }
+
 }
 
 module.exports = User;

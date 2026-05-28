@@ -30,6 +30,7 @@ function getTokenExpiryDate(expiresInValue) {
 
 async function register(req, res) {
   try {
+    const { full_name, Name, first_name, FirstName, last_name, LastName, phone_number, PhoneNumber, email, Email, password } = req.body;
     const { full_name, Name, email, Email, password, phone_number, PhoneNumber } = req.body;
     const normalizedEmail = (email || Email || '').trim().toLowerCase();
     const normalizedName = (full_name || Name || '').trim();
@@ -50,6 +51,9 @@ async function register(req, res) {
     const userId = await User.create({
       full_name: normalizedName,
       email: normalizedEmail,
+      first_name: first_name ?? FirstName ?? null,
+      last_name: last_name ?? LastName ?? null,
+      phone_number: phone_number ?? PhoneNumber ?? null,
       password: hashedPassword,
       phone_number: phone_number || PhoneNumber || null,
     });
@@ -118,6 +122,8 @@ async function login(req, res) {
       user: {
         id: user.id,
         full_name: user.full_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
         role,
       },

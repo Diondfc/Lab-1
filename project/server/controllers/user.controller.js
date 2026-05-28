@@ -86,6 +86,10 @@ exports.createUser = async (req, res) => {
       full_name: name,
       email: userEmail,
       password: hashedPassword,
+      first_name: first_name ?? FirstName ?? null,
+      last_name: last_name ?? LastName ?? null,
+      phone_number: phone_number ?? PhoneNumber ?? null,
+      email_confirmed: email_confirmed ?? EmailConfirmed ?? 0,
       role: userRole,
       status: status || Status,
       phone_number: phone_number || PhoneNumber || null,
@@ -381,5 +385,63 @@ exports.getUserByEmail = async (req, res) => {
       message: 'Failed to fetch user',
       error: error.message
     });
+  }
+};
+
+exports.getUserClaims = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const claims = await User.getClaims(userId);
+    res.json(claims);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.addUserClaim = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const claim = await User.addClaim(userId, req.body);
+    res.status(201).json(claim);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.deleteUserClaim = async (req, res) => {
+  try {
+    const affected = await User.deleteClaim(Number(req.params.id), Number(req.params.claimId));
+    if (!affected) return res.status(404).json({ message: 'Claim not found' });
+    res.json({ message: 'Claim deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getUserTokens = async (req, res) => {
+  try {
+    const tokens = await User.getTokens(Number(req.params.id));
+    res.json(tokens);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.upsertUserToken = async (req, res) => {
+  try {
+    const token = await User.upsertToken(Number(req.params.id), req.body);
+    res.status(201).json(token);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.deleteUserToken = async (req, res) => {
+  try {
+    const affected = await User.deleteToken(Number(req.params.id), Number(req.params.tokenId));
+    if (!affected) return res.status(404).json({ message: 'Token not found' });
+    res.json({ message: 'Token deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
