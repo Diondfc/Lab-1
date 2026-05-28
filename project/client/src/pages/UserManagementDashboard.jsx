@@ -6,6 +6,7 @@ import {
   FiRefreshCw,
   FiSearch,
   FiShield,
+  FiSmartphone,
   FiSlash,
   FiUserCheck,
   FiUsers,
@@ -41,6 +42,10 @@ function durationLabel(start, end) {
   if (days === 0) return 'Less than 1 day'
   if (days === 1) return '1 day'
   return `${days} days`
+}
+
+function yesNo(value) {
+  return value ? 'Yes' : 'No'
 }
 
 export default function UserManagementDashboard() {
@@ -256,6 +261,7 @@ export default function UserManagementDashboard() {
                   <tr>
                     <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500">User</th>
                     <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Roles</th>
+                    <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Identity</th>
                     <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Status</th>
                     <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Action</th>
                   </tr>
@@ -272,6 +278,10 @@ export default function UserManagementDashboard() {
                         <td className="px-5 py-4">
                           <p className="font-semibold text-slate-900 dark:text-white">{user.full_name || user.name || 'Unnamed user'}</p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+                          <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-slate-400">
+                            <FiSmartphone />
+                            {user.phone_number || 'No phone number'}
+                          </p>
                           <button
                             type="button"
                             onClick={() => setSelectedUserId(user.id)}
@@ -305,6 +315,13 @@ export default function UserManagementDashboard() {
                             })}
                           </div>
                           <p className="mt-2 text-xs text-slate-400">Current primary role: {user.role}</p>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="grid min-w-[190px] gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <p>Email confirmed: <span className="font-bold text-slate-700 dark:text-slate-200">{yesNo(user.email_confirmed)}</span></p>
+                            <p>Lockout enabled: <span className="font-bold text-slate-700 dark:text-slate-200">{yesNo(user.lockout_enabled)}</span></p>
+                            <p>Failed logins: <span className="font-bold text-slate-700 dark:text-slate-200">{user.access_failed_count ?? 0}</span></p>
+                          </div>
                         </td>
                         <td className="px-5 py-4">
                           <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusClasses(user.status)}`}>
@@ -347,7 +364,7 @@ export default function UserManagementDashboard() {
               </h2>
               {selectedUser && (
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  {selectedUser.email} - Current role: {selectedUser.role}
+                  {selectedUser.email} - Current role: {selectedUser.role} - Failed logins: {selectedUser.access_failed_count ?? 0}
                 </p>
               )}
             </div>
