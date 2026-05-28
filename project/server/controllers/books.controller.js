@@ -1,5 +1,14 @@
 const path = require('path');
 const Book = require('../models/book.model');
+const AuditLog = require('../models/audit-log.model');
+
+async function writeAuditLog(payload) {
+  try {
+    await AuditLog.create(payload);
+  } catch (error) {
+    console.error('Audit log warning:', error.message);
+  }
+}
 
 function coverPathFromFile(file) {
   if (!file) return null;
@@ -87,6 +96,18 @@ exports.addBook = async (req, res) => {
     });
 
     const book = await Book.getBookById(bookId);
+    await writeAuditLog({
+      req,
+      action: 'book.create',
+      entityType: 'Book',
+      entityId: bookId,
+      description: `Added book "${book.Title || body.Title}"`,
+      details: {
+        title: book.Title || body.Title,
+        isbn: book.ISBN || body.ISBN,
+        author: book.Author || body.Author,
+      },
+    });
     res.status(201).json(book);
   } catch (error) {
     console.error('Error adding book:', error);
@@ -139,12 +160,25 @@ exports.editBook = async (req, res) => {
 exports.deleteBook = async (req, res) => {
   try {
     const { id } = req.params;
+    const existing = await Book.getBookById(id);
     const result = await Book.deleteBook(id);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Book not found' });
     }
 
+    await writeAuditLog({
+      req,
+      action: 'book.delete',
+      entityType: 'Book',
+      entityId: id,
+      description: `Deleted book "${existing?.Title || id}"`,
+      details: {
+        title: existing?.Title,
+        isbn: existing?.ISBN,
+        author: existing?.Author,
+      },
+    });
     res.json({ message: 'Book deleted successfully' });
   } catch (error) {
     console.error('Error deleting book:', error);

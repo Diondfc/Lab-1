@@ -1,6 +1,15 @@
 const pool = require('../config/db');
 const Loan = require('../models/loan.model');
 const { getUserId, isStaffRole } = require('../middlewares/auth');
+const AuditLog = require('../models/audit-log.model');
+
+async function writeAuditLog(payload) {
+  try {
+    await AuditLog.create(payload);
+  } catch (error) {
+    console.error('Audit log warning:', error.message);
+  }
+}
 
 exports.createLoan = async (req, res) => {
   try {
@@ -135,6 +144,23 @@ exports.createLoan = async (req, res) => {
       );
 
       await connection.commit();
+
+      await writeAuditLog({
+        req,
+        action: 'loan.create',
+        entityType: 'Loan',
+        entityId: result.insertId,
+        description: `Created loan for "${bookTitle}" to "${userName}"`,
+        details: {
+          loanId: result.insertId,
+          bookId,
+          bookTitle,
+          userId,
+          userName,
+          startDate,
+          dueDate,
+        },
+      });
 
       res.status(201).json({
         success: true,

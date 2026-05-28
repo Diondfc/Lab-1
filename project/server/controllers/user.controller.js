@@ -2,6 +2,15 @@ const User = require('../models/user.model');
 const pool = require('../config/db');
 const { getUserId, isStaff } = require('../middlewares/auth');
 const { normalizeRole } = require('../lib/roles');
+const AuditLog = require('../models/audit-log.model');
+
+async function writeAuditLog(payload) {
+  try {
+    await AuditLog.create(payload);
+  } catch (error) {
+    console.error('Audit log warning:', error.message);
+  }
+}
 
 function sanitizeUser(user) {
   if (!user) return user;
@@ -142,6 +151,19 @@ exports.deactivateUser = async (req, res) => {
 
     await User.setStatus(userId, 'Inactive');
     const user = await User.findById(userId);
+    await writeAuditLog({
+      req,
+      action: 'user.deactivate',
+      entityType: 'User',
+      entityId: userId,
+      description: `Deactivated user "${user.full_name || user.email}"`,
+      details: {
+        userId,
+        email: user.email,
+        previousStatus: userExists.status,
+        nextStatus: user.status,
+      },
+    });
     res.json({ message: "User deactivated successfully", user: sanitizeUser(user) });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -163,6 +185,19 @@ exports.activateUser = async (req, res) => {
 
     await User.setStatus(userId, 'Active');
     const user = await User.findById(userId);
+    await writeAuditLog({
+      req,
+      action: 'user.activate',
+      entityType: 'User',
+      entityId: userId,
+      description: `Activated user "${user.full_name || user.email}"`,
+      details: {
+        userId,
+        email: user.email,
+        previousStatus: userExists.status,
+        nextStatus: user.status,
+      },
+    });
     res.json({ message: "User activated successfully", user: sanitizeUser(user) });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -205,6 +240,19 @@ exports.assignRole = async (req, res) => {
 
     const roles = await User.assignRole(userId, role, Number(getUserId(req)) || null);
     const updatedUser = await User.findById(userId);
+    await writeAuditLog({
+      req,
+      action: 'role.assign',
+      entityType: 'User',
+      entityId: userId,
+      description: `Assigned role "${normalizeRole(role)}" to "${updatedUser.full_name || updatedUser.email}"`,
+      details: {
+        userId,
+        email: updatedUser.email,
+        role: normalizeRole(role),
+        primaryRole: updatedUser.role,
+      },
+    });
     res.json({
       message: "Role assigned successfully",
       user: sanitizeUser(updatedUser),
@@ -236,6 +284,19 @@ exports.removeRole = async (req, res) => {
 
     const roles = await User.removeRole(userId, role, callerId || null);
     const updatedUser = await User.findById(userId);
+    await writeAuditLog({
+      req,
+      action: 'role.remove',
+      entityType: 'User',
+      entityId: userId,
+      description: `Removed role "${normalizeRole(role)}" from "${updatedUser.full_name || updatedUser.email}"`,
+      details: {
+        userId,
+        email: updatedUser.email,
+        role: normalizeRole(role),
+        primaryRole: updatedUser.role,
+      },
+    });
     res.json({
       message: "Role removed successfully",
       user: sanitizeUser(updatedUser),

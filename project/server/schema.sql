@@ -107,6 +107,26 @@ CREATE TABLE IF NOT EXISTS Notifications (
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS AuditLogs (
+  AuditLogID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ActorUserID INT UNSIGNED NULL,
+  ActorEmail VARCHAR(255) NULL,
+  ActorRole VARCHAR(64) NULL,
+  Action VARCHAR(64) NOT NULL,
+  EntityType VARCHAR(64) NOT NULL,
+  EntityID BIGINT UNSIGNED NULL,
+  Description VARCHAR(512) NOT NULL,
+  Details JSON NULL,
+  IpAddress VARCHAR(64) NULL,
+  CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (AuditLogID),
+  KEY idx_audit_created (CreatedAt),
+  KEY idx_audit_actor (ActorUserID),
+  KEY idx_audit_entity (EntityType, EntityID),
+  CONSTRAINT fk_audit_actor
+    FOREIGN KEY (ActorUserID) REFERENCES Users (UserID) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- -----------------------------------------------------------------------------
 -- Catalog: categories, books
 -- -----------------------------------------------------------------------------
