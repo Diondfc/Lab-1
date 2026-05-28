@@ -49,7 +49,25 @@ exports.getUserById = async (req, res) => {
 exports.createUser = async (req, res) => {
   try {
     const bcrypt = require('bcryptjs');
-    const { full_name, Name, email, Email, password, role, Role, status, Status } = req.body;
+    const {
+      full_name,
+      Name,
+      email,
+      Email,
+      password,
+      role,
+      Role,
+      status,
+      Status,
+      phone_number,
+      PhoneNumber,
+      email_confirmed,
+      EmailConfirmed,
+      lockout_enabled,
+      LockoutEnabled,
+      access_failed_count,
+      AccessFailedCount,
+    } = req.body;
     const name = full_name || Name;
     const userEmail = (email || Email || '').trim().toLowerCase();
     const userRole = normalizeRole(role || Role);
@@ -70,6 +88,10 @@ exports.createUser = async (req, res) => {
       password: hashedPassword,
       role: userRole,
       status: status || Status,
+      phone_number: phone_number || PhoneNumber || null,
+      email_confirmed: email_confirmed ?? EmailConfirmed ?? 0,
+      lockout_enabled: lockout_enabled ?? LockoutEnabled ?? 0,
+      access_failed_count: access_failed_count ?? AccessFailedCount ?? 0,
       changedByUserId: Number(getUserId(req)) || null,
     });
 

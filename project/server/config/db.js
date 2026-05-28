@@ -30,6 +30,118 @@ async function verifyConnection() {
 
     // Auto-migration helper for Payments integration
     try {
+      const columnExists = async (tableName, columnName) => {
+        const [rows] = await conn.execute(
+          `SELECT COLUMN_NAME
+           FROM INFORMATION_SCHEMA.COLUMNS
+           WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+          [DB_NAME, tableName, columnName],
+        )
+        return rows.length > 0
+      }
+
+      const tableExists = async (tableName) => {
+        const [rows] = await conn.execute(
+          `SELECT TABLE_NAME
+           FROM INFORMATION_SCHEMA.TABLES
+           WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+          [DB_NAME, tableName],
+        )
+        return rows.length > 0
+      }
+
+      const tryExecute = async (sql, params = []) => {
+        try {
+          await conn.execute(sql, params)
+        } catch (error) {
+          if (
+            !/Duplicate|already exists|Can't DROP|check that column\/key exists/i.test(error.message)
+          ) {
+            throw error
+          }
+        }
+      }
+
+      if (!(await columnExists('Users', 'PhoneNumber'))) {
+        await conn.execute('ALTER TABLE Users ADD COLUMN PhoneNumber VARCHAR(32) NULL AFTER Password')
+      }
+      if (!(await columnExists('Users', 'EmailConfirmed'))) {
+        await conn.execute('ALTER TABLE Users ADD COLUMN EmailConfirmed TINYINT(1) NOT NULL DEFAULT 0 AFTER PhoneNumber')
+      }
+      if (!(await columnExists('Users', 'LockoutEnabled'))) {
+        await conn.execute('ALTER TABLE Users ADD COLUMN LockoutEnabled TINYINT(1) NOT NULL DEFAULT 0 AFTER EmailConfirmed')
+      }
+      if (!(await columnExists('Users', 'AccessFailedCount'))) {
+        await conn.execute('ALTER TABLE Users ADD COLUMN AccessFailedCount INT UNSIGNED NOT NULL DEFAULT 0 AFTER LockoutEnabled')
+      }
+
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS Roles (
+          RoleID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+          Name VARCHAR(64) NOT NULL,
+          Description VARCHAR(255) NULL,
+          NormalizedName VARCHAR(64) NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (RoleID),
+          UNIQUE KEY uq_roles_name (Name),
+          UNIQUE KEY uq_roles_normalized (NormalizedName)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+
+      await conn.execute(`
+        INSERT IGNORE INTO Roles (Name, Description, NormalizedName) VALUES
+          ('Admin', 'Full system access', 'ADMIN'),
+          ('Manager', 'Manages core library operations', 'MANAGER'),
+          ('User/Member', 'Limited member access', 'USER/MEMBER')
+      `)
+
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS UserClaims (
+          UserClaimID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          UserID INT UNSIGNED NOT NULL,
+          ClaimType VARCHAR(128) NOT NULL,
+          ClaimValue VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (UserClaimID),
+          KEY idx_user_claims_user (UserID),
+          CONSTRAINT fk_user_claims_user
+            FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS UserTokens (
+          UserTokenID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          UserID INT UNSIGNED NOT NULL,
+          LoginProvider VARCHAR(128) NOT NULL,
+          TokenName VARCHAR(128) NOT NULL,
+          TokenValue TEXT NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (UserTokenID),
+          UNIQUE KEY uq_user_tokens (UserID, LoginProvider, TokenName),
+          CONSTRAINT fk_user_tokens_user
+            FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+
+      if ((await tableExists('UserRoles')) && !(await columnExists('UserRoles', 'RoleID'))) {
+        await conn.execute('ALTER TABLE UserRoles ADD COLUMN RoleID INT UNSIGNED NULL AFTER UserID')
+      }
+
+      if (await tableExists('UserRoles')) {
+        await conn.execute(`
+          UPDATE UserRoles ur
+          JOIN Roles r ON r.Name = ur.Role
+          SET ur.RoleID = r.RoleID
+          WHERE ur.RoleID IS NULL
+        `)
+        await tryExecute('ALTER TABLE UserRoles ADD CONSTRAINT fk_user_roles_role FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE SET NULL')
+      }
+    } catch (identityMigErr) {
+      console.error('Auto-migration warning: Failed to create identity tables:', identityMigErr.message)
+    }
+
+    try {
       await conn.execute(`
         CREATE TABLE IF NOT EXISTS RefreshTokens (
           RefreshTokenID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -368,6 +480,7 @@ async function verifyConnection() {
         CREATE TABLE IF NOT EXISTS UserRoles (
           UserRoleID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
           UserID INT UNSIGNED NOT NULL,
+          RoleID INT UNSIGNED NULL,
           Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL,
           AssignedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
           RemovedAt DATETIME NULL,
@@ -378,20 +491,30 @@ async function verifyConnection() {
           KEY idx_user_roles_active (UserID, RemovedAt),
           CONSTRAINT fk_user_roles_user
             FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
+          CONSTRAINT fk_user_roles_role
+            FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE SET NULL,
           CONSTRAINT fk_user_roles_assigned_by
             FOREIGN KEY (AssignedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
 
       await conn.execute(`
-        INSERT INTO UserRoles (UserID, Role, AssignedAt)
-        SELECT u.UserID, u.Role, u.created_at
+        INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt)
+        SELECT u.UserID, r.RoleID, u.Role, u.created_at
         FROM Users u
+        LEFT JOIN Roles r ON r.Name = u.Role
         WHERE NOT EXISTS (
           SELECT 1
           FROM UserRoles ur
           WHERE ur.UserID = u.UserID AND ur.Role = u.Role AND ur.RemovedAt IS NULL
         )
+      `)
+
+      await conn.execute(`
+        UPDATE UserRoles ur
+        JOIN Roles r ON r.Name = ur.Role
+        SET ur.RoleID = r.RoleID
+        WHERE ur.RoleID IS NULL
       `)
     } catch (userRolesMigErr) {
       console.error('Auto-migration warning: Failed to create/seed user roles:', userRolesMigErr.message)
