@@ -38,17 +38,18 @@ exports.createRating = async (req, res) => {
   try {
     const { book_id, rating_value, comment } = req.body;
     const callerRole = getUserRole(req);
+    const userId = getUserId(req);
 
     if (!book_id || rating_value == null) {
       return res.status(400).json({ message: 'book_id and rating_value are required' });
+    }
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
     if (callerRole !== ROLES.USER_MEMBER) {
       return res.status(403).json({ message: 'Only User/Member accounts can submit book ratings' });
     }
-
-    const memberId = await getCallerMemberId(req);
-    if (!memberId) return res.status(403).json({ message: 'Active member profile required' });
 
     const rating = Number(rating_value);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
@@ -58,24 +59,24 @@ exports.createRating = async (req, res) => {
     const [bookRows] = await pool.execute('SELECT BookID FROM Books WHERE BookID = ?', [book_id]);
     if (!bookRows.length) return res.status(404).json({ message: 'Book not found' });
 
-    const memberId = await getOrCreateMemberId(user_id);
+    const memberId = await getOrCreateMemberId(userId);
     if (!memberId) {
       return res.status(400).json({ message: 'Active member record is required to submit a review' });
     }
 
-    const [result] = await pool.execute(
+    await pool.execute(
       'INSERT INTO ratings (book_id, user_id, MemberID, rating_value, comment) VALUES (?, ?, ?, ?, ?)',
-      [book_id, user_id, memberId, rating, comment || null],
+      [book_id, userId, memberId, rating, comment || null],
     );
 
-    await pool.execute(
+    const [reviewResult] = await pool.execute(
       `INSERT INTO BookReviews (BookID, MemberID, Rating, ReviewText)
        VALUES (?, ?, ?, ?)`,
       [book_id, memberId, rating, comment || null],
     );
 
     await refreshBookRating(book_id);
-    const [rows] = await pool.execute('SELECT * FROM BookReviews WHERE ReviewID = ?', [result.insertId]);
+    const [rows] = await pool.execute('SELECT * FROM BookReviews WHERE ReviewID = ?', [reviewResult.insertId]);
     res.status(201).json(rows[0]);
   } catch (error) {
     console.error('Error creating rating:', error);

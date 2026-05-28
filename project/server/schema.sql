@@ -88,6 +88,26 @@ CREATE TABLE IF NOT EXISTS RefreshTokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
+-- Notification
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS Notifications (
+  NotificationID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  UserID INT UNSIGNED NOT NULL,
+  Title VARCHAR(255) NOT NULL,
+  Message TEXT NOT NULL,
+  Type ENUM('loan_overdue', 'loan_due_soon', 'event_created', 'request_approved', 'manual') NOT NULL DEFAULT 'manual',
+  ReferenceType VARCHAR(64) NULL,
+  ReferenceID BIGINT UNSIGNED NULL,
+  IsRead TINYINT(1) NOT NULL DEFAULT 0,
+  CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (NotificationID),
+  UNIQUE KEY uq_notifications_reference (UserID, Type, ReferenceType, ReferenceID),
+  KEY idx_notifications_user_read (UserID, IsRead, CreatedAt),
+  CONSTRAINT fk_notifications_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
 -- Catalog: categories, books
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS Categories (
@@ -368,6 +388,7 @@ CREATE TABLE IF NOT EXISTS BookRequests (
   book_title VARCHAR(255) NOT NULL,
   book_author VARCHAR(255) NULL,
   room VARCHAR(64) NOT NULL,
+  Status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_requests_room (room),

@@ -1,17 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiBook, FiMenu, FiX, FiLogOut, FiUser, FiSun, FiMoon } from 'react-icons/fi';
+import { FiBell, FiBook, FiCheck, FiMenu, FiX, FiLogOut, FiUser, FiSun, FiMoon } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { useTheme } from '../../contexts/ThemeContext';
 import { isStaffRole } from '../../lib/roles';
+import { apiClient } from '../../lib/api';
 
 function Navbar({ user, setUser }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsError, setNotificationsError] = useState('');
   const { theme, toggleTheme } = useTheme();
+  const unreadCount = notifications.filter((item) => !item.IsRead).length;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,12 +26,61 @@ function Navbar({ user, setUser }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const loadNotifications = useCallback(async () => {
+    if (!user) {
+      setNotifications([]);
+      setNotificationsError('');
+      return;
+    }
+
+    try {
+      setNotificationsError('');
+      const { data } = await apiClient.get('/api/notifications');
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setNotificationsError('Notifications unavailable.');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadNotifications();
+    if (!user) return undefined;
+
+    const id = window.setInterval(loadNotifications, 60000);
+    return () => window.clearInterval(id);
+  }, [loadNotifications, user]);
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     setUser(null);
     navigate('/login');
     setIsMobileMenuOpen(false);
+  };
+
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await apiClient.patch(`/api/notifications/${notificationId}/read`);
+      setNotifications((current) =>
+        current.map((item) =>
+          item.NotificationID === notificationId ? { ...item, IsRead: 1 } : item,
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+      setNotificationsError('Could not update notification.');
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    try {
+      await apiClient.patch('/api/notifications/read-all');
+      setNotifications((current) => current.map((item) => ({ ...item, IsRead: 1 })));
+    } catch (error) {
+      console.error(error);
+      setNotificationsError('Could not update notifications.');
+    }
   };
 
   const navLinks = [
@@ -93,6 +147,89 @@ function Navbar({ user, setUser }) {
             </button>
             {user ? (
               <motion.div className="flex items-center gap-4">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNotificationsOpen((open) => !open);
+                      loadNotifications();
+                    }}
+                    className="relative rounded-xl bg-slate-100 dark:bg-slate-800 p-2 text-slate-500 dark:text-slate-400 transition hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-300"
+                    title="Notifications"
+                  >
+                    <FiBell className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  <AnimatePresence>
+                    {isNotificationsOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        className="absolute right-0 top-12 w-80 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                      >
+                        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">Notifications</p>
+                          {unreadCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={markAllNotificationsRead}
+                              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300"
+                            >
+                              Mark all read
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                          {notificationsError && (
+                            <p className="px-4 py-3 text-sm text-red-600 dark:text-red-300">
+                              {notificationsError}
+                            </p>
+                          )}
+                          {!notificationsError && notifications.length === 0 && (
+                            <p className="px-4 py-5 text-sm text-slate-500 dark:text-slate-400">
+                              No notifications yet.
+                            </p>
+                          )}
+                          {!notificationsError &&
+                            notifications.map((item) => (
+                              <button
+                                key={item.NotificationID}
+                                type="button"
+                                onClick={() => markNotificationRead(item.NotificationID)}
+                                className={cn(
+                                  'w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 dark:border-slate-800',
+                                  item.IsRead
+                                    ? 'bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800'
+                                    : 'bg-indigo-50/70 hover:bg-indigo-50 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/60',
+                                )}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                      {item.Title}
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                                      {item.Message}
+                                    </p>
+                                    <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
+                                      {item.CreatedAt ? new Date(item.CreatedAt).toLocaleString() : ''}
+                                    </p>
+                                  </div>
+                                  {!item.IsRead && <FiCheck className="mt-0.5 shrink-0 text-indigo-600" />}
+                                </div>
+                              </button>
+                            ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
                   <FiUser className="text-indigo-600 dark:text-indigo-400" />
                   <span className="max-w-[100px] truncate">{user.full_name || user.name || 'User'}</span>
@@ -157,6 +294,24 @@ function Navbar({ user, setUser }) {
               <div className="pt-4 mt-4 border-t border-slate-200 flex flex-col gap-3">
                 {user ? (
                   <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsNotificationsOpen((open) => !open)
+                        loadNotifications()
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-base font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+                    >
+                      <span className="flex items-center gap-3">
+                        <FiBell className="text-indigo-600" />
+                        Notifications
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
                     <motion.div className="px-4 py-2 flex items-center gap-3 text-slate-700">
                       <FiUser className="text-indigo-600" />
                       {user.full_name || user.name || 'User'}

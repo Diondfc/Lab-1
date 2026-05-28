@@ -397,6 +397,47 @@ async function verifyConnection() {
       console.error('Auto-migration warning: Failed to create/seed user roles:', userRolesMigErr.message)
     }
 
+    try {
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS Notifications (
+          NotificationID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          UserID INT UNSIGNED NOT NULL,
+          Title VARCHAR(255) NOT NULL,
+          Message TEXT NOT NULL,
+          Type ENUM('loan_overdue', 'loan_due_soon', 'event_created', 'request_approved', 'manual') NOT NULL DEFAULT 'manual',
+          ReferenceType VARCHAR(64) NULL,
+          ReferenceID BIGINT UNSIGNED NULL,
+          IsRead TINYINT(1) NOT NULL DEFAULT 0,
+          CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (NotificationID),
+          UNIQUE KEY uq_notifications_reference (UserID, Type, ReferenceType, ReferenceID),
+          KEY idx_notifications_user_read (UserID, IsRead, CreatedAt),
+          CONSTRAINT fk_notifications_user
+            FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+    } catch (notificationMigErr) {
+      console.error('Auto-migration warning: Failed to create notifications:', notificationMigErr.message)
+    }
+
+    try {
+      const [requestColumns] = await conn.execute(`
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'BookRequests'
+      `, [DB_NAME])
+      const requestColumnNames = requestColumns.map(c => c.COLUMN_NAME.toLowerCase())
+
+      if (!requestColumnNames.includes('status')) {
+        console.log('Adding Status column to BookRequests table...')
+        await conn.execute("ALTER TABLE BookRequests ADD COLUMN Status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending' AFTER room")
+      } else {
+        await conn.execute("ALTER TABLE BookRequests MODIFY Status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending'")
+      }
+    } catch (requestStatusMigErr) {
+      console.error('Auto-migration warning: Failed to check/add request status:', requestStatusMigErr.message)
+    }
+
     conn.release()
   } catch (err) {
     console.error('Database connection failed. Check DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME in project/server/.env')
