@@ -40,8 +40,8 @@ const envOrigins = process.env.CLIENT_ORIGIN
   : []
 const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])]
 
-if (!process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET is not set. Copy project/server/.env.example to .env and set JWT_SECRET.')
+if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+  console.error('FATAL: JWT_SECRET and JWT_REFRESH_SECRET must be set in project/server/.env.')
   process.exit(1)
 }
 

@@ -80,6 +80,9 @@ apiClient.interceptors.response.use(
         }
 
         localStorage.setItem('token', data.token)
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken)
+        }
         resolvePendingRequests(data.token)
         originalRequest.headers.Authorization = `Bearer ${data.token}`
         return apiClient(originalRequest)

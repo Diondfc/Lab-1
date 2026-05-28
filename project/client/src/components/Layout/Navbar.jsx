@@ -54,6 +54,7 @@ function Navbar({ user, setUser }) {
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     setUser(null);
     navigate('/login');
     setIsMobileMenuOpen(false);
