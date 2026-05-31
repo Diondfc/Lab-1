@@ -129,8 +129,8 @@ exports.searchBooks = async ({ title, author, category, isbn }) => {
     params.push(`%${title}%`);
   }
   if (author) {
-    where.push('b.Author LIKE ?');
-    params.push(`%${author}%`);
+    where.push('(a.Name LIKE ? OR b.Author LIKE ?)');
+    params.push(`%${author}%`, `%${author}%`);
   }
   if (category) {
     where.push('c.CategoryName = ?');
@@ -147,7 +147,7 @@ exports.searchBooks = async ({ title, author, category, isbn }) => {
       b.BookID AS id,
       b.ISBN AS isbn,
       b.Title AS title,
-      b.Author AS author,
+      COALESCE(a.Name, b.Author) AS author,
       b.Publisher AS publisher,
       b.YearOfPublishment AS year,
       b.AvailabilityStatus AS availabilityStatus,
@@ -157,6 +157,7 @@ exports.searchBooks = async ({ title, author, category, isbn }) => {
       COUNT(l.LoanID) AS loanCount
     FROM Books b
     JOIN Categories c ON b.CategoryID = c.CategoryID
+    LEFT JOIN Authors a ON a.AuthorID = b.AuthorID
     LEFT JOIN Loans l ON l.BookID = b.BookID
     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
     GROUP BY
@@ -164,6 +165,7 @@ exports.searchBooks = async ({ title, author, category, isbn }) => {
       b.ISBN,
       b.Title,
       b.Author,
+      a.Name,
       b.Publisher,
       b.YearOfPublishment,
       b.AvailabilityStatus,
