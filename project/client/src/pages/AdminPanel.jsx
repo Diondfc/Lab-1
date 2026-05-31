@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -10,6 +10,7 @@ import {
   FiTrendingUp, FiPlusCircle, FiList, FiCalendar, FiShield
 } from 'react-icons/fi';
 import { LuBookUp2 } from "react-icons/lu";
+import { apiClient } from '../lib/api';
 
 // Mock Data for Charts
 const loansData = [
@@ -31,6 +32,46 @@ const categoryData = [
 
 const AdminPanel = () => {
     const navigate = useNavigate();
+    const [dashboardStats, setDashboardStats] = useState({
+      borrowedBooks: 0,
+      activeMembers: 0,
+      overdueLoans: 0,
+      totalBooks: 0,
+    });
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [statsError, setStatsError] = useState('');
+
+    useEffect(() => {
+      let mounted = true;
+
+      async function loadDashboardStats() {
+        try {
+          setStatsLoading(true);
+          setStatsError('');
+          const { data } = await apiClient.get('/api/dashboard/stats');
+          if (!mounted) return;
+
+          setDashboardStats({
+            borrowedBooks: Number(data?.borrowedBooks) || 0,
+            activeMembers: Number(data?.activeMembers) || 0,
+            overdueLoans: Number(data?.overdueLoans) || 0,
+            totalBooks: Number(data?.totalBooks) || 0,
+          });
+        } catch (error) {
+          if (!mounted) return;
+          setStatsError(error.response?.data?.message || 'Could not load dashboard statistics.');
+        } finally {
+          if (mounted) setStatsLoading(false);
+        }
+      }
+
+      loadDashboardStats();
+      return () => {
+        mounted = false;
+      };
+    }, []);
+
+    const formatNumber = (value) => new Intl.NumberFormat('en-US').format(value);
 
     const staggerContainer = {
       hidden: { opacity: 0 },
@@ -82,6 +123,11 @@ const AdminPanel = () => {
                 </motion.div>
 
                 {/* KPI Cards */}
+                {statsError && (
+                  <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                    {statsError}
+                  </div>
+                )}
                 <motion.div 
                   variants={staggerContainer}
                   initial="hidden"
@@ -89,10 +135,10 @@ const AdminPanel = () => {
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"
                 >
                   {[
-                    { title: "Total Books", value: "3,240", icon: <FiBook />, color: "indigo", trend: "+12%" },
-                    { title: "Active Loans", value: "184", icon: <LuBookUp2 />, color: "blue", trend: "+5%" },
-                    { title: "Active Users", value: "892", icon: <FiUsers />, color: "amber", trend: "+18%" },
-                    { title: "Overdue", value: "24", icon: <FiClock />, color: "rose", trend: "-2%" }
+                    { title: "Total Books", value: dashboardStats.totalBooks, icon: <FiBook />, color: "indigo", trend: "+12%" },
+                    { title: "Active Loans", value: dashboardStats.borrowedBooks, icon: <LuBookUp2 />, color: "blue", trend: "+5%" },
+                    { title: "Active Members", value: dashboardStats.activeMembers, icon: <FiUsers />, color: "amber", trend: "+18%" },
+                    { title: "Overdue", value: dashboardStats.overdueLoans, icon: <FiClock />, color: "rose", trend: "-2%" }
                   ].map((stat, i) => (
                     <motion.div variants={fadeUp} key={i} className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-zinc-100 dark:border-slate-700 transition-colors duration-300">
                       <div className="flex justify-between items-start mb-4">
@@ -104,7 +150,9 @@ const AdminPanel = () => {
                           {stat.trend}
                         </span>
                       </div>
-                      <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{stat.value}</h3>
+                      <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">
+                        {statsLoading ? '...' : formatNumber(stat.value)}
+                      </h3>
                       <p className="text-slate-400 font-medium">{stat.title}</p>
                     </motion.div>
                   ))}

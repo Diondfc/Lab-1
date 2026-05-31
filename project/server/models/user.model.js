@@ -50,8 +50,6 @@ class User {
     const emailConfirmed = userData.email_confirmed ?? userData.EmailConfirmed ?? 0;
     const role = normalizeRole(userData.role);
     const status = normalizeStatus(userData.status || userData.Status);
-    const phoneNumber = userData.phone_number || userData.PhoneNumber || null;
-    const emailConfirmed = userData.email_confirmed ?? userData.EmailConfirmed ?? 0;
     const lockoutEnabled = userData.lockout_enabled ?? userData.LockoutEnabled ?? 0;
     const accessFailedCount = userData.access_failed_count ?? userData.AccessFailedCount ?? 0;
     if (!isValidRole(role)) {
