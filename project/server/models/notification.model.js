@@ -14,17 +14,18 @@ class Notification {
     title,
     message,
     type = NOTIFICATION_TYPES.MANUAL,
+    loanId = null,
     referenceType = null,
     referenceId = null,
   }) {
     const [result] = await db.query(
       `INSERT INTO Notifications
-       (UserID, Title, Message, Type, ReferenceType, ReferenceID)
-       VALUES (?, ?, ?, ?, ?, ?)
+       (UserID, LoanID, Title, Message, Type, ReferenceType, ReferenceID)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          Title = VALUES(Title),
          Message = VALUES(Message)`,
-      [userId, title, message, type, referenceType, referenceId],
+      [userId, loanId, title, message, type, referenceType, referenceId],
     );
 
     return result.insertId;
@@ -34,28 +35,30 @@ class Notification {
     title,
     message,
     type = NOTIFICATION_TYPES.MANUAL,
+    loanId = null,
     referenceType = null,
     referenceId = null,
   }) {
     await db.query(
       `INSERT INTO Notifications
-       (UserID, Title, Message, Type, ReferenceType, ReferenceID)
-       SELECT UserID, ?, ?, ?, ?, ?
+       (UserID, LoanID, Title, Message, Type, ReferenceType, ReferenceID)
+       SELECT UserID, ?, ?, ?, ?, ?, ?
        FROM Users
        WHERE Status = 'Active'
        ON DUPLICATE KEY UPDATE
          Title = VALUES(Title),
          Message = VALUES(Message)`,
-      [title, message, type, referenceType, referenceId],
+      [loanId, title, message, type, referenceType, referenceId],
     );
   }
 
   static async syncLoanReminders(userId) {
     await db.query(
       `INSERT INTO Notifications
-       (UserID, Title, Message, Type, ReferenceType, ReferenceID)
+       (UserID, LoanID, Title, Message, Type, ReferenceType, ReferenceID)
        SELECT
          l.UserID,
+         l.LoanID,
          'Book overdue',
          CONCAT('The book "', l.BookTitle, '" was due on ', DATE_FORMAT(l.DueDate, '%Y-%m-%d'), '.'),
          ?,
@@ -74,9 +77,10 @@ class Notification {
 
     await db.query(
       `INSERT INTO Notifications
-       (UserID, Title, Message, Type, ReferenceType, ReferenceID)
+       (UserID, LoanID, Title, Message, Type, ReferenceType, ReferenceID)
        SELECT
          l.UserID,
+         l.LoanID,
          'Return due soon',
          CONCAT('The book "', l.BookTitle, '" should be returned by ', DATE_FORMAT(l.DueDate, '%Y-%m-%d'), '.'),
          ?,
@@ -94,11 +98,39 @@ class Notification {
     );
   }
 
+  static async createOverdueForAll() {
+    const [result] = await db.query(
+      `INSERT INTO Notifications
+       (UserID, LoanID, Title, Message, Type, ReferenceType, ReferenceID)
+       SELECT
+         l.UserID,
+         l.LoanID,
+         'Book overdue',
+         CONCAT('The book "', l.BookTitle, '" was due on ', DATE_FORMAT(l.DueDate, '%Y-%m-%d'), '.'),
+         ?,
+         'Loan',
+         l.LoanID
+       FROM Loans l
+       LEFT JOIN ReturnLoans r ON r.LoanID = l.LoanID
+       JOIN Users u ON u.UserID = l.UserID
+       WHERE r.ReturnID IS NULL
+         AND l.DueDate < CURDATE()
+         AND u.Status = 'Active'
+       ON DUPLICATE KEY UPDATE
+         Title = VALUES(Title),
+         Message = VALUES(Message)`,
+      [NOTIFICATION_TYPES.LOAN_OVERDUE],
+    );
+
+    return result.affectedRows || 0;
+  }
+
   static async findForUser(userId) {
     const [rows] = await db.query(
       `SELECT
         NotificationID,
         UserID,
+        LoanID,
         Title,
         Message,
         Type,

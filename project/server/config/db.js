@@ -609,6 +609,7 @@ async function verifyConnection() {
         CREATE TABLE IF NOT EXISTS Notifications (
           NotificationID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
           UserID INT UNSIGNED NOT NULL,
+          LoanID INT UNSIGNED NULL,
           Title VARCHAR(255) NOT NULL,
           Message TEXT NOT NULL,
           Type ENUM('loan_overdue', 'loan_due_soon', 'event_created', 'request_approved', 'manual') NOT NULL DEFAULT 'manual',
@@ -618,11 +619,24 @@ async function verifyConnection() {
           CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (NotificationID),
           UNIQUE KEY uq_notifications_reference (UserID, Type, ReferenceType, ReferenceID),
+          KEY idx_notifications_loan (LoanID),
           KEY idx_notifications_user_read (UserID, IsRead, CreatedAt),
           CONSTRAINT fk_notifications_user
             FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
+
+      const [notificationColumns] = await conn.execute(`
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'Notifications'
+      `, [DB_NAME])
+      const notificationColumnNames = notificationColumns.map(c => c.COLUMN_NAME.toLowerCase())
+
+      if (!notificationColumnNames.includes('loanid')) {
+        console.log('Adding LoanID column to Notifications table...')
+        await conn.execute('ALTER TABLE Notifications ADD COLUMN LoanID INT UNSIGNED NULL AFTER UserID')
+      }
     } catch (notificationMigErr) {
       console.error('Auto-migration warning: Failed to create notifications:', notificationMigErr.message)
     }

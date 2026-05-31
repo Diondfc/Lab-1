@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS UserTokens (
 CREATE TABLE IF NOT EXISTS Notifications (
   NotificationID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   UserID INT UNSIGNED NOT NULL,
+  LoanID INT UNSIGNED NULL,
   Title VARCHAR(255) NOT NULL,
   Message TEXT NOT NULL,
   Type ENUM('loan_overdue', 'loan_due_soon', 'event_created', 'request_approved', 'manual') NOT NULL DEFAULT 'manual',
@@ -189,6 +190,7 @@ CREATE TABLE IF NOT EXISTS Notifications (
   CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (NotificationID),
   UNIQUE KEY uq_notifications_reference (UserID, Type, ReferenceType, ReferenceID),
+  KEY idx_notifications_loan (LoanID),
   KEY idx_notifications_user_read (UserID, IsRead, CreatedAt),
   CONSTRAINT fk_notifications_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE

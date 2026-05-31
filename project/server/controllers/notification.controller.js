@@ -43,3 +43,16 @@ exports.markAllRead = async (req, res) => {
     res.status(500).json({ message: 'Error marking notifications read' });
   }
 };
+
+exports.runOverdueCheck = async (_req, res) => {
+  try {
+    const affectedRows = await Notification.createOverdueForAll();
+    res.json({
+      message: 'Overdue notification check completed',
+      affectedRows,
+    });
+  } catch (error) {
+    console.error('Error running overdue notification check:', error);
+    res.status(500).json({ message: 'Error running overdue notification check' });
+  }
+};
