@@ -32,6 +32,19 @@ exports.getBookQueue = async (req, res) => {
   }
 };
 
+exports.expireReservations = async (_req, res) => {
+  try {
+    const expiredCount = await Reservation.expireActiveReservations();
+    res.json({
+      message: 'Reservation expiry processing completed',
+      expiredCount,
+    });
+  } catch (error) {
+    console.error('Error expiring reservations:', error);
+    res.status(500).json({ message: 'Failed to expire reservations' });
+  }
+};
+
 exports.getById = async (req, res) => {
   try {
     const reservation = await Reservation.getById(req.params.id);

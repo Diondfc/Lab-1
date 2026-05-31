@@ -134,3 +134,15 @@ exports.updateStatus = async (id, status) => {
   );
   return result.affectedRows;
 };
+
+exports.expireActiveReservations = async () => {
+  const [result] = await db.query(
+    `UPDATE Reservations
+     SET Status = 'Expired'
+     WHERE Status = 'Active'
+       AND ExpiresAt IS NOT NULL
+       AND ExpiresAt < NOW()`,
+  );
+
+  return result.affectedRows;
+};
