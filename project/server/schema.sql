@@ -19,14 +19,11 @@ CREATE TABLE IF NOT EXISTS Users (
   FirstName VARCHAR(120) NULL,
   LastName VARCHAR(120) NULL,
   Email VARCHAR(255) NOT NULL,
+  Password VARCHAR(255) NOT NULL,
+  PasswordHash VARCHAR(255) NOT NULL,
   PhoneNumber VARCHAR(32) NULL,
   EmailConfirmed TINYINT(1) NOT NULL DEFAULT 0,
   LockoutEnabled TINYINT(1) NOT NULL DEFAULT 1,
-  AccessFailedCount INT UNSIGNED NOT NULL DEFAULT 0,
-  Password VARCHAR(255) NOT NULL,
-  PhoneNumber VARCHAR(32) NULL,
-  EmailConfirmed TINYINT(1) NOT NULL DEFAULT 0,
-  LockoutEnabled TINYINT(1) NOT NULL DEFAULT 0,
   AccessFailedCount INT UNSIGNED NOT NULL DEFAULT 0,
   Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member',
   Status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active',
@@ -41,9 +38,10 @@ CREATE TABLE IF NOT EXISTS Roles (
   Description VARCHAR(255) NULL,
   NormalizedName VARCHAR(64) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (RoleID),
   UNIQUE KEY uq_roles_name (Name),
-  UNIQUE KEY uq_roles_normalized (NormalizedName)
+  UNIQUE KEY uq_roles_normalized_name (NormalizedName)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS useraccount (
@@ -54,18 +52,6 @@ CREATE TABLE IF NOT EXISTS useraccount (
   UNIQUE KEY uq_useraccount_user (UserID),
   CONSTRAINT fk_useraccount_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS Roles (
-  RoleID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  Name VARCHAR(64) NOT NULL,
-  Description VARCHAR(255) NULL,
-  NormalizedName VARCHAR(64) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (RoleID),
-  UNIQUE KEY uq_roles_name (Name),
-  UNIQUE KEY uq_roles_normalized_name (NormalizedName)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS UserRoleHistory (
@@ -88,8 +74,7 @@ CREATE TABLE IF NOT EXISTS UserRoleHistory (
 CREATE TABLE IF NOT EXISTS UserRoles (
   UserRoleID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   UserID INT UNSIGNED NOT NULL,
-  RoleID INT UNSIGNED NULL,
-  Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL,
+  RoleID INT UNSIGNED NOT NULL,
   AssignedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   RemovedAt DATETIME NULL,
   AssignedByUserID INT UNSIGNED NULL,
@@ -101,7 +86,7 @@ CREATE TABLE IF NOT EXISTS UserRoles (
   CONSTRAINT fk_user_roles_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
   CONSTRAINT fk_user_roles_role
-    FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE SET NULL,
+    FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE RESTRICT,
   CONSTRAINT fk_user_roles_assigned_by
     FOREIGN KEY (AssignedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -110,7 +95,7 @@ CREATE TABLE IF NOT EXISTS UserClaims (
   UserClaimID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   UserID INT UNSIGNED NOT NULL,
   ClaimType VARCHAR(128) NOT NULL,
-  ClaimValue VARCHAR(255) NOT NULL,
+  ClaimValue VARCHAR(512) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (UserClaimID),
   KEY idx_user_claims_user (UserID),
@@ -124,8 +109,10 @@ CREATE TABLE IF NOT EXISTS UserTokens (
   LoginProvider VARCHAR(128) NOT NULL,
   TokenName VARCHAR(128) NOT NULL,
   TokenValue TEXT NOT NULL,
+  ExpiresAt DATETIME NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (UserTokenID),
+  KEY idx_user_tokens_user (UserID),
   UNIQUE KEY uq_user_tokens (UserID, LoginProvider, TokenName),
   CONSTRAINT fk_user_tokens_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
@@ -147,31 +134,6 @@ CREATE TABLE IF NOT EXISTS RefreshTokens (
     FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
   CONSTRAINT fk_refresh_tokens_replaced_by
     FOREIGN KEY (ReplacedByTokenID) REFERENCES RefreshTokens (RefreshTokenID) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS UserClaims (
-  UserClaimID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  UserID INT UNSIGNED NOT NULL,
-  ClaimType VARCHAR(128) NOT NULL,
-  ClaimValue VARCHAR(512) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (UserClaimID),
-  KEY idx_user_claims_user (UserID),
-  CONSTRAINT fk_user_claims_user FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS UserTokens (
-  UserTokenID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  UserID INT UNSIGNED NOT NULL,
-  LoginProvider VARCHAR(128) NOT NULL,
-  Name VARCHAR(128) NOT NULL,
-  Value TEXT NOT NULL,
-  ExpiresAt DATETIME NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (UserTokenID),
-  KEY idx_user_tokens_user (UserID),
-  UNIQUE KEY uq_user_tokens_provider_name (UserID, LoginProvider, Name),
-  CONSTRAINT fk_user_tokens_user FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
@@ -345,7 +307,7 @@ CREATE TABLE IF NOT EXISTS Loans (
   CONSTRAINT fk_loans_user
     FOREIGN KEY (UserID) REFERENCES Users (UserID),
   CONSTRAINT fk_loans_member
-    FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE SET NULL
+    FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ReturnLoans (
@@ -534,11 +496,6 @@ INSERT IGNORE INTO EventLocations (LocationID, Name) VALUES
   (3, 'Reading Lounge'),
   (4, 'Auditorium');
 
-INSERT IGNORE INTO Roles (Name, Description, NormalizedName) VALUES
-  ('Admin', 'Full system access', 'ADMIN'),
-  ('Manager', 'Manages core library operations', 'MANAGER'),
-  ('User/Member', 'Limited member access', 'USER/MEMBER');
-
 -- Default admin — email: admin@ubt.edu  password: Admin123!
 INSERT IGNORE INTO Users (UserID, Name, FirstName, LastName, Email, Password, PasswordHash, Role) VALUES
   (
@@ -569,11 +526,6 @@ JOIN Roles r ON r.Name = u.Role
 WHERE NOT EXISTS (
   SELECT 1 FROM UserRoles ur WHERE ur.UserID = u.UserID AND ur.RoleID = r.RoleID AND ur.RemovedAt IS NULL
 );
-
-UPDATE UserRoles ur
-JOIN Roles r ON r.Name = ur.Role
-SET ur.RoleID = r.RoleID
-WHERE ur.RoleID IS NULL;
 
 -- Sample catalog (IDs 1–8 align with the demo client catalog for easier testing)
 INSERT IGNORE INTO Books (

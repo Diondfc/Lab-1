@@ -65,11 +65,12 @@ class User {
 
       const [result] = await conn.query(
         `INSERT INTO Users
-         (Name, Email, Password, PhoneNumber, EmailConfirmed, LockoutEnabled, AccessFailedCount, Role, Status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (Name, Email, Password, PasswordHash, PhoneNumber, EmailConfirmed, LockoutEnabled, AccessFailedCount, Role, Status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           full_name,
           email,
+          password,
           password,
           phoneNumber,
           emailConfirmed ? 1 : 0,
@@ -86,12 +87,12 @@ class User {
       );
 
       await conn.query(
-        `INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt, AssignedByUserID)
-         SELECT ?, RoleID, ?, NOW(), ?
+        `INSERT INTO UserRoles (UserID, RoleID, AssignedAt, AssignedByUserID)
+         SELECT ?, RoleID, NOW(), ?
          FROM Roles
          WHERE Name = ?
          LIMIT 1`,
-        [result.insertId, role, userData.changedByUserId || null, role]
+        [result.insertId, userData.changedByUserId || null, role]
       );
 
       await conn.commit();
@@ -161,26 +162,6 @@ class User {
     if (userData.email != null || userData.Email != null) {
       updates.push('Email = ?');
       values.push((userData.email ?? userData.Email).trim().toLowerCase());
-    }
-
-    if (userData.phone_number != null || userData.PhoneNumber != null) {
-      updates.push('PhoneNumber = ?');
-      values.push(userData.phone_number ?? userData.PhoneNumber);
-    }
-
-    if (userData.email_confirmed != null || userData.EmailConfirmed != null) {
-      updates.push('EmailConfirmed = ?');
-      values.push(userData.email_confirmed ?? userData.EmailConfirmed ? 1 : 0);
-    }
-
-    if (userData.lockout_enabled != null || userData.LockoutEnabled != null) {
-      updates.push('LockoutEnabled = ?');
-      values.push(userData.lockout_enabled ?? userData.LockoutEnabled ? 1 : 0);
-    }
-
-    if (userData.access_failed_count != null || userData.AccessFailedCount != null) {
-      updates.push('AccessFailedCount = ?');
-      values.push(Number(userData.access_failed_count ?? userData.AccessFailedCount) || 0);
     }
 
     if (userData.role != null || userData.Role != null) {
@@ -325,12 +306,12 @@ class User {
 
       if (!existingActive.length) {
         await conn.query(
-          `INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt, AssignedByUserID)
-           SELECT ?, RoleID, ?, NOW(), ?
+          `INSERT INTO UserRoles (UserID, RoleID, AssignedAt, AssignedByUserID)
+           SELECT ?, RoleID, NOW(), ?
            FROM Roles
            WHERE Name = ?
            LIMIT 1`,
-          [id, normalizedRole, assignedByUserId || null, normalizedRole]
+          [id, assignedByUserId || null, normalizedRole]
         );
       }
 
@@ -386,12 +367,12 @@ class User {
       );
       if (!remainingDefault.length) {
         await conn.query(
-          `INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt, AssignedByUserID)
-           SELECT ?, RoleID, ?, NOW(), ?
+          `INSERT INTO UserRoles (UserID, RoleID, AssignedAt, AssignedByUserID)
+           SELECT ?, RoleID, NOW(), ?
            FROM Roles
            WHERE Name = ?
            LIMIT 1`,
-          [id, nextRole, changedByUserId || null, nextRole]
+          [id, changedByUserId || null, nextRole]
         );
       }
 
@@ -447,7 +428,7 @@ class User {
   }
 
   static async getTokens(id) {
-    const [rows] = await pool.query('SELECT UserTokenID, UserID, LoginProvider, Name, ExpiresAt, created_at FROM UserTokens WHERE UserID = ? ORDER BY UserTokenID DESC', [id]);
+    const [rows] = await pool.query('SELECT UserTokenID, UserID, LoginProvider, TokenName, ExpiresAt, created_at FROM UserTokens WHERE UserID = ? ORDER BY UserTokenID DESC', [id]);
     return rows;
   }
 
@@ -457,12 +438,12 @@ class User {
     const tokenValue = value ?? Value;
     const expiry = expires_at ?? ExpiresAt ?? null;
     await pool.query(
-      `INSERT INTO UserTokens (UserID, LoginProvider, Name, Value, ExpiresAt)
+      `INSERT INTO UserTokens (UserID, LoginProvider, TokenName, TokenValue, ExpiresAt)
        VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE Value = VALUES(Value), ExpiresAt = VALUES(ExpiresAt)`,
+       ON DUPLICATE KEY UPDATE TokenValue = VALUES(TokenValue), ExpiresAt = VALUES(ExpiresAt)`,
       [id, provider, tokenName, tokenValue, expiry]
     );
-    const [rows] = await pool.query('SELECT UserTokenID, UserID, LoginProvider, Name, ExpiresAt, created_at FROM UserTokens WHERE UserID = ? AND LoginProvider = ? AND Name = ?', [id, provider, tokenName]);
+    const [rows] = await pool.query('SELECT UserTokenID, UserID, LoginProvider, TokenName, ExpiresAt, created_at FROM UserTokens WHERE UserID = ? AND LoginProvider = ? AND TokenName = ?', [id, provider, tokenName]);
     return rows[0];
   }
 

@@ -82,9 +82,10 @@ async function verifyConnection() {
           Description VARCHAR(255) NULL,
           NormalizedName VARCHAR(64) NOT NULL,
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           PRIMARY KEY (RoleID),
           UNIQUE KEY uq_roles_name (Name),
-          UNIQUE KEY uq_roles_normalized (NormalizedName)
+          UNIQUE KEY uq_roles_normalized_name (NormalizedName)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
 
@@ -92,7 +93,7 @@ async function verifyConnection() {
         INSERT IGNORE INTO Roles (Name, Description, NormalizedName) VALUES
           ('Admin', 'Full system access', 'ADMIN'),
           ('Manager', 'Manages core library operations', 'MANAGER'),
-          ('User/Member', 'Limited member access', 'USER/MEMBER')
+          ('User/Member', 'Limited member access', 'USER_MEMBER')
       `)
 
       await conn.execute(`
@@ -116,26 +117,40 @@ async function verifyConnection() {
           LoginProvider VARCHAR(128) NOT NULL,
           TokenName VARCHAR(128) NOT NULL,
           TokenValue TEXT NOT NULL,
+          ExpiresAt DATETIME NULL,
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (UserTokenID),
+          KEY idx_user_tokens_user (UserID),
           UNIQUE KEY uq_user_tokens (UserID, LoginProvider, TokenName),
           CONSTRAINT fk_user_tokens_user
             FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
 
+      if (!(await columnExists('UserTokens', 'TokenName')) && (await columnExists('UserTokens', 'Name'))) {
+        await conn.execute('ALTER TABLE UserTokens CHANGE COLUMN Name TokenName VARCHAR(128) NOT NULL')
+      }
+      if (!(await columnExists('UserTokens', 'TokenValue')) && (await columnExists('UserTokens', 'Value'))) {
+        await conn.execute('ALTER TABLE UserTokens CHANGE COLUMN Value TokenValue TEXT NOT NULL')
+      }
+      if (!(await columnExists('UserTokens', 'ExpiresAt'))) {
+        await conn.execute('ALTER TABLE UserTokens ADD COLUMN ExpiresAt DATETIME NULL AFTER TokenValue')
+      }
+
       if ((await tableExists('UserRoles')) && !(await columnExists('UserRoles', 'RoleID'))) {
         await conn.execute('ALTER TABLE UserRoles ADD COLUMN RoleID INT UNSIGNED NULL AFTER UserID')
       }
 
       if (await tableExists('UserRoles')) {
-        await conn.execute(`
-          UPDATE UserRoles ur
-          JOIN Roles r ON r.Name = ur.Role
-          SET ur.RoleID = r.RoleID
-          WHERE ur.RoleID IS NULL
-        `)
-        await tryExecute('ALTER TABLE UserRoles ADD CONSTRAINT fk_user_roles_role FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE SET NULL')
+        if (await columnExists('UserRoles', 'Role')) {
+          await conn.execute(`
+            UPDATE UserRoles ur
+            JOIN Roles r ON r.Name = ur.Role
+            SET ur.RoleID = r.RoleID
+            WHERE ur.RoleID IS NULL
+          `)
+        }
+        await tryExecute('ALTER TABLE UserRoles ADD CONSTRAINT fk_user_roles_role FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE RESTRICT')
       }
     } catch (identityMigErr) {
       console.error('Auto-migration warning: Failed to create identity tables:', identityMigErr.message)
@@ -198,13 +213,13 @@ async function verifyConnection() {
           UserTokenID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
           UserID INT UNSIGNED NOT NULL,
           LoginProvider VARCHAR(128) NOT NULL,
-          Name VARCHAR(128) NOT NULL,
-          Value TEXT NOT NULL,
+          TokenName VARCHAR(128) NOT NULL,
+          TokenValue TEXT NOT NULL,
           ExpiresAt DATETIME NULL,
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (UserTokenID),
           KEY idx_user_tokens_user (UserID),
-          UNIQUE KEY uq_user_tokens_provider_name (UserID, LoginProvider, Name),
+          UNIQUE KEY uq_user_tokens (UserID, LoginProvider, TokenName),
           CONSTRAINT fk_user_tokens_user FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
@@ -255,8 +270,8 @@ async function verifyConnection() {
           updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           PRIMARY KEY (FineID),
           UNIQUE KEY uq_fines_return (ReturnID),
+          UNIQUE KEY uq_fines_loan (LoanID),
           KEY idx_fines_user_status (UserID, Status),
-          KEY idx_fines_loan (LoanID),
           CONSTRAINT fk_fines_return
             FOREIGN KEY (ReturnID) REFERENCES ReturnLoans (ReturnID) ON DELETE CASCADE,
           CONSTRAINT fk_fines_loan
@@ -265,6 +280,14 @@ async function verifyConnection() {
             FOREIGN KEY (UserID) REFERENCES Users (UserID)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `)
+
+      try {
+        await conn.execute('ALTER TABLE Fines ADD UNIQUE KEY uq_fines_loan (LoanID)')
+      } catch (uniqueFineErr) {
+        if (!/Duplicate|already exists/i.test(uniqueFineErr.message)) {
+          throw uniqueFineErr
+        }
+      }
 
       await conn.execute(`
         INSERT INTO Fines (ReturnID, LoanID, UserID, Amount, Status)
@@ -545,8 +568,6 @@ async function verifyConnection() {
           UserRoleID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
           UserID INT UNSIGNED NOT NULL,
           RoleID INT UNSIGNED NOT NULL,
-          RoleID INT UNSIGNED NULL,
-          Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL,
           AssignedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
           RemovedAt DATETIME NULL,
           AssignedByUserID INT UNSIGNED NULL,
@@ -558,8 +579,7 @@ async function verifyConnection() {
           CONSTRAINT fk_user_roles_user
             FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE,
           CONSTRAINT fk_user_roles_role
-            FOREIGN KEY (RoleID) REFERENCES Roles (RoleID),
-            FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE SET NULL,
+            FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE RESTRICT,
           CONSTRAINT fk_user_roles_assigned_by
             FOREIGN KEY (AssignedByUserID) REFERENCES Users (UserID) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -583,10 +603,10 @@ async function verifyConnection() {
         `)
       }
       await conn.execute(`
-        INSERT INTO UserRoles (UserID, RoleID, Role, AssignedAt)
-        SELECT u.UserID, r.RoleID, u.Role, u.created_at
+        INSERT INTO UserRoles (UserID, RoleID, AssignedAt)
+        SELECT u.UserID, r.RoleID, u.created_at
         FROM Users u
-        LEFT JOIN Roles r ON r.Name = u.Role
+        JOIN Roles r ON r.Name = u.Role
         WHERE NOT EXISTS (
           SELECT 1
           FROM UserRoles ur
@@ -594,12 +614,14 @@ async function verifyConnection() {
         )
       `)
 
-      await conn.execute(`
-        UPDATE UserRoles ur
-        JOIN Roles r ON r.Name = ur.Role
-        SET ur.RoleID = r.RoleID
-        WHERE ur.RoleID IS NULL
-      `)
+      if (userRoleColumnNames.includes('role')) {
+        await conn.execute(`
+          UPDATE UserRoles ur
+          JOIN Roles r ON r.Name = ur.Role
+          SET ur.RoleID = r.RoleID
+          WHERE ur.RoleID IS NULL
+        `)
+      }
     } catch (userRolesMigErr) {
       console.error('Auto-migration warning: Failed to create/seed user roles:', userRolesMigErr.message)
     }
