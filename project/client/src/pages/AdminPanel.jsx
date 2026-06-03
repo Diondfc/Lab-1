@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  AreaChart, Area
 } from 'recharts';
 import { 
   FiBook, FiUsers, FiClock, FiActivity, FiMessageSquare, FiSettings,
@@ -29,6 +29,36 @@ const categoryData = [
   { name: 'Journals', count: 45 },
   { name: 'Tech', count: 90 },
 ];
+
+function MeasuredChart({ height = 300, children }) {
+  const containerRef = useRef(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return undefined;
+
+    const updateSize = () => {
+      setWidth(Math.max(0, Math.floor(element.getBoundingClientRect().width)));
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(element);
+    window.addEventListener('resize', updateSize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateSize);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="min-w-0 w-full" style={{ height, minHeight: height }}>
+      {width > 0 ? children(width, height) : null}
+    </div>
+  );
+}
 
 const AdminPanel = () => {
     const navigate = useNavigate();
@@ -188,6 +218,16 @@ const AdminPanel = () => {
                       { title: 'Library Reports', path: '/admin/reports', icon: <FiTrendingUp />, desc: 'Search & reports', color: 'green' },
                       { title: 'Role History', path: '/admin/role-history', icon: <FiShield />, desc: 'Track role periods', color: 'violet' },
                       { title: 'User Management', path: '/admin/users', icon: <FiUsers />, desc: 'Activate/deactivate users', color: 'cyan' },
+                      { title: 'Roles', path: '/admin/crud/roles', icon: <FiShield />, desc: 'Create and edit roles', color: 'violet' },
+                      { title: 'Authors', path: '/admin/crud/authors', icon: <FiUsers />, desc: 'Manage author records', color: 'blue' },
+                      { title: 'Categories', path: '/admin/crud/categories', icon: <FiList />, desc: 'Manage categories', color: 'emerald' },
+                      { title: 'Publishers', path: '/admin/crud/publishers', icon: <FiBook />, desc: 'Manage publishers', color: 'sky' },
+                      { title: 'Members', path: '/admin/crud/members', icon: <FiUsers />, desc: 'Manage member profiles', color: 'cyan' },
+                      { title: 'Book Reviews', path: '/admin/crud/bookreviews', icon: <FiActivity />, desc: 'Manage reviews', color: 'amber' },
+                      { title: 'User Claims', path: '/admin/crud/user-claims', icon: <FiShield />, desc: 'Manage identity claims', color: 'rose' },
+                      { title: 'User Tokens', path: '/admin/crud/user-tokens', icon: <FiActivity />, desc: 'Manage user tokens', color: 'indigo' },
+                      { title: 'Refresh Tokens', path: '/admin/crud/refresh-tokens', icon: <FiClock />, desc: 'Revoke or remove refresh tokens', color: 'lime' },
+                      { title: 'Reservations', path: '/admin/crud/reservations', icon: <FiClock />, desc: 'Manage reservations', color: 'green' },
                     ].map((item, i) => (
                       <button
                         key={i}
@@ -276,9 +316,9 @@ const AdminPanel = () => {
                         <p className="text-slate-400 text-sm">Daily borrowing trends over the last week</p>
                       </div>
                     </div>
-                    <div className="h-[300px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={loansData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <MeasuredChart>
+                      {(width, height) => (
+                        <AreaChart width={width} height={height} data={loansData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                           <defs>
                             <linearGradient id="colorLoans" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -293,8 +333,8 @@ const AdminPanel = () => {
                           />
                           <Area type="monotone" dataKey="loans" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorLoans)" />
                         </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
+                      )}
+                    </MeasuredChart>
                   </motion.div>
 
                   {/* Categories Chart */}
@@ -303,17 +343,17 @@ const AdminPanel = () => {
                       <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Collection Stats</h3>
                       <p className="text-slate-400 text-sm">Books by category</p>
                     </div>
-                    <div className="h-[300px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                    <MeasuredChart>
+                      {(width, height) => (
+                        <BarChart width={width} height={height} data={categoryData} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f4f4f5" />
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} tick={{ fill: '#52525b', fontWeight: 500 }} />
                           <RechartsTooltip cursor={{ fill: '#f4f4f5' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                           <Bar dataKey="count" fill="#14b8a6" radius={[0, 4, 4, 0]} barSize={24} />
                         </BarChart>
-                      </ResponsiveContainer>
-                    </div>
+                      )}
+                    </MeasuredChart>
                   </motion.div>
                 </motion.div>
                 

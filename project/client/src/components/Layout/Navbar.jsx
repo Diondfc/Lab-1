@@ -27,7 +27,8 @@ function Navbar({ user, setUser }) {
   }, []);
 
   const loadNotifications = useCallback(async () => {
-    if (!user) {
+    const token = localStorage.getItem('token');
+    if (!user || !token) {
       setNotifications([]);
       setNotificationsError('');
       return;
@@ -38,10 +39,18 @@ function Navbar({ user, setUser }) {
       const { data } = await apiClient.get('/api/notifications');
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        setUser?.(null);
+        setNotifications([]);
+        setNotificationsError('');
+        return;
+      }
       setNotificationsError('Notifications unavailable.');
     }
-  }, [user]);
+  }, [setUser, user]);
 
   useEffect(() => {
     loadNotifications();

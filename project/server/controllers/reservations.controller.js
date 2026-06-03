@@ -78,6 +78,24 @@ exports.createHold = async (req, res) => {
   }
 };
 
+exports.create = async (req, res) => {
+  try {
+    res.status(201).json(await Reservation.create(req.body));
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.update = async (req, res) => {
+  try {
+    const affectedRows = await Reservation.update(req.params.id, req.body);
+    if (!affectedRows) return res.status(404).json({ message: 'Reservation not found' });
+    res.json(await Reservation.getById(req.params.id));
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 exports.updateStatus = async (req, res) => {
   try {
     const status = req.body?.status;
@@ -105,5 +123,15 @@ exports.updateStatus = async (req, res) => {
     res.json(await Reservation.getById(req.params.id));
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+exports.remove = async (req, res) => {
+  try {
+    const affectedRows = await Reservation.delete(req.params.id);
+    if (!affectedRows) return res.status(404).json({ message: 'Reservation not found' });
+    res.json({ message: 'Reservation deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

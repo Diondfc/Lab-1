@@ -135,6 +135,8 @@ export default function ReservationQueueDashboard() {
         <div className="mb-4 flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <FiSearch className="shrink-0 text-slate-400" />
           <input
+            id="reservation-queue-search"
+            name="reservationQueueSearch"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by book, user, email, or status"

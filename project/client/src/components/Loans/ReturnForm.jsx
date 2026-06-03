@@ -53,6 +53,7 @@ const ReturnForm = () => {
     
     try {
       const response = await apiClient.post('/api/returns', {
+        loanId: formData.loanId,
         bookId: formData.bookId,
         userId: formData.userId,
         returnDate: formData.returnDate,
@@ -81,7 +82,13 @@ const ReturnForm = () => {
       }
     } catch (error) {
       console.error('Error processing return:', error);
-      setError(error.response?.data?.message || 'Failed to process return');
+      const serverMessage = error.response?.data?.message;
+      const serverDetail = error.response?.data?.error;
+      setError(
+        serverDetail && serverMessage
+          ? `${serverMessage}: ${serverDetail}`
+          : serverMessage || serverDetail || 'Failed to process return'
+      );
     } finally {
       setIsSubmitting(false);
     }

@@ -127,11 +127,64 @@ exports.createHold = async ({ bookId, userId }) => {
   }
 };
 
+exports.create = async (body) => {
+  const bookId = body.BookID ?? body.bookId;
+  const memberId = body.MemberID ?? body.memberId;
+  if (!bookId || !memberId) {
+    throw new Error('BookID and MemberID are required');
+  }
+
+  const [result] = await db.query(
+    `INSERT INTO Reservations (BookID, MemberID, ReservedAt, ExpiresAt, Status)
+     VALUES (?, ?, ?, ?, ?)`,
+    [
+      bookId,
+      memberId,
+      body.ReservedAt ?? body.reservedAt ?? new Date(),
+      body.ExpiresAt ?? body.expiresAt ?? null,
+      body.Status ?? body.status ?? 'Active',
+    ],
+  );
+  return exports.getById(result.insertId);
+};
+
+exports.update = async (id, body) => {
+  const fields = [];
+  const values = [];
+  const map = {
+    BookID: body.BookID ?? body.bookId,
+    MemberID: body.MemberID ?? body.memberId,
+    ReservedAt: body.ReservedAt ?? body.reservedAt,
+    ExpiresAt: body.ExpiresAt ?? body.expiresAt,
+    Status: body.Status ?? body.status,
+  };
+
+  Object.entries(map).forEach(([key, value]) => {
+    if (value !== undefined) {
+      fields.push(`${key} = ?`);
+      values.push(value);
+    }
+  });
+
+  if (!fields.length) return 0;
+  values.push(id);
+  const [result] = await db.query(
+    `UPDATE Reservations SET ${fields.join(', ')} WHERE ReservationID = ?`,
+    values,
+  );
+  return result.affectedRows;
+};
+
 exports.updateStatus = async (id, status) => {
   const [result] = await db.query(
     'UPDATE Reservations SET Status = ? WHERE ReservationID = ?',
     [status, id],
   );
+  return result.affectedRows;
+};
+
+exports.delete = async (id) => {
+  const [result] = await db.query('DELETE FROM Reservations WHERE ReservationID = ?', [id]);
   return result.affectedRows;
 };
 

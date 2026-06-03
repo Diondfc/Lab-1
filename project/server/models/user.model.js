@@ -65,10 +65,12 @@ class User {
 
       const [result] = await conn.query(
         `INSERT INTO Users
-         (Name, Email, Password, PasswordHash, PhoneNumber, EmailConfirmed, LockoutEnabled, AccessFailedCount, Role, Status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (Name, FirstName, LastName, Email, Password, PasswordHash, PhoneNumber, EmailConfirmed, LockoutEnabled, AccessFailedCount, Role, Status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           full_name,
+          firstName,
+          lastName,
           email,
           password,
           password,

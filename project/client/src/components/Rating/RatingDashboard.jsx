@@ -34,7 +34,13 @@ const RatingDashboard = () => {
         setError('');
       } catch (err) {
         console.error('Error fetching ratings:', err);
-        setError('Failed to load ratings. Please try again later.');
+        const serverMessage = err.response?.data?.message;
+        const serverDetail = err.response?.data?.error;
+        setError(
+          serverDetail && serverMessage
+            ? `${serverMessage}: ${serverDetail}`
+            : serverMessage || serverDetail || 'Failed to load ratings. Please try again later.'
+        );
       } finally {
         setIsLoading(false);
       }

@@ -4,9 +4,13 @@ import { isStaffRole } from '../../lib/roles.js'
 function AdminRoute() {
   const { user } = useOutletContext() || {}
   const storedUser = localStorage.getItem('user')
+  const token = localStorage.getItem('token')
   const currentUser = user || (storedUser ? JSON.parse(storedUser) : null)
 
-  if (!currentUser) {
+  if (!currentUser || !token) {
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     return <Navigate to="/login" replace />
   }
 

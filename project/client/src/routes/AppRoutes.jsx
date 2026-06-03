@@ -33,6 +33,7 @@ import UserManagementDashboard from '../pages/UserManagementDashboard.jsx'
 import ReservationQueueDashboard from '../pages/ReservationQueueDashboard.jsx'
 import AuditLogsDashboard from '../pages/AuditLogsDashboard.jsx'
 import LibraryReportsDashboard from '../pages/LibraryReportsDashboard.jsx'
+import AdminCrudPage from '../pages/AdminCrudPage.jsx'
 
 export default function AppRoutes() {
   return (
@@ -57,6 +58,7 @@ export default function AppRoutes() {
           <Route path="/admin/ratings" element={<RatingDashboard />} />
           <Route path="/admin/role-history" element={<RoleHistoryDashboard />} />
           <Route path="/admin/users" element={<UserManagementDashboard />} />
+          <Route path="/admin/crud/:resource" element={<AdminCrudPage />} />
           <Route path="/admin/reservations" element={<ReservationQueueDashboard />} />
           <Route path="/admin/audit-logs" element={<AuditLogsDashboard />} />
           <Route path="/admin/reports" element={<LibraryReportsDashboard />} />

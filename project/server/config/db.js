@@ -335,6 +335,8 @@ async function verifyConnection() {
         CREATE TABLE IF NOT EXISTS Authors (
           AuthorID INT UNSIGNED NOT NULL AUTO_INCREMENT,
           Name VARCHAR(255) NOT NULL,
+          FirstName VARCHAR(120) NULL,
+          LastName VARCHAR(120) NULL,
           Bio TEXT NULL,
           PRIMARY KEY (AuthorID),
           UNIQUE KEY uq_authors_name (Name)
@@ -345,6 +347,8 @@ async function verifyConnection() {
         CREATE TABLE IF NOT EXISTS Publishers (
           PublisherID INT UNSIGNED NOT NULL AUTO_INCREMENT,
           Name VARCHAR(255) NOT NULL,
+          Address VARCHAR(255) NULL,
+          Phone VARCHAR(32) NULL,
           PRIMARY KEY (PublisherID),
           UNIQUE KEY uq_publishers_name (Name)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -354,7 +358,14 @@ async function verifyConnection() {
         CREATE TABLE IF NOT EXISTS Members (
           MemberID INT UNSIGNED NOT NULL AUTO_INCREMENT,
           UserID INT UNSIGNED NOT NULL,
+          FirstName VARCHAR(120) NULL,
+          LastName VARCHAR(120) NULL,
+          Email VARCHAR(255) NULL,
+          Phone VARCHAR(32) NULL,
+          Address VARCHAR(255) NULL,
+          JoinedAt DATE NULL,
           MembershipCode VARCHAR(64) NOT NULL,
+          Status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
           IsActive TINYINT(1) NOT NULL DEFAULT 1,
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (MemberID),
@@ -363,6 +374,47 @@ async function verifyConnection() {
           CONSTRAINT fk_members_user
             FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+
+      if (!(await columnExists('Categories', 'Description'))) {
+        await conn.execute('ALTER TABLE Categories ADD COLUMN Description TEXT NULL AFTER CategoryName')
+      }
+      if (!(await columnExists('Authors', 'FirstName'))) {
+        await conn.execute('ALTER TABLE Authors ADD COLUMN FirstName VARCHAR(120) NULL AFTER Name')
+      }
+      if (!(await columnExists('Authors', 'LastName'))) {
+        await conn.execute('ALTER TABLE Authors ADD COLUMN LastName VARCHAR(120) NULL AFTER FirstName')
+      }
+      if (!(await columnExists('Publishers', 'Address'))) {
+        await conn.execute('ALTER TABLE Publishers ADD COLUMN Address VARCHAR(255) NULL AFTER Name')
+      }
+      if (!(await columnExists('Publishers', 'Phone'))) {
+        await conn.execute('ALTER TABLE Publishers ADD COLUMN Phone VARCHAR(32) NULL AFTER Address')
+      }
+      const memberColumnAdds = [
+        ['FirstName', 'FirstName VARCHAR(120) NULL AFTER UserID'],
+        ['LastName', 'LastName VARCHAR(120) NULL AFTER FirstName'],
+        ['Email', 'Email VARCHAR(255) NULL AFTER LastName'],
+        ['Phone', 'Phone VARCHAR(32) NULL AFTER Email'],
+        ['Address', 'Address VARCHAR(255) NULL AFTER Phone'],
+        ['JoinedAt', 'JoinedAt DATE NULL AFTER Address'],
+        ['Status', "Status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active' AFTER MembershipCode"],
+      ]
+      for (const [column, ddl] of memberColumnAdds) {
+        if (!(await columnExists('Members', column))) {
+          await conn.execute(`ALTER TABLE Members ADD COLUMN ${ddl}`)
+        }
+      }
+      await conn.execute(`
+        UPDATE Members m
+        JOIN Users u ON u.UserID = m.UserID
+        SET
+          m.FirstName = COALESCE(m.FirstName, u.FirstName),
+          m.LastName = COALESCE(m.LastName, u.LastName),
+          m.Email = COALESCE(m.Email, u.Email),
+          m.Phone = COALESCE(m.Phone, u.PhoneNumber),
+          m.JoinedAt = COALESCE(m.JoinedAt, DATE(m.created_at)),
+          m.Status = CASE WHEN m.IsActive = 1 THEN 'Active' ELSE 'Inactive' END
       `)
 
       await conn.execute(`

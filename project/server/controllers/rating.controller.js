@@ -2,7 +2,48 @@ const pool = require('../config/db');
 const { getUserId, isStaffRole, getUserRole } = require('../middlewares/auth');
 const { ROLES } = require('../lib/roles');
 
+async function ensureReviewTables() {
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS BookReviews (
+      ReviewID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+      BookID INT UNSIGNED NOT NULL,
+      MemberID INT UNSIGNED NOT NULL,
+      Rating TINYINT UNSIGNED NOT NULL,
+      ReviewText TEXT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (ReviewID),
+      KEY idx_review_book (BookID),
+      KEY idx_review_member (MemberID),
+      CONSTRAINT fk_review_book FOREIGN KEY (BookID) REFERENCES Books (BookID) ON DELETE CASCADE,
+      CONSTRAINT fk_review_member FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE CASCADE,
+      CONSTRAINT chk_review_rating CHECK (Rating BETWEEN 1 AND 5)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS ratings (
+      id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+      book_id INT UNSIGNED NOT NULL,
+      user_id INT UNSIGNED NOT NULL,
+      MemberID INT UNSIGNED NULL,
+      rating_value TINYINT UNSIGNED NOT NULL,
+      comment TEXT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_ratings_book (book_id),
+      KEY idx_ratings_user (user_id),
+      KEY idx_ratings_member (MemberID),
+      CONSTRAINT fk_ratings_book FOREIGN KEY (book_id) REFERENCES Books (BookID) ON DELETE CASCADE,
+      CONSTRAINT fk_ratings_user FOREIGN KEY (user_id) REFERENCES Users (UserID) ON DELETE CASCADE,
+      CONSTRAINT fk_ratings_member FOREIGN KEY (MemberID) REFERENCES Members (MemberID) ON DELETE SET NULL,
+      CONSTRAINT chk_rating_value CHECK (rating_value BETWEEN 1 AND 5)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+}
+
 async function refreshBookRating(bookId) {
+  await ensureReviewTables();
   await pool.execute(
     `UPDATE Books
      SET Rating = COALESCE(
@@ -36,6 +77,7 @@ async function getOrCreateMemberId(userId) {
 
 exports.createRating = async (req, res) => {
   try {
+    await ensureReviewTables();
     const { book_id, rating_value, comment } = req.body;
     const callerRole = getUserRole(req);
     const userId = getUserId(req);
@@ -79,12 +121,13 @@ exports.createRating = async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (error) {
     console.error('Error creating rating:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 exports.getAllRatings = async (_req, res) => {
   try {
+    await ensureReviewTables();
     const [rows] = await pool.execute(
       `SELECT br.*, b.Title AS book_title
        FROM BookReviews br
@@ -94,12 +137,13 @@ exports.getAllRatings = async (_req, res) => {
     res.json(rows);
   } catch (error) {
     console.error('Error fetching ratings:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 exports.getRatingsByBookId = async (req, res) => {
   try {
+    await ensureReviewTables();
     const { bookId } = req.params;
     const [rows] = await pool.execute(
       'SELECT * FROM BookReviews WHERE BookID = ? ORDER BY created_at DESC',
@@ -108,12 +152,13 @@ exports.getRatingsByBookId = async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.error('Error fetching ratings by book:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 exports.deleteRating = async (req, res) => {
   try {
+    await ensureReviewTables();
     const { id } = req.params;
     const callerId = Number(getUserId(req));
 
@@ -139,6 +184,6 @@ exports.deleteRating = async (req, res) => {
     res.json({ message: 'Rating deleted successfully' });
   } catch (error) {
     console.error('Error deleting rating:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
