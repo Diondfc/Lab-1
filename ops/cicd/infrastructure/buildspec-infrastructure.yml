@@ -1,0 +1,31 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Starting Infrastructure Validation Phase..."
+      - echo "Build started on $(date)"
+      - echo "Checking Terraform version..."
+      - terraform --version
+      
+  build:
+    commands:
+      - echo "Validating Terraform configurations..."
+      - cd ops/iac
+      - echo "Running terraform init..."
+      - terraform init -backend=false
+      - echo "Running terraform validate..."
+      - terraform validate
+      - echo "Infrastructure validation completed successfully"
+      
+  post_build:
+    commands:
+      - echo "Post-build phase for Infrastructure..."
+      - echo "Validation completed on $(date)"
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'ops/iac'
+  name: infrastructure-artifact
+

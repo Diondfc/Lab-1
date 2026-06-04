@@ -1,0 +1,31 @@
+project/client — files you need to run the web app
+==================================================
+
+Required (must exist):
+  project/client/package.json
+  project/client/package-lock.json
+  project/client/index.html
+  project/client/vite.config.js
+  project/client/src/main.jsx
+  project/client/src/App.jsx
+  project/client/src/routes/AppRoutes.jsx
+  project/client/src/lib/api.js
+  project/client/src/components/**    (UI components)
+  project/client/src/pages/**         (pages)
+  project/client/src/contexts/**      (e.g. ThemeContext)
+
+Optional for styling/assets:
+  project/client/src/images/**
+  project/client/eslint.config.js
+
+Not required for production build on AWS:
+  node_modules/                     (npm install creates this)
+  dist/                             (npm run build creates this)
+
+Environment (local dev — usually no file needed):
+  Vite proxies /api and /uploads to http://localhost:5001
+  (see project/client/vite.config.js)
+
+Production build (AWS CodeBuild sets this):
+  VITE_API_URL=http://<ALB-DNS-NAME>
+  Example: VITE_API_URL=http://apprenticefinal-alb-staging-123.us-east-1.elb.amazonaws.com

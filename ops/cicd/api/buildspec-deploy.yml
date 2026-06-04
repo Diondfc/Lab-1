@@ -1,0 +1,100 @@
+version: 0.2
+
+env:
+  variables:
+    GIT_CLONE_DEPTH: 0
+    AWS_DEFAULT_REGION: ${AWS_REGION}
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Verifying Docker and AWS CLI..."
+      - docker --version
+      - aws --version
+      - echo "Logging in to ECR..."
+      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+  pre_build:
+    commands:
+      - echo "Starting API Deploy Phase..."
+      - echo "Deploy started on $(date)"
+      - export ECR_REPOSITORY=${ECR_REPOSITORY_URI}
+      - export IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c1-7)
+      - echo "ECR Repository - $ECR_REPOSITORY"
+      - echo "Image Tag - $IMAGE_TAG"
+      - echo "Resolving API source directory..."
+      - |
+        if [ -f server.js ] && [ -f package.json ]; then
+          export API_DIR=.
+        elif [ -d project/server ]; then
+          export API_DIR=project/server
+        else
+          echo "ERROR - project/server not found"
+          ls -la
+          exit 1
+        fi
+      - echo "API directory - $API_DIR"
+      - cd "$API_DIR"
+      - test -f Dockerfile || (echo "ERROR - Dockerfile missing (should come from build artifact)" && exit 1)
+      - echo "Building Docker image..."
+      - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+      - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REPOSITORY:latest
+      - echo "Docker image built successfully"
+
+  build:
+    commands:
+      - echo "Pushing Docker image to ECR..."
+      - docker push $ECR_REPOSITORY:$IMAGE_TAG
+      - docker push $ECR_REPOSITORY:latest
+      - echo "Image pushed to ECR successfully"
+      - echo "Updating ECS service..."
+      - aws ecs update-service --cluster ${ECS_CLUSTER_NAME} --service ${ECS_SERVICE_NAME} --force-new-deployment --region ${AWS_REGION}
+      - echo "ECS service update initiated"
+      - echo "Checking current service status..."
+      - aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].[status,runningCount,desiredCount,deployments[0].status]' --output table
+      - echo "Waiting for service to stabilize (this may take up to 15 minutes)..."
+      - |
+        MAX_WAIT_TIME=900
+        ELAPSED=0
+        INTERVAL=30
+
+        while [ $ELAPSED -lt $MAX_WAIT_TIME ]; do
+          SERVICE_STATUS=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].status' --output text)
+          RUNNING_COUNT=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].runningCount' --output text)
+          DESIRED_COUNT=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].desiredCount' --output text)
+          DEPLOYMENT_STATUS=$(aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0].deployments[0].status' --output text)
+
+          echo "[$ELAPSED/$MAX_WAIT_TIME] Service Status: $SERVICE_STATUS | Running: $RUNNING_COUNT/$DESIRED_COUNT | Deployment: $DEPLOYMENT_STATUS"
+
+          if [ "$SERVICE_STATUS" = "ACTIVE" ] && [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DEPLOYMENT_STATUS" = "PRIMARY" ]; then
+            echo "Service is stable!"
+            exit 0
+          fi
+
+          if [ "$SERVICE_STATUS" = "DRAINING" ] || [ "$DEPLOYMENT_STATUS" = "FAILED" ]; then
+            echo "Service deployment failed or is draining"
+            aws ecs list-tasks --cluster ${ECS_CLUSTER_NAME} --service-name ${ECS_SERVICE_NAME} --region ${AWS_REGION} --output table
+            exit 1
+          fi
+
+          sleep $INTERVAL
+          ELAPSED=$((ELAPSED + INTERVAL))
+        done
+
+        echo "Service did not stabilize within $MAX_WAIT_TIME seconds"
+        aws ecs describe-services --cluster ${ECS_CLUSTER_NAME} --services ${ECS_SERVICE_NAME} --region ${AWS_REGION} --query 'services[0]' --output json
+        exit 1
+      - echo "ECS service deployment completed successfully"
+
+  post_build:
+    commands:
+      - echo "Post-deploy phase for API..."
+      - echo "Deployment completed on $(date)"
+      - echo "Image - $ECR_REPOSITORY:$IMAGE_TAG"
+
+artifacts:
+  files:
+    - '**/*'
+  name: api-deploy-artifact

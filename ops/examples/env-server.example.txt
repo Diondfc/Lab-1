@@ -1,0 +1,16 @@
+# Copy these lines into project/server/.env (create the file yourself)
+# Source template in repo: project/server/.env.example
+
+PORT=5001
+CLIENT_ORIGIN=http://localhost:5173,http://localhost:5174,http://localhost:3000
+
+JWT_SECRET=change-me-in-production
+JWT_REFRESH_SECRET=change-me-refresh-secret-in-production
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=30d
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=ubt_library

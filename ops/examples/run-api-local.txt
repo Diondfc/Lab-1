@@ -1,0 +1,30 @@
+Run API locally (Windows PowerShell)
+====================================
+
+Prerequisites:
+  - Node.js 20+
+  - MySQL running with database ubt_library
+  - File: project/server/.env (see env-server.example.txt)
+
+Steps:
+
+  1. Open terminal at repo root (Lab-1).
+
+  2. Create .env if missing:
+       Copy-Item project\server\.env.example project\server\.env
+     Edit project\server\.env — set DB_PASSWORD and JWT secrets.
+
+  3. Load schema (first time):
+       cd project\server
+       npm run db:init
+
+  4. Install and start:
+       cd project\server
+       npm install
+       npm run dev
+
+  5. Check:
+       Browser or curl: http://localhost:5001/api/health
+       Expected: {"ok":true}
+
+Default port: 5001 (from .env PORT or server.js default).

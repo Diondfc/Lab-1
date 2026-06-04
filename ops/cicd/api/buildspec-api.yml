@@ -1,0 +1,50 @@
+version: 0.2
+
+env:
+  variables:
+    GIT_CLONE_DEPTH: 0
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing phase..."
+      - echo "Node $(node --version), npm $(npm --version)"
+
+  pre_build:
+    commands:
+      - echo "Starting API Build Phase..."
+      - test -d project/server || (echo "ERROR - project/server/ NOT FOUND" && exit 1)
+      - cd project/server
+      - npm ci
+      - echo "Dependencies installed"
+
+  build:
+    commands:
+      - echo "Validating API application..."
+      - test -f server.js || (echo "ERROR - server.js not found" && exit 1)
+      - test -f package.json || (echo "ERROR - package.json not found" && exit 1)
+      - node --check server.js
+      - echo "API validation completed successfully"
+
+  post_build:
+    commands:
+      - echo "Post-build phase for API..."
+      - cd ../..
+      - cp ops/examples/project-server-Dockerfile.example.txt project/server/Dockerfile
+      - cp ops/examples/project-server-dockerignore.example.txt project/server/.dockerignore
+      - echo "Docker examples copied into build artifact (project/ unchanged in git)"
+      - echo "Build completed"
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: project/server
+  exclude-paths:
+    - node_modules/**/*
+  name: api-build-artifact
+
+cache:
+  paths:
+    - 'project/server/node_modules/**/*'

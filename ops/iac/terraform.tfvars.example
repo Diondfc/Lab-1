@@ -1,0 +1,64 @@
+# Example Terraform Variables
+# Copy this file to terraform.tfvars and update with your values
+
+# AWS Configuration
+aws_region  = "us-east-1"
+environment = "staging"
+
+# Project Information
+project_name = "ApprenticeFinal"
+owner        = "YourName"
+
+# Network Configuration
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+public_subnet_cidrs   = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs  = ["10.0.11.0/24", "10.0.12.0/24"]
+database_subnet_cidrs = ["10.0.21.0/24", "10.0.22.0/24"]
+
+# RDS Configuration (UBT Library uses MySQL)
+rds_engine         = "mysql"
+rds_engine_version = "8.0"
+rds_instance_class = "db.t3.micro"
+rds_database_name  = "ubt_library"
+rds_username       = "dbadmin"
+# rds_password     = ""  # Leave empty to auto-generate
+rds_multi_az       = false  # Set to true for production
+
+# Elasticache Configuration
+elasticache_node_type      = "cache.t3.micro"
+elasticache_num_cache_nodes = 1
+
+# Compute Configuration
+api_port          = 5001
+api_cpu           = 512
+api_memory        = 1024
+api_desired_count = 2
+api_min_capacity  = 1
+api_max_capacity  = 10
+
+web_port          = 80
+web_cpu           = 256
+web_memory        = 512
+web_desired_count = 2
+web_min_capacity  = 1
+web_max_capacity  = 10
+
+# Edge Configuration (Optional - for HTTPS)
+# enable_https = false
+# domain_name = "project.yourname.com"
+# create_hosted_zone = true
+
+# Observability Configuration
+# alert_email_addresses = ["your-email@example.com"]
+# high_5xx_threshold = 10
+# high_latency_threshold = 2.0
+
+# Pipeline Configuration (Required for CI/CD pipelines)
+# Get your CodeStar connection ARN from AWS Console: CodePipeline > Settings > Connections
+codestar_connection_arn = "arn:aws:codestar-connections:us-east-1:123456789012:connection/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# Your GitHub repository in format: owner/repo-name
+repository_id = "your-username/your-repo-name"
+branch_name   = "main"  # Optional, defaults to "main"
+

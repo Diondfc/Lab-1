@@ -1,0 +1,33 @@
+Run web (client) locally (Windows PowerShell)
+=============================================
+
+Prerequisites:
+  - Node.js 20+
+  - API running at http://localhost:5001 (see run-api-local.txt)
+
+Steps:
+
+  1. Open terminal at repo root (Lab-1).
+
+  2. Install and start Vite:
+       cd project\client
+       npm install
+       npm run dev
+
+     Or fixed port 3000:
+       npm start
+
+  3. Open in browser:
+       http://localhost:5173   (npm run dev)
+       http://localhost:3000   (npm start)
+
+  API calls go to /api/* — Vite proxies to localhost:5001
+  (see project/client/vite.config.js). No .env file required for local dev.
+
+Production build (test locally):
+       cd project\client
+       $env:VITE_API_URL="http://localhost:5001"
+       npm run build
+       npm run preview
+
+Output folder: project/client/dist/

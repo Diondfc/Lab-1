@@ -1,0 +1,29 @@
+project/server — files you need to run the API
+==============================================
+
+Required (must exist):
+  project/server/package.json
+  project/server/package-lock.json
+  project/server/server.js
+  project/server/config/db.js
+  project/server/middlewares/auth.js
+  project/server/middlewares/upload.middleware.js
+  project/server/lib/roles.js
+  project/server/routes/*.js          (all route files)
+  project/server/controllers/*.js     (all controller files)
+  project/server/models/*.js          (all model files)
+
+Required before first run (create locally — not committed):
+  project/server/.env                 (copy from .env.example)
+
+Database (pick one):
+  project/server/schema.sql           (MySQL schema)
+  project/server/scripts/apply-schema.js   (npm run db:init)
+
+Optional:
+  project/server/uploads/             (created at runtime for book images)
+  project/server/.env.example         (template only)
+
+Not required for local dev:
+  Dockerfile / .dockerignore          (only for AWS Docker deploy; see
+                                       project-server-Dockerfile.example.txt)

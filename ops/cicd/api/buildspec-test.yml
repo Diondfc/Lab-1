@@ -1,0 +1,239 @@
+version: 0.2
+
+env:
+  variables:
+    GIT_CLONE_DEPTH: 0
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing curl, jq, and AWS CLI for health checks and diagnostics..."
+      - apt-get update && apt-get install -y curl jq unzip
+      - |
+        if ! command -v aws &> /dev/null; then
+          echo "Installing AWS CLI..."
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          ./aws/install
+          rm -rf aws awscliv2.zip
+        fi
+      - aws --version || echo "AWS CLI installation failed"
+
+  pre_build:
+    commands:
+      - echo "Starting API Test Phase..."
+      - echo "Test started on $(date)"
+      - echo "Waiting for service to be ready (deployment may take several minutes)..."
+      - |
+        # Wait for ECS service to stabilize and targets to become healthy
+        if [ -n "$ECS_CLUSTER_NAME" ] && [ -n "$ECS_SERVICE_NAME" ] && [ -n "$AWS_REGION" ]; then
+          echo "Checking ECS service status..."
+          MAX_WAIT=300  # 5 minutes max wait
+          ELAPSED=0
+          INTERVAL=15
+          
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            SERVICE_STATUS=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER_NAME" \
+              --services "$ECS_SERVICE_NAME" \
+              --region "$AWS_REGION" \
+              --query 'services[0].[status,runningCount,desiredCount,deployments[0].status,deployments[0].runningCount]' \
+              --output text 2>/dev/null || echo "UNKNOWN 0 0 UNKNOWN 0")
+            
+            echo "Service status: $SERVICE_STATUS"
+            
+            # Check if service is stable and has running tasks
+            RUNNING=$(echo $SERVICE_STATUS | awk '{print $2}')
+            DESIRED=$(echo $SERVICE_STATUS | awk '{print $3}')
+            
+            if [ "$RUNNING" = "$DESIRED" ] && [ "$RUNNING" -gt 0 ]; then
+              echo "ECS service has $RUNNING/$DESIRED tasks running"
+              break
+            fi
+            
+            echo "Waiting for ECS service to stabilize... ($ELAPSED/$MAX_WAIT seconds)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+        else
+          echo "ECS variables not set, waiting 90 seconds..."
+          sleep 90
+        fi
+
+  build:
+    commands:
+      - echo "Testing API health endpoint..."
+      - export HEALTH_URL=http://${ALB_DNS_NAME}/api/health
+      - echo "Health check URL - $HEALTH_URL"
+      - |
+        # Try to find and check target group health
+        if [ -n "$ALB_DNS_NAME" ] && [ -n "$AWS_REGION" ]; then
+          echo "Attempting to find target group from ALB..."
+          # Extract ALB name from DNS (format: name-1234567890.region.elb.amazonaws.com)
+          ALB_NAME=$(echo "$ALB_DNS_NAME" | cut -d'.' -f1 | sed 's/-[0-9]*$//')
+          
+          if [ -n "$ALB_NAME" ]; then
+            echo "Looking for ALB: $ALB_NAME"
+            ALB_ARN=$(aws elbv2 describe-load-balancers \
+              --region "$AWS_REGION" \
+              --query "LoadBalancers[?contains(DNSName, '$ALB_NAME')].LoadBalancerArn" \
+              --output text 2>/dev/null | head -1)
+            
+            if [ -n "$ALB_ARN" ] && [ "$ALB_ARN" != "None" ]; then
+              echo "Found ALB: $ALB_ARN"
+              # Get target groups for this ALB
+              TG_ARN=$(aws elbv2 describe-target-groups \
+                --load-balancer-arn "$ALB_ARN" \
+                --region "$AWS_REGION" \
+                --query 'TargetGroups[?contains(TargetGroupName, `api`)].TargetGroupArn' \
+                --output text 2>/dev/null | head -1)
+              
+              if [ -n "$TG_ARN" ] && [ "$TG_ARN" != "None" ]; then
+                echo "Found API target group: $TG_ARN"
+                echo "Checking target group health status..."
+                aws elbv2 describe-target-health \
+                  --target-group-arn "$TG_ARN" \
+                  --region "$AWS_REGION" \
+                  --query 'TargetHealthDescriptions[*].[Target.Id,TargetHealth.State,TargetHealth.Reason]' \
+                  --output table 2>/dev/null || echo "Could not retrieve target group health"
+                
+                # Wait for at least one healthy target
+                echo "Waiting for at least one healthy target..."
+                MAX_TARGET_WAIT=180  # 3 minutes
+                TARGET_ELAPSED=0
+                TARGET_INTERVAL=10
+                
+                while [ $TARGET_ELAPSED -lt $MAX_TARGET_WAIT ]; do
+                  HEALTHY_COUNT=$(aws elbv2 describe-target-health \
+                    --target-group-arn "$TG_ARN" \
+                    --region "$AWS_REGION" \
+                    --query 'TargetHealthDescriptions[?TargetHealth.State==`healthy`] | length(@)' \
+                    --output text 2>/dev/null || echo "0")
+                  
+                  if [ "$HEALTHY_COUNT" -gt 0 ]; then
+                    echo "Found $HEALTHY_COUNT healthy target(s)"
+                    break
+                  fi
+                  
+                  echo "No healthy targets yet... ($TARGET_ELAPSED/$MAX_TARGET_WAIT seconds)"
+                  sleep $TARGET_INTERVAL
+                  TARGET_ELAPSED=$((TARGET_ELAPSED + TARGET_INTERVAL))
+                done
+              else
+                echo "Could not find API target group for ALB"
+              fi
+            else
+              echo "Could not find ALB with name containing: $ALB_NAME"
+            fi
+          fi
+        fi
+      - |
+        export MAX_RETRIES=20
+        export RETRY_COUNT=0
+        export RETRY_INTERVAL=15
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL 2>&1 || echo "000")
+          echo "HTTP Status Code - $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Response details:"
+            curl -v $HEALTH_URL 2>&1 | head -20 || echo "Could not connect to $HEALTH_URL"
+            
+            case "$HTTP_CODE" in
+              "000")
+                echo "⚠ Connection failed: Could not reach the endpoint."
+                ;;
+              "502")
+                echo "⚠ 502 Bad Gateway: ALB cannot reach healthy targets. API service may still be deploying or containers may be unhealthy."
+                ;;
+              "503")
+                echo "⚠ 503 Service Unavailable: API service is temporarily unavailable."
+                ;;
+              "504")
+                echo "⚠ 504 Gateway Timeout: Request timed out."
+                ;;
+            esac
+          fi
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✓ Health check passed!"
+            echo "Health check response:"
+            curl -s "$HEALTH_URL" | jq . || curl -s "$HEALTH_URL"
+            echo ""
+            echo "Response headers:"
+            curl -s -I "$HEALTH_URL" | head -10
+            exit 0
+          fi
+          
+          RETRY_COUNT=$((RETRY_COUNT + 1))
+          if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            echo "Waiting $RETRY_INTERVAL seconds before retry..."
+            sleep $RETRY_INTERVAL
+          fi
+        done
+        
+        echo "✗ Health check failed after $MAX_RETRIES attempts"
+        echo ""
+        echo "=== Last attempt details ==="
+        curl -v "$HEALTH_URL" 2>&1 | head -30
+        echo ""
+        
+        if [ -n "$ECS_CLUSTER_NAME" ] && [ -n "$ECS_SERVICE_NAME" ] && [ -n "$AWS_REGION" ]; then
+          echo "=== ECS Service Status ==="
+          echo "Cluster: $ECS_CLUSTER_NAME"
+          echo "Service: $ECS_SERVICE_NAME"
+          echo ""
+            
+          aws ecs describe-services \
+            --cluster "$ECS_CLUSTER_NAME" \
+            --services "$ECS_SERVICE_NAME" \
+            --region "$AWS_REGION" \
+            --query 'services[0].[status,runningCount,desiredCount,deployments[0].status,deployments[0].runningCount]' \
+            --output table 2>/dev/null || echo "Could not retrieve ECS service status"
+          
+          echo ""
+          echo "=== Recent Task Status ==="
+          aws ecs list-tasks \
+            --cluster "$ECS_CLUSTER_NAME" \
+            --service-name "$ECS_SERVICE_NAME" \
+            --region "$AWS_REGION" \
+            --max-items 5 \
+            --output table 2>/dev/null || echo "Could not retrieve task list"
+          
+          echo ""
+          echo "=== Service Events (last 5) ==="
+          aws ecs describe-services \
+            --cluster "$ECS_CLUSTER_NAME" \
+            --services "$ECS_SERVICE_NAME" \
+            --region "$AWS_REGION" \
+            --query 'services[0].events[:5].[createdAt,message]' \
+            --output table 2>/dev/null || echo "Could not retrieve service events"
+        else
+          echo "ECS_CLUSTER_NAME, ECS_SERVICE_NAME, or AWS_REGION not available for diagnostics"
+        fi
+        
+        echo ""
+        echo "=== Possible issues ==="
+        echo "  - API service containers may not be running"
+        echo "  - Health checks may be failing"
+        echo "  - Service may still be deploying (check ECS service status above)"
+        echo "  - Target group may have no healthy targets"
+        echo "  - Database connection may be failing"
+        echo "  - API may be crashing on startup"
+        echo "  - Check CloudWatch logs for container errors"
+        exit 1
+
+  post_build:
+    commands:
+      - echo "Post-test phase for API..."
+      - echo "Tests completed on $(date)"
+
+artifacts:
+  files:
+    - '**/*'
+  name: api-test-artifact
+

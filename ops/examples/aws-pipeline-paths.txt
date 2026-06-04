@@ -1,0 +1,41 @@
+AWS infra — how project/ maps to ops/ (no project/ code changes in git)
+========================================================================
+
+Repository layout:
+  project/server/     → API (Node + Express + MySQL)
+  project/client/     → Web (Vite + React)
+  ops/iac/            → Terraform
+  ops/cicd/           → CodeBuild buildspecs
+  ops/examples/       → These .txt run guides + Docker examples
+
+CodePipeline buildspec paths (already configured in ops/iac/main.tf):
+  API build:     ops/cicd/api/buildspec-api.yml
+  API deploy:    ops/cicd/api/buildspec-deploy.yml
+  API test:      ops/cicd/api/buildspec-test.yml
+  Web build:     ops/cicd/web/buildspec-web.yml
+  Web deploy:    ops/cicd/web/buildspec-deploy.yml
+  Web test:      ops/cicd/web/buildspec-test.yml
+  IaC validate:  ops/cicd/infrastructure/buildspec-infrastructure.yml
+  IaC apply:     ops/cicd/infrastructure/buildspec-apply.yml
+
+Terraform variables (copy and edit):
+  ops/iac/terraform.tfvars.example  →  ops/iac/terraform.tfvars
+
+ECS API environment (set by Terraform, matches project/server/.env names):
+  PORT, NODE_ENV, DB_HOST, DB_PORT, DB_USER, DB_NAME
+  DB_PASSWORD         (from Secrets Manager)
+  JWT_SECRET, JWT_REFRESH_SECRET
+
+Health check URL (ALB):
+  http://<alb-dns>/api/health
+
+Web build env (CodeBuild):
+  VITE_API_URL=http://<alb-dns>
+  (must NOT include /api suffix — client adds /api/... paths)
+
+Optional manual Docker deploy:
+  Copy ops/examples/project-server-Dockerfile.example.txt
+       to project/server/Dockerfile
+  Copy ops/examples/project-server-dockerignore.example.txt
+       to project/server/.dockerignore
+  Or let CodeBuild copy them during deploy (automatic).

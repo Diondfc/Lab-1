@@ -1,0 +1,158 @@
+version: 0.2
+
+env:
+  variables:
+    GIT_CLONE_DEPTH: 0
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing curl and AWS CLI for health checks and diagnostics..."
+      - apt-get update && apt-get install -y curl unzip
+      - |
+        if ! command -v aws &> /dev/null; then
+          echo "Installing AWS CLI..."
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          ./aws/install
+          rm -rf aws awscliv2.zip
+        fi
+      - aws --version || echo "AWS CLI installation failed"
+
+  pre_build:
+    commands:
+      - echo "Starting Web Test Phase..."
+      - echo "Test started on $(date)"
+      - echo "Waiting for service to be ready (deployment may take several minutes)..."
+      - sleep 60
+
+  build:
+    commands:
+      - echo "Testing Web frontend endpoint..."
+      - |
+        # Use CloudFront URL if available, otherwise use S3 website endpoint
+        if [ -n "${CLOUDFRONT_DOMAIN_NAME}" ]; then
+          export WEB_URL="https://${CLOUDFRONT_DOMAIN_NAME}"
+          echo "Testing via CloudFront: $WEB_URL"
+        elif [ -n "${WEB_S3_BUCKET_NAME}" ]; then
+          # Get S3 website endpoint
+          export AWS_REGION=${AWS_REGION:-us-east-1}
+          export WEB_URL="http://${WEB_S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
+          echo "Testing via S3 website endpoint: $WEB_URL"
+        else
+          export WEB_URL=${ALB_DNS_NAME}
+          echo "Testing via ALB: $WEB_URL (Note: Web is now served from S3/CloudFront)"
+        fi
+      - echo "Web URL - $WEB_URL"
+      - |
+        export MAX_RETRIES=20
+        export RETRY_COUNT=0
+        export RETRY_INTERVAL=15
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
+          
+          # Get HTTP status code
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $WEB_URL 2>&1 || echo "000")
+          echo "HTTP Status Code - $HTTP_CODE"
+          
+          # Get more details on error
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "301" ] && [ "$HTTP_CODE" != "302" ]; then
+            echo "Response details:"
+            curl -v $WEB_URL 2>&1 | head -20 || echo "Could not connect to $WEB_URL"
+            
+            # Explain common error codes
+            case "$HTTP_CODE" in
+              "502")
+                echo "⚠ 502 Bad Gateway: ALB cannot reach healthy targets. Service may still be deploying or containers may be unhealthy."
+                ;;
+              "503")
+                echo "⚠ 503 Service Unavailable: Service is temporarily unavailable."
+                ;;
+              "504")
+                echo "⚠ 504 Gateway Timeout: Request timed out."
+                ;;
+              "000")
+                echo "⚠ Connection failed: Could not reach the endpoint."
+                ;;
+            esac
+          fi
+          
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
+            echo "✓ Web frontend is accessible!"
+            echo "Final response:"
+            curl -s -I $WEB_URL | head -10
+            exit 0
+          fi
+          
+          RETRY_COUNT=$((RETRY_COUNT + 1))
+          if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            echo "Waiting $RETRY_INTERVAL seconds before retry..."
+            sleep $RETRY_INTERVAL
+          fi
+        done
+        
+        echo "✗ Web frontend check failed after $MAX_RETRIES attempts"
+        echo ""
+        echo "=== Last attempt details ==="
+        curl -v $WEB_URL 2>&1 | head -30
+        echo ""
+        
+        # Check ECS service status if available
+        if [ -n "$ECS_CLUSTER_NAME" ] && [ -n "$ECS_SERVICE_NAME" ] && [ -n "$AWS_REGION" ]; then
+          echo "=== ECS Service Status ==="
+          echo "Cluster: $ECS_CLUSTER_NAME"
+          echo "Service: $ECS_SERVICE_NAME"
+          echo ""
+          
+          # Get service status
+          aws ecs describe-services \
+            --cluster "$ECS_CLUSTER_NAME" \
+            --services "$ECS_SERVICE_NAME" \
+            --region "$AWS_REGION" \
+            --query 'services[0].[status,runningCount,desiredCount,deployments[0].status,deployments[0].runningCount]' \
+            --output table 2>/dev/null || echo "Could not retrieve ECS service status"
+          
+          echo ""
+          echo "=== Recent Task Status ==="
+          aws ecs list-tasks \
+            --cluster "$ECS_CLUSTER_NAME" \
+            --service-name "$ECS_SERVICE_NAME" \
+            --region "$AWS_REGION" \
+            --max-items 5 \
+            --output table 2>/dev/null || echo "Could not retrieve task list"
+          
+          echo ""
+          echo "=== Service Events (last 5) ==="
+          aws ecs describe-services \
+            --cluster "$ECS_CLUSTER_NAME" \
+            --services "$ECS_SERVICE_NAME" \
+            --region "$AWS_REGION" \
+            --query 'services[0].events[:5].[createdAt,message]' \
+            --output table 2>/dev/null || echo "Could not retrieve service events"
+        else
+          echo "ECS_CLUSTER_NAME, ECS_SERVICE_NAME, or AWS_REGION not available for diagnostics"
+        fi
+        
+        echo ""
+        echo "=== Possible issues ==="
+        echo "  - Web service containers may not be running"
+        echo "  - Health checks may be failing"
+        echo "  - Service may still be deploying (check ECS service status above)"
+        echo "  - Target group may have no healthy targets"
+        echo "  - Containers may be crashing on startup"
+        echo "  - Check CloudWatch logs for container errors"
+        exit 1
+
+  post_build:
+    commands:
+      - echo "Post-test phase for Web..."
+      - echo "Tests completed on $(date)"
+
+artifacts:
+  files:
+    - '**/*'
+  name: web-test-artifact
+
