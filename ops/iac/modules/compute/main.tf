@@ -224,10 +224,13 @@ resource "aws_lb_listener" "http" {
   default_action {
     type = var.alb_certificate_arn != "" ? "redirect" : "forward"
 
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+    dynamic "redirect" {
+      for_each = var.alb_certificate_arn != "" ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
     }
 
     dynamic "forward" {
@@ -366,7 +369,7 @@ resource "aws_ecs_service" "api" {
   load_balancer {
     target_group_arn = aws_lb_target_group.api.arn
     container_name   = "api"
-    container_port   = var.api_port # ← 5000
+    container_port   = var.api_port
   }
 
   deployment_minimum_healthy_percent = 100

@@ -82,9 +82,15 @@ resource "aws_iam_role_policy" "ecs_task_secrets" {
 
 data "aws_caller_identity" "current" {}
 
-# Give task execution role access to the RDS password secret
-resource "aws_iam_role_policy" "ecs_task_execution_rds_secret" {
-  name = "ecs-task-execution-rds-secret-access"
+locals {
+  ecs_task_execution_secret_arns = length(var.secrets_manager_arns) > 0 ? var.secrets_manager_arns : [
+    "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:${var.project_name}-rds-password-${var.environment}-*"
+  ]
+}
+
+# Give the task execution role access to secrets injected into ECS containers.
+resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
+  name = "${var.project_name}-ecs-task-execution-secrets-${var.environment}"
   role = aws_iam_role.ecs_task_execution.id
 
   policy = jsonencode({
@@ -96,7 +102,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_rds_secret" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:ApprenticeFinal-rds-password-${var.environment}-*"
+        Resource = local.ecs_task_execution_secret_arns
       }
     ]
   })

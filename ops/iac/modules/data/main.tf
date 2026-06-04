@@ -38,14 +38,6 @@ resource "aws_security_group" "rds" {
   description = "Security group for RDS database"
   vpc_id      = var.vpc_id
 
-  ingress {
-    description     = "PostgreSQL/MySQL from ECS"
-    from_port       = var.rds_port
-    to_port         = var.rds_port
-    protocol        = "tcp"
-    security_groups = var.ecs_security_group_ids
-  }
-
   egress {
     description = "Allow all outbound"
     from_port   = 0
@@ -60,6 +52,33 @@ resource "aws_security_group" "rds" {
       Name = "${var.project_name}-rds-sg-${var.environment}"
     }
   )
+}
+
+
+# RDS ingress rules are separate resources so callers can provide security group
+# sources, CIDR sources, or both without creating a module dependency cycle.
+resource "aws_security_group_rule" "rds_from_ecs_security_groups" {
+  for_each = toset(var.ecs_security_group_ids)
+
+  type                     = "ingress"
+  description              = "MySQL from ECS security group"
+  from_port                = var.rds_port
+  to_port                  = var.rds_port
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds.id
+  source_security_group_id = each.value
+}
+
+resource "aws_security_group_rule" "rds_from_allowed_cidrs" {
+  for_each = toset(var.allowed_cidr_blocks)
+
+  type              = "ingress"
+  description       = "MySQL from allowed private CIDR"
+  from_port         = var.rds_port
+  to_port           = var.rds_port
+  protocol          = "tcp"
+  security_group_id = aws_security_group.rds.id
+  cidr_blocks       = [each.value]
 }
 
 # RDS Instance
@@ -116,14 +135,6 @@ resource "aws_security_group" "elasticache" {
   description = "Security group for Elasticache Redis"
   vpc_id      = var.vpc_id
 
-  ingress {
-    description     = "Redis from ECS"
-    from_port       = var.elasticache_port
-    to_port         = var.elasticache_port
-    protocol        = "tcp"
-    security_groups = var.ecs_security_group_ids
-  }
-
   egress {
     description = "Allow all outbound"
     from_port   = 0
@@ -140,6 +151,32 @@ resource "aws_security_group" "elasticache" {
   )
 }
 
+
+
+# Elasticache ingress rules are separate resources for the same reason as RDS.
+resource "aws_security_group_rule" "elasticache_from_ecs_security_groups" {
+  for_each = toset(var.ecs_security_group_ids)
+
+  type                     = "ingress"
+  description              = "Redis from ECS security group"
+  from_port                = var.elasticache_port
+  to_port                  = var.elasticache_port
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.elasticache.id
+  source_security_group_id = each.value
+}
+
+resource "aws_security_group_rule" "elasticache_from_allowed_cidrs" {
+  for_each = toset(var.allowed_cidr_blocks)
+
+  type              = "ingress"
+  description       = "Redis from allowed private CIDR"
+  from_port         = var.elasticache_port
+  to_port           = var.elasticache_port
+  protocol          = "tcp"
+  security_group_id = aws_security_group.elasticache.id
+  cidr_blocks       = [each.value]
+}
 
 # Elasticache Replication Group (Redis)
 resource "aws_elasticache_replication_group" "main" {

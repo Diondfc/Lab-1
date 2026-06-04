@@ -92,14 +92,14 @@ module "iam" {
   aws_account_id = local.aws_account_id
   tags           = local.common_tags
 
-  # These will be populated when ECS and data modules are created
-  secrets_manager_arns = []
+  # Allow ECS to read the database password injected into the API task.
+  secrets_manager_arns = [module.data.rds_password_secret_arn]
   ssm_parameter_arns   = []
   enable_rds_access    = false
   enable_lambda_role   = false
 }
 
-# Compute Module - ECS Cluster, Services, ALB (must be created before data module)
+# Compute Module - ECS Cluster, Services, ALB
 module "compute" {
   source = "./modules/compute"
 
@@ -130,6 +130,13 @@ module "compute" {
     {
       name  = "PORT"
       value = tostring(var.api_port)
+    },
+    {
+      name = "CLIENT_ORIGIN"
+      value = join(",", compact([
+        "http://${lower(var.project_name)}-web-${var.environment}-${local.aws_account_id}.s3-website-${local.aws_region}.amazonaws.com",
+        var.domain_name != "" ? "https://${var.domain_name}" : ""
+      ]))
     },
     {
       name  = "DB_HOST"
@@ -172,7 +179,7 @@ module "compute" {
   depends_on = [module.iam, module.network]
 }
 
-# Data Module - RDS + Elasticache (depends on compute for security group)
+# Data Module - RDS + Elasticache
 module "data" {
   source = "./modules/data"
 
@@ -181,7 +188,10 @@ module "data" {
   vpc_id                        = module.network.vpc_id
   database_subnet_group_name    = module.network.database_subnet_group_name
   elasticache_subnet_group_name = module.network.elasticache_subnet_group_name
-  ecs_security_group_ids        = [module.compute.ecs_security_group_id]
+  # Use private subnet CIDRs instead of the ECS security group here so the data
+  # module can be created before compute and avoid a Terraform module cycle.
+  ecs_security_group_ids        = []
+  allowed_cidr_blocks          = var.private_subnet_cidrs
 
   # RDS Configuration
   rds_engine         = var.rds_engine

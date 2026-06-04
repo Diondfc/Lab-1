@@ -11,19 +11,20 @@ Steps:
   1. Open terminal at repo root (Lab-1).
 
   2. Create .env if missing:
-       Copy-Item project\server\.env.example project\server\.env
+       Copy-Item ops\examples\env-server.example.txt project\server\.env
      Edit project\server\.env — set DB_PASSWORD and JWT secrets.
 
-  3. Load schema (first time):
-       cd project\server
-       npm run db:init
-
-  4. Install and start:
+  3. Install dependencies:
        cd project\server
        npm install
+
+  4. Load schema (first time):
+       npm run db:init
+
+  5. Start the API:
        npm run dev
 
-  5. Check:
+  6. Check:
        Browser or curl: http://localhost:5001/api/health
        Expected: {"ok":true}
 

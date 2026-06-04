@@ -22,7 +22,7 @@ Terraform variables (copy and edit):
   ops/iac/terraform.tfvars.example  →  ops/iac/terraform.tfvars
 
 ECS API environment (set by Terraform, matches project/server/.env names):
-  PORT, NODE_ENV, DB_HOST, DB_PORT, DB_USER, DB_NAME
+  PORT, NODE_ENV, CLIENT_ORIGIN, DB_HOST, DB_PORT, DB_USER, DB_NAME
   DB_PASSWORD         (from Secrets Manager)
   JWT_SECRET, JWT_REFRESH_SECRET
 
