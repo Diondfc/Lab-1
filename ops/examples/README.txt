@@ -17,4 +17,4 @@ Docker on AWS (optional — copy into project/server yourself if you want):
   - project-server-dockerignore.example.txt → project/server/.dockerignore
 
 CI/CD deploy copies those examples automatically during CodeBuild
-(see ops/cicd/api/buildspec-deploy.yml). Your git copy of project/ stays unchanged.
+(see ops/cicd/api/buildspec-api.yml). Your git copy of project/ stays unchanged.

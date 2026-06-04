@@ -14,7 +14,7 @@ Required (must exist):
   project/server/models/*.js          (all model files)
 
 Required before first run (create locally — not committed):
-  project/server/.env                 (copy from .env.example)
+  project/server/.env                 (copy from ops/examples/env-server.example.txt)
 
 Database (pick one):
   project/server/schema.sql           (MySQL schema)
@@ -22,7 +22,6 @@ Database (pick one):
 
 Optional:
   project/server/uploads/             (created at runtime for book images)
-  project/server/.env.example         (template only)
 
 Not required for local dev:
   Dockerfile / .dockerignore          (only for AWS Docker deploy; see

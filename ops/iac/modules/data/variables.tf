@@ -26,8 +26,15 @@ variable "elasticache_subnet_group_name" {
 }
 
 variable "ecs_security_group_ids" {
-  description = "List of ECS security group IDs that need database access"
+  description = "List of ECS security group IDs that need database access. Leave empty when bootstrapping compute from this data module."
   type        = list(string)
+  default     = []
+}
+
+variable "allowed_cidr_blocks" {
+  description = "CIDR blocks allowed to access RDS and Elasticache. Useful to avoid a circular dependency on the ECS security group."
+  type        = list(string)
+  default     = []
 }
 
 # RDS Variables
@@ -121,9 +128,9 @@ variable "rds_maintenance_window" {
 }
 
 variable "rds_cloudwatch_logs_exports" {
-  description = "List of log types to export to CloudWatch"
+  description = "List of log types to export to CloudWatch. Defaults to empty because MySQL and PostgreSQL accept different values."
   type        = list(string)
-  default     = ["postgresql", "upgrade"]
+  default     = []
 }
 
 # Elasticache Variables
