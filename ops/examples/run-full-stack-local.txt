@@ -1,0 +1,25 @@
+Run full stack locally
+======================
+
+You need TWO terminals.
+
+Terminal 1 — API:
+  See: ops/examples/run-api-local.txt
+
+Terminal 2 — Web:
+  See: ops/examples/run-web-local.txt
+
+Order: start API first, then web.
+
+Quick checklist:
+  [ ] MySQL up, database ubt_library exists
+  [ ] project/server/.env configured
+  [ ] npm run db:init (once)
+  [ ] API: http://localhost:5001/api/health returns ok
+  [ ] Web: http://localhost:5173 (or :3000) loads UI
+
+Files touched only on your machine (not in git by default):
+  project/server/.env
+  project/server/node_modules/
+  project/client/node_modules/
+  project/server/uploads/   (runtime)

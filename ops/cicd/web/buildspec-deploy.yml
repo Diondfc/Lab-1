@@ -1,0 +1,124 @@
+version: 0.2
+
+env:
+  variables:
+    GIT_CLONE_DEPTH: 0
+    AWS_DEFAULT_REGION: ${AWS_REGION}
+
+phases:
+  pre_build:
+    commands:
+      - echo "Starting Web Deploy Phase..."
+      - echo "Deploy started on $(date)"
+      - echo "S3 Bucket - ${WEB_S3_BUCKET_NAME}"
+      - echo "Verifying S3 bucket exists..."
+      - aws s3api head-bucket --bucket ${WEB_S3_BUCKET_NAME} || (echo "ERROR - S3 bucket ${WEB_S3_BUCKET_NAME} not found or inaccessible" && exit 1)
+      - echo "S3 bucket verified"
+      - echo "Checking for build artifacts..."
+      - echo "Current directory - $(pwd)"
+      - echo "CODEBUILD_SRC_DIR - ${CODEBUILD_SRC_DIR}"
+      - echo "Listing current directory contents..."
+      - ls -la
+      - echo ""
+      - echo "Checking CODEBUILD_SRC_DIR contents..."
+      - ls -la ${CODEBUILD_SRC_DIR} 2>/dev/null || echo "CODEBUILD_SRC_DIR not accessible"
+      - echo ""
+      - echo "Searching for index.html..."
+      - find . -name "index.html" -type f 2>/dev/null | head -10 || echo "No index.html found"
+      - echo ""
+      - echo "Searching for assets directory..."
+      - find . -name "assets" -type d 2>/dev/null | head -10 || echo "No assets directory found"
+
+  build:
+    commands:
+      - echo "Deploying web application to S3..."
+      - echo "Looking for build artifacts..."
+      - |
+        # Artifacts from build stage are extracted to the working directory
+        # The build stage outputs from project/client/dist with base-directory,
+        # so the contents are extracted to the root of CODEBUILD_SRC_DIR
+        # Check if artifacts are at root (most likely) or in original structure
+        DEPLOY_DIR=""
+        
+        # First, check for actual build artifacts at root (most common case)
+        if [ -f "index.html" ] || [ -d "assets" ]; then
+          echo "Found build artifacts at root (from build stage artifacts)"
+          DEPLOY_DIR="."
+        # Check for dist directory at root
+        elif [ -d "dist" ] && ([ -f "dist/index.html" ] || [ -d "dist/assets" ]); then
+          echo "Found dist/ directory at root with build artifacts"
+          DEPLOY_DIR="dist"
+        # Check CODEBUILD_SRC_DIR for artifacts
+        elif [ -n "${CODEBUILD_SRC_DIR}" ] && ([ -f "${CODEBUILD_SRC_DIR}/index.html" ] || [ -d "${CODEBUILD_SRC_DIR}/assets" ]); then
+          echo "Found build artifacts in CODEBUILD_SRC_DIR"
+          DEPLOY_DIR="${CODEBUILD_SRC_DIR}"
+        # Check for project/client/dist (fallback when full repo is present)
+        elif [ -d "project/client/dist" ] && ([ -f "project/client/dist/index.html" ] || [ -d "project/client/dist/assets" ]); then
+          echo "Found dist/ directory at project/client/dist"
+          DEPLOY_DIR="project/client/dist"
+        else
+          echo "ERROR - build artifacts not found"
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo ""
+          echo "CODEBUILD_SRC_DIR: ${CODEBUILD_SRC_DIR}"
+          if [ -n "${CODEBUILD_SRC_DIR}" ]; then
+            echo "CODEBUILD_SRC_DIR contents:"
+            ls -la ${CODEBUILD_SRC_DIR} 2>/dev/null || echo "Cannot list CODEBUILD_SRC_DIR"
+          fi
+          echo ""
+          echo "Checking for index.html:"
+          find . -name "index.html" -type f 2>/dev/null | head -10 || echo "No index.html found"
+          echo ""
+          echo "Checking for assets directory:"
+          find . -name "assets" -type d 2>/dev/null | head -10 || echo "No assets directory found"
+          echo ""
+          echo "ERROR: Build artifacts from build stage not found. Make sure the build stage completed successfully."
+          exit 1
+        fi
+        
+        # Verify the deploy directory actually contains build artifacts
+        if [ ! -f "${DEPLOY_DIR}/index.html" ] && [ ! -d "${DEPLOY_DIR}/assets" ]; then
+          echo "ERROR - Deploy directory ${DEPLOY_DIR} does not contain build artifacts"
+          echo "Contents of ${DEPLOY_DIR}:"
+          ls -la ${DEPLOY_DIR}/
+          exit 1
+        fi
+        
+        export DEPLOY_DIR
+      - echo "Source directory - ${DEPLOY_DIR}"
+      - echo "Verifying build artifacts exist..."
+      - test -f "${DEPLOY_DIR}/index.html" && echo "index.html found" || echo "WARNING - index.html not found"
+      - test -d "${DEPLOY_DIR}/assets" && echo "assets directory found" || echo "WARNING - assets directory not found"
+      - echo "Listing files to deploy:"
+      - ls -la ${DEPLOY_DIR}/ | head -20
+      - echo "Syncing files to S3 bucket ${WEB_S3_BUCKET_NAME}..."
+      - aws s3 sync ${DEPLOY_DIR}/ s3://${WEB_S3_BUCKET_NAME}/ --delete --exact-timestamps
+      - echo "Files synced to S3"
+      - echo "Setting proper cache headers..."
+      - |
+        aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
+          --recursive --exclude "*" --include "*.html" \
+          --cache-control "no-cache, no-store, must-revalidate" \
+          --metadata-directive REPLACE || true
+
+        aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
+          --recursive --exclude "*" --include "*.js" --include "*.css" \
+          --cache-control "public, max-age=31536000, immutable" \
+          --metadata-directive REPLACE || true
+
+        aws s3 cp s3://${WEB_S3_BUCKET_NAME}/ s3://${WEB_S3_BUCKET_NAME}/ \
+          --recursive --exclude "*" --include "*.png" --include "*.jpg" --include "*.jpeg" --include "*.gif" --include "*.svg" --include "*.ico" \
+          --cache-control "public, max-age=31536000, immutable" \
+          --metadata-directive REPLACE || true
+
+      - echo "Cache headers applied"
+      - echo "Listing first 20 uploaded objects..."
+      - aws s3 ls s3://${WEB_S3_BUCKET_NAME}/ --recursive | head -20
+      - echo "Web application deployed successfully!"
+      - echo "URL - http://${WEB_S3_BUCKET_NAME}.s3-website-${AWS_REGION}.amazonaws.com"
+artifacts:
+  files:
+    - '**/*'
+  name: web-deploy-artifact-${CODEBUILD_BUILD_ID}

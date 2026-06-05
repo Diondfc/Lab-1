@@ -1,0 +1,60 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing AWS CLI..."
+      - apk add --no-cache python3 py3-pip
+      - pip3 install --upgrade --break-system-packages awscli
+      - aws --version
+      
+  pre_build:
+    commands:
+      - echo "Starting Infrastructure Apply Phase..."
+      - |
+        echo "Apply started on $(date)"
+      - echo "Checking Terraform version..."
+      - terraform --version
+      - echo "Configuring AWS credentials..."
+      - aws sts get-caller-identity
+      
+  build:
+    commands:
+      - echo "Initializing Terraform with backend..."
+      - |
+        echo "Current directory: $(pwd)"
+      - echo "Listing contents:"
+      - ls -la
+      - echo "Changing to ops/iac directory..."
+      - cd ops/iac
+      - |
+        echo "In ops/iac directory: $(pwd)"
+      - terraform init
+      - echo "Attempting to import existing resources if needed..."
+      - |
+        # Try to import web target group if it exists (ignore errors if already imported or doesn't exist)
+        WEB_TG_ARN=$(aws elbv2 describe-target-groups --names ApprenticeFinal-web-tg-staging --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+        if [ -n "$WEB_TG_ARN" ] && [ "$WEB_TG_ARN" != "None" ]; then
+          terraform import module.compute.aws_lb_target_group.web "$WEB_TG_ARN" 2>/dev/null || echo "Web target group already in state or import failed"
+        fi
+      - echo "Running terraform plan..."
+      - terraform plan -var="owner=${TF_VAR_owner}" -var="codestar_connection_arn=${TF_VAR_codestar_connection_arn}" -var="repository_id=${TF_VAR_repository_id}" -out=tfplan
+      - echo "Terraform plan completed"
+      - echo "Applying Terraform configuration..."
+      - terraform apply -auto-approve tfplan
+      - echo "Infrastructure deployment completed successfully"
+      
+  post_build:
+    commands:
+      - echo "Post-apply phase for Infrastructure..."
+      - |
+        echo "Deployment completed on $(date)"
+      - echo "Getting Terraform outputs..."
+      - terraform output -json || echo "No outputs available"
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'ops/iac'
+  name: infrastructure-apply-artifact
+
