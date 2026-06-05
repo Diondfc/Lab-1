@@ -15,7 +15,7 @@ function passwordRequirementMessages(password) {
 }
 
 const inputNormal =
-  'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-600 dark:focus:border-green-500 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/30'
+  'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20'
 
 const RegistrationForm = () => {
   const [formData, setFormData] = useState({
@@ -106,7 +106,7 @@ const RegistrationForm = () => {
         className="space-y-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-lg md:p-10 transition-colors duration-300"
       >
         <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-green-800 dark:text-green-500">Sign Up</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400">Sign Up</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Join the Library Management System</p>
         </div>
 
@@ -202,7 +202,7 @@ const RegistrationForm = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full rounded-xl bg-green-700 dark:bg-green-600 py-3 font-semibold text-slate-900 dark:text-white shadow-md transition duration-200 hover:bg-green-800 dark:hover:bg-green-500 ${isLoading ? 'cursor-not-allowed opacity-50' : ''
+          className={`w-full rounded-xl bg-indigo-600 py-3 font-semibold text-slate-900 shadow-lg shadow-indigo-600/20 transition duration-200 hover:bg-indigo-500 ${isLoading ? 'cursor-not-allowed opacity-50' : ''
             }`}
         >
           {isLoading ? 'Creating Account...' : 'Register'}
@@ -210,7 +210,7 @@ const RegistrationForm = () => {
 
         <p className="text-center text-sm text-slate-600 dark:text-slate-400">
           Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-green-700 dark:text-green-400 hover:underline">
+          <Link to="/login" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
             Login here
           </Link>
         </p>

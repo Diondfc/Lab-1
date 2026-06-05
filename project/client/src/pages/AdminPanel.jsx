@@ -239,6 +239,7 @@ const AdminPanel = () => {
                       { title: 'Events Control', path: '/events/dashboard', icon: <FiCalendar />, desc: 'Organize library events', color: 'rose' },
                       { title: 'Ratings Overview', path: '/admin/ratings', icon: <FiActivity />, desc: 'View all book ratings', color: 'amber' },
                       { title: 'Reservation Queue', path: '/admin/reservations', icon: <FiClock />, desc: 'Manage book holds', color: 'lime' },
+                      { title: 'Reservations', path: '/admin/crud/reservations', icon: <FiClock />, desc: 'Manage reservations', color: 'green' },
                       { title: 'Audit Logs', path: '/admin/audit-logs', icon: <FiActivity />, desc: 'Track important actions', color: 'sky' },
                       { title: 'Library Reports', path: '/admin/reports', icon: <FiTrendingUp />, desc: 'Search & reports', color: 'green' },
                       { title: 'Role History', path: '/admin/role-history', icon: <FiShield />, desc: 'Track role periods', color: 'violet' },
@@ -250,9 +251,6 @@ const AdminPanel = () => {
                       { title: 'Members', path: '/admin/crud/members', icon: <FiUsers />, desc: 'Manage member profiles', color: 'cyan' },
                       { title: 'Book Reviews', path: '/admin/crud/bookreviews', icon: <FiActivity />, desc: 'Manage reviews', color: 'amber' },
                       { title: 'User Claims', path: '/admin/crud/user-claims', icon: <FiShield />, desc: 'Manage identity claims', color: 'rose' },
-                      { title: 'User Tokens', path: '/admin/crud/user-tokens', icon: <FiActivity />, desc: 'Manage user tokens', color: 'indigo' },
-                      { title: 'Refresh Tokens', path: '/admin/crud/refresh-tokens', icon: <FiClock />, desc: 'Revoke or remove refresh tokens', color: 'lime' },
-                      { title: 'Reservations', path: '/admin/crud/reservations', icon: <FiClock />, desc: 'Manage reservations', color: 'green' },
                     ].map((item, i) => (
                       <button
                         key={i}

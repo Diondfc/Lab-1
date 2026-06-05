@@ -6,7 +6,7 @@ import { isStaffRole } from '../../lib/roles.js'
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const inputNormal =
-  'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-600 dark:focus:border-green-500 focus:ring-2 focus:ring-green-100 dark:focus:ring-green-900/30'
+  'border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20'
 
 function LoginForm({ setUser }) {
   const [formData, setFormData] = useState({ email: '', password: '' })
@@ -85,7 +85,7 @@ function LoginForm({ setUser }) {
         className="space-y-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-lg md:p-10 transition-colors duration-300"
       >
         <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-green-800 dark:text-green-500">Sign In</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400">Sign In</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Welcome back to the Library Management System</p>
         </div>
 
@@ -140,7 +140,7 @@ function LoginForm({ setUser }) {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full rounded-xl bg-green-700 dark:bg-green-600 py-3 font-semibold text-slate-900 dark:text-white shadow-md transition duration-200 hover:bg-green-800 dark:hover:bg-green-500 ${isLoading ? 'cursor-not-allowed opacity-50' : ''
+          className={`w-full rounded-xl bg-indigo-600 py-3 font-semibold text-slate-900 shadow-lg shadow-indigo-600/20 transition duration-200 hover:bg-indigo-500 ${isLoading ? 'cursor-not-allowed opacity-50' : ''
             }`}
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
@@ -148,7 +148,7 @@ function LoginForm({ setUser }) {
 
         <p className="text-center text-sm text-slate-600 dark:text-slate-400">
           Need an account?{' '}
-          <Link to="/" className="font-semibold text-green-700 dark:text-green-400 hover:underline">
+          <Link to="/" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
             Register here
           </Link>
         </p>

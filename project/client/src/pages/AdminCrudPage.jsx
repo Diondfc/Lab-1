@@ -9,7 +9,6 @@ import {
   FiSearch,
   FiTrash2,
   FiX,
-  FiSlash,
 } from 'react-icons/fi'
 import { apiClient } from '../lib/api.js'
 
@@ -119,36 +118,6 @@ const resourceConfigs = {
       { name: 'ClaimValue', label: 'Claim value', required: true },
     ],
     columns: ['UserClaimID', 'UserID', 'UserEmail', 'ClaimType', 'ClaimValue'],
-  },
-  'user-tokens': {
-    title: 'User Tokens',
-    endpoint: '/api/user-tokens',
-    idKey: 'UserTokenID',
-    searchKeys: ['UserName', 'UserEmail', 'LoginProvider', 'TokenName'],
-    fields: [
-      { name: 'UserID', label: 'User ID', type: 'number', required: true },
-      { name: 'LoginProvider', label: 'Login provider', required: true },
-      { name: 'TokenName', label: 'Token name', required: true },
-      { name: 'TokenValue', label: 'Token value', type: 'textarea' },
-      { name: 'ExpiresAt', label: 'Expires at', type: 'datetime-local' },
-    ],
-    columns: ['UserTokenID', 'UserID', 'UserEmail', 'LoginProvider', 'TokenName', 'ExpiresAt', 'created_at'],
-  },
-  'refresh-tokens': {
-    title: 'Refresh Tokens',
-    endpoint: '/api/refresh-tokens',
-    idKey: 'RefreshTokenID',
-    searchKeys: ['UserName', 'UserEmail', 'TokenHash', 'ExpiresAt', 'RevokedAt'],
-    fields: [
-      { name: 'UserID', label: 'User ID', type: 'number', required: true },
-      { name: 'Token', label: 'Raw token (will be hashed)', type: 'textarea' },
-      { name: 'TokenHash', label: 'Token hash' },
-      { name: 'ExpiresAt', label: 'Expires at', type: 'datetime-local', required: true },
-      { name: 'RevokedAt', label: 'Revoked at', type: 'datetime-local' },
-      { name: 'ReplacedByTokenID', label: 'Replaced by token ID', type: 'number' },
-    ],
-    columns: ['RefreshTokenID', 'UserID', 'UserEmail', 'TokenHash', 'ExpiresAt', 'RevokedAt', 'ReplacedByTokenID'],
-    allowRevoke: true,
   },
 }
 
@@ -300,18 +269,6 @@ export default function AdminCrudPage() {
     }
   }
 
-  async function revokeRecord(row) {
-    try {
-      setMessage('')
-      setError('')
-      await apiClient.patch(`${config.endpoint}/${row[config.idKey]}/revoke`)
-      setMessage('Refresh token revoked successfully.')
-      await loadRows()
-    } catch (err) {
-      setError(err.response?.data?.message || 'Could not revoke token.')
-    }
-  }
-
   return (
     <div className="min-h-screen bg-zinc-50 px-4 py-10 text-slate-900 dark:bg-slate-900 dark:text-white">
       <div className="mx-auto max-w-7xl">
@@ -450,16 +407,6 @@ export default function AdminCrudPage() {
                       ))}
                       <td className="px-5 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          {config.allowRevoke && !row.RevokedAt && (
-                            <button
-                              type="button"
-                              onClick={() => revokeRecord(row)}
-                              className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-amber-500"
-                            >
-                              <FiSlash />
-                              Revoke
-                            </button>
-                          )}
                           <button
                             type="button"
                             onClick={() => startEdit(row)}
