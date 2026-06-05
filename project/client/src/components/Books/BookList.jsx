@@ -18,11 +18,13 @@ const BookList = () => {
         if (Array.isArray(response.data)) {
           setDisplayBooks(prevBooks => 
             prevBooks.map(staticBook => {
-              const dbBook = response.data.find(b => Number(b.BookID) === Number(staticBook.id));
+              const dbBook = response.data.find(b => Number(b.BookID ?? b.id) === Number(staticBook.id));
               if (dbBook) {
+                const quantity = Number(dbBook.Quantity ?? dbBook.quantity ?? 0);
+                const availability = dbBook.AvailabilityStatus ?? dbBook.availabilityStatus ?? dbBook.available;
                 return {
                   ...staticBook,
-                  status: dbBook.AvailabilityStatus === 'Available' && Number(dbBook.Quantity) > 0
+                  status: availability === 'Available' && quantity > 0
                     ? 'available'
                     : 'unavailable'
                 };

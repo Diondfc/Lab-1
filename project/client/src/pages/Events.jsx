@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { FiCalendar, FiMapPin } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiCalendar, FiCheck, FiMapPin, FiUsers } from 'react-icons/fi';
 import { apiClient } from '../lib/api';
 
 const Events = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reservationMessages, setReservationMessages] = useState({});
+  const [reservationErrors, setReservationErrors] = useState({});
+  const [savingEventId, setSavingEventId] = useState(null);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -39,6 +44,73 @@ const Events = () => {
   const eventDescription = (title) =>
     `Join us for ${title || 'this event'} hosted by the UBT Library community.`;
 
+  const updateEventReservation = (eventId, status, seatsRemaining) => {
+    setEvents((current) =>
+      current.map((event) => {
+        if (Number(event.EventID) !== Number(eventId)) return event;
+        const nextReservedSeats =
+          status === 'Reserved'
+            ? Number(event.ReservedSeats || 0) + 1
+            : Math.max(Number(event.ReservedSeats || 0) - 1, 0);
+        return {
+          ...event,
+          MyReservationStatus: status,
+          ReservedSeats: nextReservedSeats,
+          SeatsRemaining:
+            seatsRemaining != null
+              ? seatsRemaining
+              : Math.max(Number(event.Capacity || 0) - nextReservedSeats, 0),
+        };
+      }),
+    );
+  };
+
+  const reserveSeat = async (eventId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setSavingEventId(eventId);
+      setReservationErrors((current) => ({ ...current, [eventId]: '' }));
+      const { data } = await apiClient.post(`/api/events/${eventId}/reserve`);
+      setReservationMessages((current) => ({
+        ...current,
+        [eventId]: data?.message || 'Seat reserved successfully.',
+      }));
+      updateEventReservation(eventId, 'Reserved', data?.seatsRemaining);
+    } catch (err) {
+      setReservationErrors((current) => ({
+        ...current,
+        [eventId]: err.response?.data?.message || 'Could not reserve this seat.',
+      }));
+    } finally {
+      setSavingEventId(null);
+    }
+  };
+
+  const cancelReservation = async (eventId) => {
+    try {
+      setSavingEventId(eventId);
+      setReservationErrors((current) => ({ ...current, [eventId]: '' }));
+      const { data } = await apiClient.delete(`/api/events/${eventId}/reserve`);
+      setReservationMessages((current) => ({
+        ...current,
+        [eventId]: data?.message || 'Reservation cancelled.',
+      }));
+      updateEventReservation(eventId, 'Cancelled');
+    } catch (err) {
+      setReservationErrors((current) => ({
+        ...current,
+        [eventId]: err.response?.data?.message || 'Could not cancel this reservation.',
+      }));
+    } finally {
+      setSavingEventId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-16 transition-colors duration-300">
       <div className="container mx-auto max-w-7xl px-4">
@@ -71,6 +143,12 @@ const Events = () => {
           )}
 
           {events.map((event) => (
+            (() => {
+              const isReserved = event.MyReservationStatus === 'Reserved';
+              const seatsRemaining = Number(event.SeatsRemaining ?? event.Capacity ?? 0);
+              const isFull = seatsRemaining <= 0 && !isReserved;
+              const isSaving = savingEventId === event.EventID;
+              return (
             <article
               key={event.EventID}
               className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-md transition hover:-translate-y-1 hover:shadow-lg"
@@ -88,9 +166,44 @@ const Events = () => {
                   <FiMapPin className="mr-2 text-indigo-700 dark:text-indigo-400" />
                   <span>{event.Location || 'TBA'}</span>
                 </div>
+                <div className="flex items-center">
+                  <FiUsers className="mr-2 text-indigo-700 dark:text-indigo-400" />
+                  <span>
+                    {isReserved
+                      ? 'Your seat is reserved'
+                      : `${seatsRemaining} seat${seatsRemaining === 1 ? '' : 's'} remaining`}
+                  </span>
+                </div>
               </div>
               <p className="leading-relaxed text-gray-600 dark:text-gray-400">{eventDescription(event.Title)}</p>
+
+              {reservationMessages[event.EventID] && (
+                <p className="mt-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                  {reservationMessages[event.EventID]}
+                </p>
+              )}
+              {reservationErrors[event.EventID] && (
+                <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {reservationErrors[event.EventID]}
+                </p>
+              )}
+
+              <button
+                type="button"
+                disabled={isSaving || isFull}
+                onClick={() => (isReserved ? cancelReservation(event.EventID) : reserveSeat(event.EventID))}
+                className={`mt-6 inline-flex w-full items-center justify-center rounded-lg px-4 py-3 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isReserved
+                    ? 'border border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
+                    : 'bg-indigo-700 text-white hover:bg-indigo-800'
+                }`}
+              >
+                {isReserved && <FiCheck className="mr-2" />}
+                {isSaving ? 'Saving...' : isReserved ? 'Cancel reservation' : isFull ? 'Fully booked' : 'Reserve a seat'}
+              </button>
             </article>
+              );
+            })()
           ))}
         </div>
       </div>

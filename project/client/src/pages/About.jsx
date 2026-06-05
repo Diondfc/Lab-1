@@ -36,6 +36,13 @@ const About = () => {
         { icon: <FiPhone className="text-indigo-700 text-xl" />, title: "Phone", details: ["+383 38 541 400"] }
     ];
 
+    const teamMembers = [
+        { name: "Vlera Zogjani", role: "Library Operations Lead" },
+        { name: "Rina Shala", role: "Member Services Coordinator" },
+        { name: "Erjon Murtezi", role: "Digital Systems Manager" },
+        { name: "Dion Gjakova", role: "Events & Research Support" }
+    ];
+
     return (
         <div className="font-poppins bg-white dark:bg-slate-900 transition-colors duration-300">
             {/* Hero */}
@@ -98,9 +105,9 @@ const About = () => {
 
             {/* Team */}
             <div className="py-16 bg-white dark:bg-slate-900 transition-colors duration-300">
-                <div className="container mx-auto px-4 flex flex-col md:flex-row-reverse items-center">
-                    <div className="md:w-1/2 mb-8 md:pl-10">
-                        <video autoPlay loop muted className="w-full rounded-xl shadow-lg">
+                <div className="container mx-auto px-4 flex flex-col md:flex-row-reverse items-stretch gap-8">
+                    <div className="md:w-1/2 flex">
+                        <video autoPlay loop muted className="h-full min-h-[420px] w-full rounded-xl object-cover shadow-lg md:min-h-[560px]">
                             <source src={TeamImage} type="video/mp4" />
                         </video>
                     </div>
@@ -113,6 +120,20 @@ const About = () => {
                         <p className="text-gray-600 dark:text-slate-400">
                             Experts in research, tech, and library systems.
                         </p>
+                        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                            {teamMembers.map((member) => (
+                                <div
+                                    key={member.name}
+                                    className="rounded-xl border border-indigo-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-4"
+                                >
+                                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                                        <FiUsers className="text-xl" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900 dark:text-white">{member.name}</h3>
+                                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">{member.role}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

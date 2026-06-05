@@ -7,6 +7,15 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { isStaffRole } from '../../lib/roles';
 import { apiClient } from '../../lib/api';
 
+function isTokenExpired(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1] || ''));
+    return payload.exp ? payload.exp * 1000 <= Date.now() : false;
+  } catch {
+    return true;
+  }
+}
+
 function Navbar({ user, setUser }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,7 +37,13 @@ function Navbar({ user, setUser }) {
 
   const loadNotifications = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (!user || !token) {
+    if (!user || !token || isTokenExpired(token)) {
+      if (token && isTokenExpired(token)) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        setUser?.(null);
+      }
       setNotifications([]);
       setNotificationsError('');
       return;
@@ -53,12 +68,13 @@ function Navbar({ user, setUser }) {
   }, [setUser, user]);
 
   useEffect(() => {
+    if (!user || !isNotificationsOpen) return undefined;
+
     loadNotifications();
-    if (!user) return undefined;
 
     const id = window.setInterval(loadNotifications, 60000);
     return () => window.clearInterval(id);
-  }, [loadNotifications, user]);
+  }, [isNotificationsOpen, loadNotifications, user]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -161,8 +177,11 @@ function Navbar({ user, setUser }) {
                   <button
                     type="button"
                     onClick={() => {
-                      setIsNotificationsOpen((open) => !open);
-                      loadNotifications();
+                      setIsNotificationsOpen((open) => {
+                        const next = !open;
+                        if (next) loadNotifications();
+                        return next;
+                      });
                     }}
                     className="relative rounded-xl bg-slate-100 dark:bg-slate-800 p-2 text-slate-500 dark:text-slate-400 transition hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-300"
                     title="Notifications"

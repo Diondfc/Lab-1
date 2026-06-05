@@ -1,7 +1,7 @@
 const User = require('../models/user.model');
 const pool = require('../config/db');
 const { getUserId, isStaff } = require('../middlewares/auth');
-const { normalizeRole } = require('../lib/roles');
+const { ROLES, normalizeRole } = require('../lib/roles');
 const AuditLog = require('../models/audit-log.model');
 
 async function writeAuditLog(payload) {
@@ -74,7 +74,7 @@ exports.createUser = async (req, res) => {
     } = req.body;
     const name = full_name || Name;
     const userEmail = (email || Email || '').trim().toLowerCase();
-    const userRole = normalizeRole(role || Role);
+    const userRole = normalizeRole(role || Role || ROLES.USER_MEMBER);
 
     if (!name || !userEmail || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });

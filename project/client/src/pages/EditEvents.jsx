@@ -12,6 +12,7 @@ const EditEvents = () => {
     Date: '',
     Time: '',
     LocationID: '',
+    Capacity: '50',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -35,6 +36,7 @@ const EditEvents = () => {
           Date: ev.Date || '',
           Time: ev.Time || '',
           LocationID: ev.LocationID != null ? String(ev.LocationID) : '',
+          Capacity: ev.Capacity != null ? String(ev.Capacity) : '50',
         })
       } catch (e) {
         console.error(e)
@@ -72,6 +74,7 @@ const EditEvents = () => {
         Date: form.Date,
         Time: form.Time,
         LocationID: lid,
+        Capacity: Number(form.Capacity) || 50,
       })
       setSaved(true)
       setTimeout(() => navigate('/events/dashboard'), 800)
@@ -206,6 +209,22 @@ const EditEvents = () => {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="Capacity" className="mb-2 block font-medium text-gray-700">
+                Seat capacity
+              </label>
+              <input
+                id="Capacity"
+                name="Capacity"
+                type="number"
+                min="1"
+                required
+                value={form.Capacity}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 focus:border-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-700/20"
+              />
             </div>
 
             <div className="flex flex-wrap gap-3">

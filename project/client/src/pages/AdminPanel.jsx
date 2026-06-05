@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fi';
 import { LuBookUp2 } from "react-icons/lu";
 import { apiClient } from '../lib/api';
+import { isStaffRole } from '../lib/roles';
 
 // Mock Data for Charts
 const loansData = [
@@ -29,6 +30,15 @@ const categoryData = [
   { name: 'Journals', count: 45 },
   { name: 'Tech', count: 90 },
 ];
+
+function isTokenExpired(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1] || ''));
+    return payload.exp ? payload.exp * 1000 <= Date.now() : false;
+  } catch {
+    return true;
+  }
+}
 
 function MeasuredChart({ height = 300, children }) {
   const containerRef = useRef(null);
@@ -75,6 +85,21 @@ const AdminPanel = () => {
       let mounted = true;
 
       async function loadDashboardStats() {
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        const currentUser = storedUser ? JSON.parse(storedUser) : null;
+
+        if (!token || isTokenExpired(token) || !isStaffRole(currentUser?.role)) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          if (mounted) {
+            setStatsLoading(false);
+            navigate('/login', { replace: true });
+          }
+          return;
+        }
+
         try {
           setStatsLoading(true);
           setStatsError('');
@@ -99,7 +124,7 @@ const AdminPanel = () => {
       return () => {
         mounted = false;
       };
-    }, []);
+    }, [navigate]);
 
     const formatNumber = (value) => new Intl.NumberFormat('en-US').format(value);
 

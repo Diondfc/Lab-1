@@ -421,11 +421,30 @@ CREATE TABLE IF NOT EXISTS Events (
   Date DATE NOT NULL,
   Time TIME NOT NULL,
   LocationID INT UNSIGNED NOT NULL,
+  Capacity INT UNSIGNED NOT NULL DEFAULT 50,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (EventID),
   KEY idx_events_date (Date),
   CONSTRAINT fk_events_location
     FOREIGN KEY (LocationID) REFERENCES EventLocations (LocationID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS EventReservations (
+  EventReservationID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  EventID INT UNSIGNED NOT NULL,
+  UserID INT UNSIGNED NOT NULL,
+  Status ENUM('Reserved', 'Cancelled') NOT NULL DEFAULT 'Reserved',
+  ReservedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CancelledAt DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (EventReservationID),
+  UNIQUE KEY uq_event_reservation_user (EventID, UserID),
+  KEY idx_event_reservations_event_status (EventID, Status),
+  CONSTRAINT fk_event_reservations_event
+    FOREIGN KEY (EventID) REFERENCES Events (EventID) ON DELETE CASCADE,
+  CONSTRAINT fk_event_reservations_user
+    FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------

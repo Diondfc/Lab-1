@@ -143,11 +143,18 @@ async function verifyConnection() {
 
       if (await tableExists('UserRoles')) {
         if (await columnExists('UserRoles', 'Role')) {
+          await conn.execute("ALTER TABLE UserRoles MODIFY Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member'")
           await conn.execute(`
             UPDATE UserRoles ur
             JOIN Roles r ON r.Name = ur.Role
             SET ur.RoleID = r.RoleID
             WHERE ur.RoleID IS NULL
+          `)
+          await conn.execute(`
+            UPDATE UserRoles ur
+            JOIN Roles r ON r.RoleID = ur.RoleID
+            SET ur.Role = r.Name
+            WHERE ur.Role <> r.Name
           `)
         }
         await tryExecute('ALTER TABLE UserRoles ADD CONSTRAINT fk_user_roles_role FOREIGN KEY (RoleID) REFERENCES Roles (RoleID) ON DELETE RESTRICT')
@@ -441,6 +448,16 @@ async function verifyConnection() {
       if (!(await columnExists('Books', 'PublisherID'))) {
         await conn.execute('ALTER TABLE Books ADD COLUMN PublisherID INT UNSIGNED NULL AFTER Publisher')
       }
+      if (!(await columnExists('Books', 'CoverImagePath'))) {
+        await conn.execute('ALTER TABLE Books ADD COLUMN CoverImagePath VARCHAR(512) NULL AFTER Rating')
+      }
+      if (await columnExists('Books', 'CoverImage')) {
+        await conn.execute(`
+          UPDATE Books
+          SET CoverImagePath = COALESCE(CoverImagePath, CoverImage)
+          WHERE CoverImage IS NOT NULL AND CoverImage <> ''
+        `)
+      }
       if (!(await columnExists('Loans', 'MemberID'))) {
         await conn.execute('ALTER TABLE Loans ADD COLUMN MemberID INT UNSIGNED NULL AFTER UserID')
       }
@@ -647,6 +664,7 @@ async function verifyConnection() {
         await conn.execute('ALTER TABLE UserRoles ADD COLUMN RoleID INT UNSIGNED NULL AFTER UserID')
       }
       if (userRoleColumnNames.includes('role')) {
+        await conn.execute("ALTER TABLE UserRoles MODIFY Role ENUM('Admin', 'Manager', 'User/Member') NOT NULL DEFAULT 'User/Member'")
         await conn.execute(`
           UPDATE UserRoles ur
           JOIN Roles r ON r.Name = ur.Role
@@ -669,13 +687,51 @@ async function verifyConnection() {
       if (userRoleColumnNames.includes('role')) {
         await conn.execute(`
           UPDATE UserRoles ur
-          JOIN Roles r ON r.Name = ur.Role
-          SET ur.RoleID = r.RoleID
-          WHERE ur.RoleID IS NULL
+          JOIN Roles r ON r.RoleID = ur.RoleID
+          SET ur.Role = r.Name
+          WHERE ur.Role <> r.Name
         `)
       }
     } catch (userRolesMigErr) {
       console.error('Auto-migration warning: Failed to create/seed user roles:', userRolesMigErr.message)
+    }
+
+    try {
+      const columnExists = async (tableName, columnName) => {
+        const [rows] = await conn.execute(
+          `SELECT COLUMN_NAME
+           FROM INFORMATION_SCHEMA.COLUMNS
+           WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+          [DB_NAME, tableName, columnName],
+        )
+        return rows.length > 0
+      }
+
+      if (!(await columnExists('Events', 'Capacity'))) {
+        await conn.execute('ALTER TABLE Events ADD COLUMN Capacity INT UNSIGNED NOT NULL DEFAULT 50 AFTER LocationID')
+      }
+
+      await conn.execute(`
+        CREATE TABLE IF NOT EXISTS EventReservations (
+          EventReservationID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          EventID INT UNSIGNED NOT NULL,
+          UserID INT UNSIGNED NOT NULL,
+          Status ENUM('Reserved', 'Cancelled') NOT NULL DEFAULT 'Reserved',
+          ReservedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CancelledAt DATETIME NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (EventReservationID),
+          UNIQUE KEY uq_event_reservation_user (EventID, UserID),
+          KEY idx_event_reservations_event_status (EventID, Status),
+          CONSTRAINT fk_event_reservations_event
+            FOREIGN KEY (EventID) REFERENCES Events (EventID) ON DELETE CASCADE,
+          CONSTRAINT fk_event_reservations_user
+            FOREIGN KEY (UserID) REFERENCES Users (UserID) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+    } catch (eventReservationMigErr) {
+      console.error('Auto-migration warning: Failed to create event reservations:', eventReservationMigErr.message)
     }
 
     try {

@@ -54,6 +54,7 @@ async function register(req, res) {
       last_name: last_name ?? LastName ?? null,
       phone_number: phone_number ?? PhoneNumber ?? null,
       password: hashedPassword,
+      role: ROLES.USER_MEMBER,
     });
     await UserAccount.create(userId);
 
